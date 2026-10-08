@@ -1,0 +1,118 @@
+import { useState } from 'react';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { isDirectorioDesactivado, isMantenimientoAdmin, tieneAccesoMantenimiento } from '../lib/types';
+import UserMenu from '../components/UserMenu';
+import MobileMenu from '../components/MobileMenu';
+import { useConfiguracionQuery } from '../features/config/useConfiguracion';
+import { RetiroCartProvider, useRetiroCart } from '../features/retiros/RetiroCartContext';
+import ItemsList from '../features/items/ItemsList';
+import InformeReposicion from '../features/items/InformeReposicion';
+import RetiroCartPanel from '../features/retiros/RetiroCartPanel';
+import HistorialRetiros from '../features/retiros/HistorialRetiros';
+import QrScannerModal from '../features/scanner/QrScannerModal';
+import TareasScreen from '../features/tareas/TareasScreen';
+import ReparacionesScreen from '../features/reparaciones/ReparacionesScreen';
+
+type Tab = 'buscar' | 'carrito' | 'retiros' | 'tareas' | 'reparaciones' | 'informe';
+
+function MantenimientoContent() {
+  const { profile } = useAuth();
+  const { cart } = useRetiroCart();
+  const { data: config } = useConfiguracionQuery();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<Tab>('buscar');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
+  // Reparaciones toca stock igual que retiros/edición de repuestos — se
+  // reserva a admin de Mantenimiento, no satura la navegación del común.
+  const esAdmin = isMantenimientoAdmin(profile);
+
+  // Un usuario con Directorio desactivado queda encerrado en Mantenimiento —
+  // sin botón de "Volver", igual que exitMantenimiento() en la app vieja.
+  const canExit = !isDirectorioDesactivado(profile);
+
+  const navItems = [
+    { icon: '🔍', label: 'Buscar', onClick: () => setTab('buscar'), active: tab === 'buscar' },
+    { icon: '🛒', label: `A retirar${cart.length ? ` (${cart.length})` : ''}`, onClick: () => setTab('carrito'), active: tab === 'carrito' },
+    { icon: '📋', label: 'Retiros', onClick: () => setTab('retiros'), active: tab === 'retiros' },
+    ...(esAdmin ? [{ icon: '🔧', label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
+    { icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' },
+    ...(esAdmin ? [{ icon: '📊', label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
+    ...(canExit ? [{ icon: '←', label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
+  ];
+
+  return (
+    <div className="mantenimiento-screen">
+      <header className="app-header">
+        <div className="header-logo">
+          {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
+          <div>
+            <div className="header-logo-fallback">{nombreEmpresa}</div>
+            <div className="header-title">Depósito de mantenimiento</div>
+          </div>
+        </div>
+        <div className="header-right">
+          {canExit && (
+            <Link to="/" className="btn-volver-directorio" style={{ display: 'flex' }}>← <span className="hide-mobile">Directorio</span></Link>
+          )}
+          <UserMenu />
+          <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <nav className="app-nav">
+        <button className={`nav-tab${tab === 'buscar' ? ' active' : ''}`} onClick={() => setTab('buscar')}>🔍 Buscar</button>
+        <button className={`nav-tab${tab === 'carrito' ? ' active' : ''}`} onClick={() => setTab('carrito')}>
+          🛒 A retirar {cart.length > 0 && <span className="badge badge-rubro">{cart.length}</span>}
+        </button>
+        <button className={`nav-tab${tab === 'retiros' ? ' active' : ''}`} onClick={() => setTab('retiros')}>📋 Retiros</button>
+        <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}>✅ Tareas</button>
+        {esAdmin && (
+          <button className={`nav-tab${tab === 'reparaciones' ? ' active' : ''}`} onClick={() => setTab('reparaciones')}>🔧 Reparaciones</button>
+        )}
+        {esAdmin && (
+          <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}>📊 Informe</button>
+        )}
+      </nav>
+
+      <main className="app-main">
+        {tab === 'buscar' && (
+          <div id="paneMantBuscar">
+            <ItemsList />
+            <button className="fab-scan" onClick={() => setScannerOpen(true)} aria-label="Escanear QR">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="3" height="3" /><rect x="18" y="14" width="3" height="3" /><rect x="14" y="18" width="3" height="3" /><rect x="18" y="18" width="3" height="3" /></svg>
+            </button>
+          </div>
+        )}
+        {tab === 'carrito' && <RetiroCartPanel />}
+        {tab === 'retiros' && <HistorialRetiros />}
+        {tab === 'tareas' && <TareasScreen />}
+        {tab === 'reparaciones' && esAdmin && <ReparacionesScreen />}
+        {tab === 'informe' && esAdmin && <InformeReposicion />}
+      </main>
+
+      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} navItems={navItems} />
+      <QrScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onListo={() => { setScannerOpen(false); setTab('carrito'); }} />
+    </div>
+  );
+}
+
+export default function MantenimientoPage() {
+  const { profile } = useAuth();
+  // Con Directorio desactivado, esta pantalla es la única a la que puede
+  // entrar, tenga o no un rol de Mantenimiento propio asignado.
+  if (!tieneAccesoMantenimiento(profile) && !isDirectorioDesactivado(profile)) return <Navigate to="/" replace />;
+
+  return (
+    <RetiroCartProvider>
+      <MantenimientoContent />
+    </RetiroCartProvider>
+  );
+}
