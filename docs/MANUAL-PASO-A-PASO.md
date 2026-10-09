@@ -1,0 +1,702 @@
+# Manual paso a paso
+
+Este manual es para **quien vende e instala la aplicación** (no para el cliente). Está escrito sin jerga, con los
+pasos en el orden en que se hacen. Cuando algo es técnico, se explica con palabras comunes.
+
+**Cómo usarlo:** si es tu primera vez, leé los capítulos 1 a 3 enteros. Después, para instalar un cliente, andá directo al
+capítulo 4 y seguilo punto por punto. Los demás son de consulta.
+
+| Capítulo | Para qué |
+|---|---|
+| 1. Qué es lo que vendés | Entender las piezas |
+| 2. Qué necesitás antes de empezar | Cuentas y programas (una sola vez) |
+| 3. Decisiones antes de vender | Cuenta de Supabase, plan, contraseñas |
+| **4. Instalar un cliente nuevo** | **El paso a paso principal** |
+| 5. Módulos | Qué se vende por separado y cómo se activa |
+| 6. Usuarios y permisos | Quién puede hacer qué |
+| 7. El asistente de configuración inicial | Lo que ve el cliente la primera vez |
+| 8. El día a día | Actualizar, cambiar módulos, resolver pedidos del cliente |
+| 9. Si algo sale mal | Problemas comunes y qué hacer |
+| 10. Pasar una instalación que ya existe (Cremac) | Con cuidado |
+| 11. Lo que todavía no existe | Para no prometer de más |
+| 12. Dónde está cada cosa | Mapa de la carpeta del proyecto |
+| 13. Glosario | Qué significa cada palabra |
+| 14. Lista de verificación de entrega | Para ir tildando |
+
+---
+
+## 1. Qué es lo que vendés
+
+Pensalo como **un edificio de oficinas**:
+
+- **El edificio es la aplicación.** Es siempre la misma para todos los clientes: el mismo código.
+- **Los pisos son los módulos** (Proveedores, Comisionistas, Envíos, Depósito, Tareas). Cada cliente compra algunos pisos,
+  y los que no compró quedan cerrados con llave.
+- **Cada cliente tiene su propia base de datos**, que es su "depósito" privado donde viven sus datos. Nadie ve los datos de otro.
+
+Las piezas concretas que intervienen son cuatro:
+
+| Pieza | Para qué sirve | Dónde vive |
+|---|---|---|
+| **La aplicación** (lo que ve el cliente en el navegador) | Las pantallas | Un sitio en **Netlify**, uno por cliente |
+| **Supabase** | Guarda los datos, los usuarios y los permisos | Un **proyecto** por cliente |
+| **GitHub** | Guarda el código de la aplicación | Un solo repositorio, `gestion-empresarial` |
+| **Servidor de archivos** *(opcional, todavía no conectado a la app)* | Manuales y archivos pesados | Tu servidor de Digital Ocean |
+
+**Lo importante:** el código es uno solo. Lo que cambia entre clientes son (1) su proyecto de Supabase, (2) su sitio en
+Netlify, y (3) su **licencia de módulos**. Por eso instalar un cliente nuevo es repetir siempre los mismos pasos.
+
+---
+
+## 2. Qué necesitás antes de empezar (una sola vez)
+
+### 2.1 Cuentas
+
+| Cuenta | Para qué | Ya la tenés |
+|---|---|---|
+| **GitHub** (github.com) | El código | Sí |
+| **Supabase** (supabase.com) | Las bases de datos de los clientes | Sí |
+| **Netlify** (netlify.com) | Publicar la aplicación de cada cliente | Sí |
+
+### 2.2 Programas en tu PC
+
+| Programa | Para qué | Cómo comprobar que está |
+|---|---|---|
+| **Node.js 24** | Hace funcionar los comandos | `node -v` debe mostrar `v24...` |
+| **pnpm** | Instala las librerías del proyecto | `pnpm -v` debe mostrar un número |
+| **Git** | Guardar y subir el código | `git --version` |
+
+Para comprobar, abrí la terminal de Git (la que dice `MINGW64` arriba), escribí el comando y apretá Enter.
+
+### 2.3 Preparar el proyecto
+
+1. **Abrí la terminal de Git y pasate a la carpeta del proyecto:**
+
+```bash
+cd ~/OneDrive/Desktop/"Gestion empresarial"
+```
+
+2. **Instalá las librerías** (solo la primera vez, o si te lo pido):
+
+```bash
+pnpm install
+```
+
+3. **Iniciá sesión en Supabase desde la terminal.** Se abre el navegador para que autorices. Es una sola vez:
+
+```bash
+npx supabase login
+```
+
+4. **Comprobá que todo está bien.** Este comando muestra la ayuda de los comandos del instalador; si ves el texto, está listo:
+
+```bash
+pnpm cliente
+```
+
+> **Si algo de esto falla:** copiá el mensaje completo y consultame. No sigas con el capítulo 4 hasta que `pnpm cliente`
+> muestre la ayuda.
+
+---
+
+## 3. Decisiones antes de vender (pensalas una vez)
+
+### 3.1 ¿En qué cuenta de Supabase vive el cliente?
+
+| | En tu cuenta | En la cuenta del cliente *(recomendado)* |
+|---|---|---|
+| De quién son los datos | Viven en tu cuenta | Son claramente de él |
+| Quién paga Supabase | Vos | Él, con su tarjeta |
+| Límite del plan gratis (2 proyectos por cuenta) | Se te acaba rápido | Cada cliente tiene los suyos |
+| Si dejás de trabajar con él | Hay que mudar todo | Se queda con todo funcionando |
+
+**Si elegís la cuenta del cliente**, antes de instalar:
+
+1. El cliente crea su cuenta en supabase.com y una **organización** con el nombre de su empresa.
+2. Te invita a esa organización con tu correo, con rol de administrador (el que permita crear proyectos):
+   *Organization → Team → Invite*.
+3. Averiguás el identificador de su organización. En la terminal, en la carpeta del proyecto:
+
+```bash
+npx supabase orgs list
+```
+
+   Aparecen todas las organizaciones a las que tenés acceso, cada una con su identificador. Anotá el del cliente.
+4. Al instalar (capítulo 4) vas a sumar `--org IDENTIFICADOR` al comando.
+
+> Dependés de que él te mantenga como miembro. Si te saca de su organización, no podés actualizar ni cambiar módulos.
+> Conviene dejarlo acordado.
+
+### 3.2 El plan de Supabase
+
+- El plan **gratis** permite **2 proyectos activos por cuenta**. Hoy tu cuenta ya usa los dos (el de Cremac y el de pruebas).
+  Si intentás un tercero, el comando falla.
+- Los proyectos gratis **se pausan solos si pasan unos días sin uso** y **no tienen copias de seguridad restaurables**.
+  Para una empresa que usa la aplicación todos los días, conviene un plan pago, y es el cliente quien debería pagarlo
+  (por eso es mejor su propia cuenta). **Confirmá precios y condiciones vigentes en supabase.com/pricing.**
+
+### 3.3 Las contraseñas (un hueco que hay que conocer)
+
+**La aplicación todavía NO tiene "cambiar mi contraseña" ni "olvidé mi contraseña".** Consecuencias:
+
+- Al instalar, el sistema crea al dueño con una contraseña inicial aleatoria. **Esa contraseña no la puede cambiar él
+  mismo desde la aplicación.**
+- Si un usuario se olvida la suya, **no puede recuperarla solo.**
+- Lo que sí existe: **un dueño puede resetear la contraseña de otro usuario** (incluso de otro dueño) desde
+  *Configuración → General → Usuarios → Editar → 🔑 Contraseña*. Un dueño **no puede** resetear la suya propia.
+- Lo que **no** sirve: el panel de Supabase. Aunque ahí hay opciones para usuarios, el correo de recuperación llevaría a una
+  pantalla que la aplicación no tiene.
+
+**Qué hacer mientras tanto:** al instalar, dejá **dos dueños** (por ejemplo, el cliente y una persona de su confianza), para
+que uno pueda resetear al otro. Y avisale al cliente que la contraseña inicial es la que usa hasta que se arme esa función.
+
+> **Recomendación fuerte:** construir "cambiar mi contraseña" y "olvidé mi contraseña" **antes de vender**, porque sin eso
+> el cliente depende de vos para algo básico. Para "olvidé mi contraseña" hay que configurar el envío de correos en
+> Supabase, y los correos que trae por defecto tienen límites estrictos.
+
+### 3.4 Qué módulos vende cada cliente
+
+Decidilo con él antes de instalar (capítulo 5 explica cada uno). Recordá que **Envíos necesita Proveedores**.
+
+---
+
+## 4. Instalar un cliente nuevo (paso a paso)
+
+**Tiempo total:** entre 20 y 40 minutos, casi todo esperando.
+
+### Paso 1. Reuní los datos
+
+Anotá estos tres datos:
+
+1. **Nombre de la empresa**, por ejemplo `Metalúrgica Pérez SA`.
+2. **Correo del dueño**, por ejemplo `juan@metalurgicaperez.com`. Con ese correo va a entrar.
+3. **Módulos que contrata**, por ejemplo `proveedores,deposito`. Los nombres exactos son:
+   `proveedores`, `comisionistas`, `envios`, `deposito`, `tareas` (o `todos`).
+
+Y, si va en la cuenta del cliente, el **identificador de su organización** (capítulo 3.1).
+
+### Paso 2. Abrí la terminal en la carpeta del proyecto
+
+Terminal de Git (`MINGW64`), y:
+
+```bash
+cd ~/OneDrive/Desktop/"Gestion empresarial"
+```
+
+### Paso 3. Ejecutá el instalador
+
+Reemplazá los datos de ejemplo por los reales. **Es un solo comando, en una sola línea:**
+
+```bash
+pnpm cliente nuevo --nombre "Metalúrgica Pérez SA" --email juan@metalurgicaperez.com --modulos proveedores,deposito
+```
+
+Si va en la cuenta del cliente, sumá la organización al final:
+
+```bash
+pnpm cliente nuevo --nombre "Metalúrgica Pérez SA" --email juan@metalurgicaperez.com --modulos proveedores,deposito --org IDENTIFICADOR-DE-LA-ORGANIZACION
+```
+
+**Qué vas a ver** (tarda entre 5 y 15 minutos; no cierres la terminal):
+
+1. `▶ Creando el proyecto "metalurgica-perez-sa" en Supabase`
+2. `▶ Esperando que el proyecto esté listo` *(la parte más lenta)*
+3. `▶ Aplicando la base de datos`, con una lista de archivos que se van instalando
+4. `▶ Publicando las funciones del servidor`
+5. `▶ Creando al primer dueño`
+6. `▶ Definiendo los módulos del cliente`
+7. Un cuadro final que dice `✔ Listo: Metalúrgica Pérez SA`, con el identificador del proyecto y el nombre del archivo
+   privado del cliente.
+
+**Qué hace por dentro:** crea el proyecto, instala toda la base de datos vacía, publica las funciones de crear/resetear/eliminar
+usuarios, crea al dueño con una contraseña aleatoria, y define la licencia de módulos.
+
+**Si el comando se detiene con un mensaje que empieza con `✖`:** leélo, porque dice qué falta (por ejemplo, "Falta --modulos"
+o "envios necesita proveedores"). No crea nada si los datos están mal. Ver el capítulo 9.
+
+### Paso 4. Guardá el archivo privado del cliente
+
+El instalador crea el archivo `clientes/metalurgica-perez-sa.env.local`. Es **privado**: no se sube a GitHub. Contiene:
+
+| Línea | Qué es | ¿A quién se la das? |
+|---|---|---|
+| `SUPABASE_PROJECT_REF` | El **identificador** del proyecto (unas 20 letras) | Es el dato que usás en los comandos |
+| `VITE_SUPABASE_URL` | La dirección del proyecto | Va a Netlify |
+| `VITE_SUPABASE_ANON_KEY` | Clave pública | Va a Netlify |
+| `SUPABASE_SECRET_KEY` | **Clave secreta de servicio** | **A nadie. Nunca va a Netlify.** |
+| `SUPABASE_DB_PASSWORD` | Contraseña de la base | **A nadie.** |
+| `PRIMER_DUENO_EMAIL` | Correo del dueño | Al cliente |
+| `PRIMER_DUENO_CLAVE_INICIAL` | Contraseña inicial del dueño | Al cliente (ver capítulo 3.3) |
+
+> **Hacé una copia de este archivo en un lugar seguro** (un gestor de contraseñas, por ejemplo). Existe solo en tu PC.
+> Si lo perdés, las claves se pueden volver a ver en el panel de Supabase, pero la contraseña inicial del dueño no.
+
+### Paso 5. Cerrá el registro público en Supabase
+
+Sin esto, cualquiera que conozca la dirección del proyecto podría crearse una cuenta (quedaría sin permisos, pero conviene cerrarlo).
+
+1. Entrá a **supabase.com**, y abrí el proyecto del cliente (se llama como la empresa, en minúsculas y con guiones).
+2. En el menú de la izquierda: **Authentication**.
+3. Entrá a **Sign In / Providers** (en algunas versiones se llama **Providers**).
+4. Buscá la opción **"Allow new users to sign up"** y **apagala**. Guardá los cambios.
+
+> Los nombres de los botones de Supabase pueden cambiar con el tiempo. Lo que buscás es la opción que permite o impide
+> que la gente se registre sola.
+
+### Paso 6. Publicá la aplicación en Netlify
+
+1. Entrá a **netlify.com**, tu cuenta.
+2. Tocá **Add new site → Import an existing project**.
+3. Elegí **GitHub** y autorizá si te lo pide. Buscá el repositorio **`gestion-empresarial`** y elegilo.
+4. Completá la configuración:
+
+| Campo | Qué poner |
+|---|---|
+| Branch to deploy | `main` |
+| Build command | `pnpm build` |
+| Publish directory | `dist` |
+
+5. Antes de tocar **Deploy**, abrí **Add environment variables** (o, si ya se publicó, *Site configuration → Environment variables*)
+   y creá **estas dos** variables, copiando los valores del archivo del cliente:
+
+| Nombre (exacto) | Valor |
+|---|---|
+| `VITE_SUPABASE_URL` | el de la línea `VITE_SUPABASE_URL` |
+| `VITE_SUPABASE_ANON_KEY` | el de la línea `VITE_SUPABASE_ANON_KEY` |
+
+   **No** cargues ninguna otra.
+6. Tocá **Deploy**. Espera unos minutos, hasta que diga **Published**.
+7. Netlify le asigna una dirección del tipo `algo-aleatorio.netlify.app`. Podés cambiarla en *Site configuration → Change site name*,
+   o conectar un dominio propio del cliente más adelante.
+
+### Paso 7. Decile a Supabase cuál es la dirección
+
+1. Volvé al proyecto del cliente en Supabase → **Authentication → URL Configuration**.
+2. En **Site URL**, pegá la dirección completa de Netlify, con `https://` adelante.
+3. Guardá.
+
+### Paso 8. Probá vos antes que el cliente
+
+1. Abrí la dirección de Netlify en el navegador.
+2. Tenés que ver la pantalla de ingreso con **el nombre de la empresa**.
+3. Entrá con el correo del dueño y la contraseña inicial del archivo.
+4. **Tiene que abrirse solo** el asistente de **Configuración inicial** (capítulo 7).
+5. Recorré las pestañas de arriba: tienen que aparecer **solo los módulos que contrató**.
+
+Si algo no se ve como esperás, andá al capítulo 9.
+
+### Paso 9. Dejá un segundo dueño (recomendado)
+
+Por lo explicado en el capítulo 3.3:
+
+1. Dentro de la aplicación, como dueño: *Configuración → General → Usuarios → + Nuevo usuario*.
+2. Creá la persona de confianza, con su correo y una contraseña.
+3. Entrá a su ficha (*Editar*) y tocá **👑 Agregar como dueño**.
+
+### Paso 10. Entregá al cliente
+
+Pasale por un medio seguro:
+
+- La **dirección** de la aplicación.
+- El **correo** del dueño.
+- La **contraseña inicial** (ver capítulo 3.3).
+
+Y explicale que apenas entre se abre una guía para dejar todo configurado. **Después de la entrega, tildá la lista del
+capítulo 14.**
+
+---
+
+## 5. Módulos
+
+Un módulo es una parte de la aplicación que se vende por separado.
+
+### 5.1 Los módulos que existen hoy
+
+| Módulo (nombre exacto) | Qué incluye | Necesita |
+|---|---|---|
+| `proveedores` | Directorio de proveedores, con sus contactos y rubros | — |
+| `comisionistas` | Directorio de comisionistas, con campos personalizables | — |
+| `envios` | Rótulos de envío en PDF, con el diseño de la empresa | `proveedores` |
+| `deposito` | Repuestos, stock, retiros, familias, sectores, informe de reposición | — |
+| `tareas` | Tareas con semáforo para cada persona | — |
+
+### 5.2 Cómo se relacionan (los pisos no son independientes)
+
+- **Envíos necesita Proveedores:** cada envío es de un proveedor. El comando **no te deja** activar uno sin el otro.
+- **Reparaciones** y **proveedores por repuesto** son del Depósito, pero necesitan además `proveedores`. Si el cliente no tiene
+  Proveedores, esas dos funciones **no aparecen**, y el resto del Depósito funciona normal.
+- **Elegir un comisionista al armar un envío** necesita `envios` y `comisionistas`.
+- Los demás funcionan solos.
+
+### 5.3 Quién los cambia
+
+**Solo vos**, con un comando. El cliente **no ve ni cambia** los módulos: ni el dueño, ni por la pantalla, ni hablando
+directo con la base de datos.
+
+### 5.4 Los comandos (desde la carpeta del proyecto)
+
+**Ver qué tiene un cliente:**
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR
+```
+
+**Ver qué pasaría al activar uno (no cambia nada):**
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR --activar comisionistas
+```
+
+**Activarlo de verdad** (mismo comando, con `--confirmo` al final):
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR --activar comisionistas --confirmo
+```
+
+**Apagar uno de verdad:**
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR --desactivar tareas --confirmo
+```
+
+Se pueden poner varios separados por coma: `--activar tareas,comisionistas`.
+
+- **`IDENTIFICADOR`** es el valor de `SUPABASE_PROJECT_REF` del archivo del cliente.
+- **Sin `--confirmo` solo simula.** Mostrá siempre primero la simulación y recién después aplicá.
+- El comando **rechaza combinaciones imposibles** (por ejemplo, apagar `proveedores` con `envios` activo).
+
+### 5.5 Qué pasa cuando se apaga un módulo
+
+- Queda **bloqueado para todos, incluido el dueño**: sus tablas, sus funciones y sus carpetas de archivos.
+- Las pantallas desaparecen en un máximo de **un minuto** en los navegadores abiertos.
+- **Los datos no se borran.** Si lo volvés a activar, todo está donde estaba.
+- Cada cambio queda en el **Historial** del cliente, como "Administración del sistema".
+- Una excepción: las **fotos ya subidas** se pueden abrir con su dirección exacta aunque el módulo esté apagado (lo que no
+  se puede es subir, borrar ni listar). Las direcciones no se pueden adivinar.
+
+### 5.6 Los módulos nuevos nacen apagados
+
+Si en el futuro se agrega un módulo nuevo al sistema (por ejemplo, equipos), **ningún cliente lo recibe hasta que se lo
+activás**. Solo está activo lo que la licencia dice de forma expresa. Cómo se arma uno nuevo: `docs/NUEVO-MODULO.md`.
+
+---
+
+## 6. Usuarios y permisos
+
+### 6.1 Cómo se organizan
+
+Cada persona tiene **dos roles independientes** y algunos **permisos sueltos**:
+
+**Rol en Directorio:** `Usuario`, `Administrador` o `Desactivado`.
+**Rol en Depósito:** `Usuario`, `Administrador` o `Desactivado` (sin acceso).
+
+**Permisos sueltos** (se tildan en la ficha del usuario):
+
+| Permiso | Qué permite |
+|---|---|
+| Ver los retiros de todos | Ver (y corregir o borrar) los retiros de cualquier persona del Depósito |
+| Ver el log de errores | Ver los errores que tuvo la aplicación |
+| Resetear contraseñas | Resetear la contraseña de otros usuarios |
+| Ver las sugerencias | Leer y borrar las sugerencias que mandan los usuarios |
+
+**Dueño:** una persona con **todos** los poderes. **Puede haber varios dueños, todos iguales**, y el sistema nunca queda sin
+ninguno. Un dueño puede crear, editar, bloquear y eliminar usuarios, ver el historial completo y agregar o quitar otros dueños.
+
+### 6.2 Qué puede hacer cada uno
+
+Esto es lo que impone **la base de datos**, que es lo que realmente cuenta:
+
+| Acción | Usuario | Admin Directorio | Admin Depósito | Dueño |
+|---|:-:|:-:|:-:|:-:|
+| Ver proveedores, contactos y comisionistas | ✅ | ✅ | ✅ | ✅ |
+| Crear y editar proveedores, contactos y comisionistas | ❌ | ✅ | ❌ | ✅ |
+| Eliminar un proveedor | ❌ | ❌ | ❌ | ✅ |
+| Crear un envío (rótulo) | ✅ | ✅ | ✅ | ✅ |
+| Editar un envío | ❌ | ✅ | ❌ | ✅ |
+| Eliminar un envío | ❌ | ❌ | ❌ | ✅ |
+| Editar datos de la empresa, colores y rótulo | ❌ | ✅ | ❌ | ✅ |
+| Crear un repuesto | ❌ | ❌ | ✅ | ✅ |
+| Eliminar un repuesto | ❌ | ❌ | ❌ | ✅ |
+| Crear y editar sectores | ❌ | ❌ | ✅ | ✅ |
+| Crear familias | ❌ | ❌ | ✅ | ✅ |
+| Editar o eliminar familias | ❌ | ❌ | ❌ | ✅ |
+| Ver y crear reparaciones | ❌ | ❌ | ✅ | ✅ |
+| Eliminar una reparación | ❌ | ❌ | ❌ | ✅ |
+| Crear, ver, editar y borrar usuarios; asignar roles | ❌ | ❌ | ❌ | ✅ |
+| Ver el historial de cambios | ❌ | ❌ | ❌ | ✅ |
+
+**Acciones que dependen del rol "Usuario del Depósito"** (cualquiera con acceso al Depósito, sin ser administrador):
+
+- Registrar sus propios retiros, y ver los suyos.
+- Corregir o borrar **sus** retiros durante las primeras 24 horas.
+- Ver los repuestos y su stock.
+
+**Acciones que dependen de un permiso suelto:** ver todos los retiros, ver errores, ver sugerencias, resetear contraseñas.
+
+**Tareas:** cada persona ve y maneja las suyas.
+
+### 6.3 Reglas especiales de los dueños
+
+- Un usuario común **no puede** ascenderse a sí mismo, darse permisos ni hacerse dueño. Solo puede cambiar su nombre y apellido.
+- A un dueño **no se lo puede bloquear ni eliminar**: primero hay que quitarle el cargo de dueño.
+- **No se puede quitar al último dueño.**
+- Un dueño puede resetear la contraseña de cualquiera (incluso de otro dueño), pero no la propia.
+- Todo lo que hace un dueño sobre usuarios queda en el Historial.
+
+### 6.4 Cómo crear un usuario
+
+Siendo dueño:
+
+1. *Configuración → General → Usuarios*.
+2. Tocá **+ Nuevo usuario**.
+3. Completá nombre, apellido, correo, contraseña (mínimo 6 caracteres) y los roles.
+4. Si el Depósito es de la licencia, elegí también el rol en el Depósito.
+5. Si le das el rol de administrador del Depósito, el permiso de ver todos los retiros se tilda solo (se puede destildar).
+6. Guardá.
+
+### 6.5 Lo que se puede hacer con un usuario ya creado
+
+Desde su ficha (*Editar*): cambiar roles y permisos, **🔑 Contraseña** (resetear), **Bloquear / Desbloquear**,
+**Eliminar**, **👑 Agregar como dueño**.
+
+---
+
+## 7. El asistente de configuración inicial
+
+**Qué es:** una guía que se abre **sola** la primera vez que entra el dueño de una instalación nueva. Reúne, paso a paso,
+la configuración de los módulos que el cliente tiene. Queda siempre disponible en
+*Configuración → General → Configuración inicial*.
+
+**Los pasos** (se saltean los que no corresponden a sus módulos):
+
+| Paso | Qué se completa | Si el módulo falta |
+|---|---|---|
+| Empresa y marca | Logo, nombre, dirección, teléfono, email, **colores** | — (siempre) |
+| Rótulos de envío | Diseño del rótulo | Sin `envios`, no aparece |
+| Campos de comisionistas | Datos propios de cada comisionista | Sin `comisionistas`, no aparece |
+| Sectores | Las áreas de la empresa | Sin `deposito`, no aparece |
+| Familias de repuestos | Clasificación de repuestos (o desde una planilla) | Sin `deposito`, no aparece |
+| Repuestos y stock | Carga inicial desde Excel o de a uno | Sin `deposito`, no aparece |
+| Usuarios | Las primeras personas, con sus roles | — (siempre) |
+| Resumen | Lo hecho y lo pendiente | — |
+
+**Cómo se maneja:**
+
+- Cada paso tiene **Anterior**, **Saltar este paso** y **Siguiente**.
+- Un paso se tilda **solo** cuando ya hay datos cargados (se actualiza cada pocos segundos).
+- Al final, **"Terminar y empezar a usar la aplicación"** lo cierra. También se puede cerrar antes con **"Terminar por ahora"**.
+- Una vez cerrado, **no vuelve a abrirse solo**, pero se puede retomar cuando se quiera.
+
+**Qué decirle al cliente:** "La primera vez que entres, te va a guiar. Si algo no lo tenés a mano, saltealo y lo completás después."
+
+---
+
+## 8. El día a día
+
+### 8.1 Actualizar un cliente cuando mejoré la aplicación
+
+Cuando yo agregue una mejora, te lo voy a decir. El orden normal es:
+
+1. **Actualizar la base de datos del cliente** (carpeta del proyecto):
+
+```bash
+pnpm cliente actualizar --ref IDENTIFICADOR
+```
+
+   Aplica solo lo que falta y vuelve a publicar las funciones. Si no hay nada nuevo, no hace nada.
+2. **Subir el código a GitHub.** Netlify actualiza **solo** el sitio de cada cliente cuando recibe cambios.
+
+> Cuando una mejora **solo agrega** cosas, el orden de arriba es seguro. Si una mejora **quita** algo, avisame y te digo el
+> orden correcto, para que los clientes no queden sin una pieza entre un paso y otro.
+
+Repetí el paso 1 con cada cliente.
+
+### 8.2 Un cliente compra un módulo más
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR --activar nombre-del-modulo --confirmo
+```
+
+(Primero corré la versión sin `--confirmo`, para ver la simulación.)
+
+### 8.3 Un cliente deja de pagar un módulo
+
+```bash
+pnpm cliente modulos --ref IDENTIFICADOR --desactivar nombre-del-modulo --confirmo
+```
+
+Sus datos no se borran. Si vuelve, se reactiva y todo está igual.
+
+### 8.4 Un usuario del cliente se olvidó la contraseña
+
+El dueño la resetea desde *Configuración → General → Usuarios → Editar → 🔑 Contraseña*. Si **el que se olvidó es el único
+dueño**, no hay quién lo resetee: por eso conviene tener **dos dueños** (capítulo 3.3).
+
+### 8.5 Un usuario ya no debe entrar
+
+*Configuración → General → Usuarios → Editar → Bloquear*. No se puede bloquear a un dueño (primero se le quita el cargo).
+
+### 8.6 Quién cambió qué
+
+*Configuración → General → Historial* (solo dueños). Muestra, con quién y cuándo: cambios de repuestos y stock, retiros corregidos
+o borrados, usuarios, proveedores, comisionistas, contactos y reparaciones, restablecimientos de contraseña y cambios de módulos.
+Muestra los últimos 200 movimientos.
+
+### 8.7 Errores y sugerencias
+
+- **Errores:** *Configuración → General → Errores*, para quien tenga ese permiso.
+- **Sugerencias:** *Configuración → General → Sugerencias*, para quien tenga ese permiso. Las manda cada usuario desde su menú.
+
+---
+
+## 9. Si algo sale mal
+
+| Qué pasa | Qué hacer |
+|---|---|
+| `pnpm cliente` dice que no encuentra el comando o `node` | Estás en la carpeta equivocada o falta instalar. Hacé el capítulo 2.3 de nuevo. |
+| El instalador dice `✖ Falta --modulos` | Agregá `--modulos proveedores,deposito` (o `--modulos todos`). |
+| `✖ Módulo desconocido` | Revisá cómo escribiste el nombre. Los válidos: `proveedores, comisionistas, envios, deposito, tareas`. |
+| `✖ "envios" necesita "proveedores"` | Sumá `proveedores` a la lista. |
+| El instalador falla al **crear el proyecto** | Casi seguro llegaste al límite de 2 proyectos del plan gratis, o no tenés permiso en esa organización. Mirá el mensaje que imprime. |
+| `✖ Este proyecto ya tiene tablas pero no fue instalado con este script` | Estás apuntando a un proyecto que ya existía. No toca nada. Ver el capítulo 10 si es una instalación vieja que querés adoptar. |
+| Al entrar dice **"Email o contraseña incorrectos"** | Revisá que copiaste bien la contraseña del archivo. Si no coincide, otro dueño puede resetearla. |
+| Entra, pero no se abre el asistente | Probablemente ya se cerró antes. Entrá a *Configuración → General → Configuración inicial*. |
+| El cliente **no ve un módulo** que contrató | Corré `pnpm cliente modulos --ref IDENTIFICADOR` para ver su licencia. Si figura apagado, activalo. Si figura activo, esperá un minuto o recargá. |
+| El cliente **ve un módulo** que no contrató | Corré el mismo comando y revisá. Si figura activo, apagalo con `--desactivar ... --confirmo`. |
+| La pantalla dice **"No hay módulos disponibles"** | Todos los módulos a los que tiene acceso están apagados. Revisá la licencia. |
+| Netlify publicó pero la página sale en blanco o no deja entrar | Casi seguro las dos variables de Netlify están mal copiadas o faltan. Revisalas y volvé a publicar. |
+| Un cliente dice que se registró solo | Falta cerrar el registro público (capítulo 4, paso 5). |
+| Algo extraño que no figura acá | Copiá el mensaje completo y consultame. No cambies nada en la base de datos a mano. |
+
+**Regla de oro:** si un comando muestra un mensaje que empieza con `✖`, **no es un desastre**: es el sistema avisando que no
+hizo nada porque algo estaba mal. Leélo y corregí el dato.
+
+---
+
+## 10. Pasar una instalación que ya existe (Cremac) a la plantilla
+
+**Qué se logra:** que Cremac pase a ser el cliente número 1 de la plantilla, con el mismo código que los demás.
+
+**Antes de empezar, tené en cuenta:**
+
+- Hoy el proyecto de Cremac está en el plan **gratis**, que **no tiene copias de seguridad restaurables**. Una mudanza de
+  este tipo conviene hacerla con una copia de los datos importantes (por ejemplo, exportar las planillas) o, mejor, con
+  un plan que tenga copias.
+- Hacelo en un momento en que nadie esté usando la aplicación.
+- Antes de tocar nada, pedime que revise el estado actual de la base de Cremac, para confirmar que sigue siendo igual a la
+  base de la plantilla.
+
+**El paso principal** (carpeta del proyecto):
+
+```bash
+pnpm cliente actualizar --ref IDENTIFICADOR-DE-CREMAC --marcar-hasta 20260101000000_esquema_base.sql
+```
+
+**Qué hace:** registra como "ya hechas" las migraciones hasta la base inicial (que Cremac ya tiene), sin ejecutarlas, y aplica las siguientes:
+las mejoras de la plantilla, los colores, la **licencia de módulos** (con todos los módulos activos), el bloqueo y el asistente
+(que **no se abre** en una instalación que ya tenía dueño).
+
+**Después:**
+
+1. Publicar la aplicación de Cremac desde la plantilla (en Netlify, apuntar el sitio de Cremac al repositorio `gestion-empresarial`
+   con las mismas dos variables de siempre).
+2. Revisar que todo funcione como antes.
+
+**Importante:** hay una corrección pendiente de aplicar en las funciones de Cremac (la de eliminar usuarios). Se aplica sola
+al hacer este paso, porque la plantilla ya la trae corregida.
+
+---
+
+## 11. Lo que todavía no existe
+
+Para no prometer de más. El detalle completo está en `docs/PENDIENTES.md`.
+
+**Imprescindible antes de vender:**
+
+- **Cambiar mi contraseña y Olvidé mi contraseña.** Hoy no existen (capítulo 3.3).
+- **Copias de seguridad** de los datos de los clientes. El plan gratis de Supabase no las tiene restaurables.
+
+**Importante:**
+
+- Los **formatos de código** del catálogo de repuestos son los de la primera empresa (familias y subfamilias de exactamente
+  2 letras mayúsculas), y el importador de stock espera la planilla de esa empresa.
+- Los nombres **"Directorio"** y **"Depósito de mantenimiento"** están fijos en las pantallas.
+- Los formatos de fecha y los ejemplos son de Argentina; un solo idioma.
+- La **auditoría** no registra todavía envíos, configuración de la empresa, sectores, familias ni proveedores por repuesto.
+
+**Funciones planeadas:** equipos con sus manuales y despieces (el servidor de archivos ya está listo), órdenes de trabajo,
+mantenimiento programado, avisos.
+
+---
+
+## 12. Dónde está cada cosa
+
+Todo está dentro de la carpeta `Gestion empresarial`:
+
+| Carpeta o archivo | Qué contiene |
+|---|---|
+| `docs/` | Esta documentación |
+| `docs/MANUAL-PASO-A-PASO.md` | **Este manual** |
+| `docs/NUEVO-CLIENTE.md` | La versión corta y técnica de la instalación |
+| `docs/NUEVO-MODULO.md` | Cómo se agrega un módulo nuevo al sistema |
+| `docs/ARQUITECTURA.md` | Cómo está armado por dentro |
+| `docs/SEGURIDAD.md` | Qué protecciones tiene, y qué verifica la prueba |
+| `docs/PENDIENTES.md` | Lo que falta |
+| `src/` | El código de las pantallas |
+| `supabase/migrations/` | La base de datos, en orden |
+| `supabase/functions/` | Las funciones para crear, resetear y eliminar usuarios |
+| `scripts/cliente.mjs` | El instalador (`pnpm cliente`) |
+| `scripts/pruebas/integracion.mjs` | La prueba automática completa de una instalación |
+| `servidor-manuales/` | El servidor de archivos (opcional, aún no conectado) |
+| `clientes/` | **Los datos privados de cada cliente** (no se suben a GitHub; hacé copia) |
+| `.env` | La conexión de tu entorno de pruebas (no se sube) |
+
+---
+
+## 13. Glosario
+
+| Palabra | Qué significa |
+|---|---|
+| **Aplicación** | Lo que el cliente abre en el navegador |
+| **Módulo** | Una parte de la aplicación que se vende por separado |
+| **Licencia** | La lista de módulos que tiene contratados un cliente |
+| **Proyecto** (de Supabase) | La base de datos privada de un cliente |
+| **Identificador** (o `ref`) | El código de unas 20 letras que identifica el proyecto de un cliente; está en su archivo privado |
+| **Dueño** | La persona con todos los poderes dentro de la aplicación de un cliente |
+| **Migración** | Un archivo que prepara o mejora la base de datos; se aplican en orden |
+| **Repositorio** | La carpeta del código guardada en GitHub |
+| **Commit / push** | Guardar un cambio / subirlo a GitHub |
+| **Terminal** | La ventana negra donde se escriben los comandos |
+| **Netlify** | El servicio donde se publica la aplicación de cada cliente |
+| **Variable de entorno** | Un dato de configuración que no se escribe en el código (por ejemplo, la dirección del proyecto) |
+| **Clave secreta / de servicio** | Una clave con poderes totales sobre un proyecto; nunca se comparte |
+| **Servidor de archivos** | Tu servidor de Digital Ocean para manuales pesados (todavía no conectado) |
+
+---
+
+## 14. Lista de verificación de entrega
+
+Copiala y tildala con cada cliente:
+
+**Antes**
+- [ ] Acordé con el cliente los **módulos** que contrata.
+- [ ] Decidí **en qué cuenta de Supabase** va (y, si es la suya, estoy invitado a su organización).
+- [ ] Confirmé el **plan de Supabase** y quién lo paga.
+
+**Instalación**
+- [ ] Corrí `pnpm cliente nuevo ...` y terminó con `✔ Listo`.
+- [ ] Hice **copia del archivo** `clientes/...env.local` en un lugar seguro.
+- [ ] **Cerré el registro público** en Supabase.
+- [ ] Publiqué en **Netlify** (con las **dos** variables, y ninguna más).
+- [ ] Puse la dirección de Netlify en **Site URL** de Supabase.
+
+**Pruebas**
+- [ ] La pantalla de ingreso muestra el **nombre de la empresa**.
+- [ ] Entré como dueño y se abrió el **asistente**.
+- [ ] Se ven **solo los módulos contratados**.
+- [ ] Dejé **dos dueños**.
+
+**Entrega**
+- [ ] Le di al cliente: dirección, correo y contraseña inicial, por un medio seguro.
+- [ ] Le avisé que **todavía no puede cambiar su contraseña** (mientras no exista esa función).
+- [ ] Anoté en mi lista: nombre del cliente, identificador del proyecto, módulos, fecha y quién paga Supabase.

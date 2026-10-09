@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
-import { efectivos, integraciones, normalizarModulos } from '../../lib/modulos';
+import { TODOS_ACTIVOS, efectivos, integraciones, normalizarModulos } from '../../lib/modulos';
 
 // Módulos activos de esta instalación, según la licencia (que solo puede cambiar quien vende, por
 // el comando "pnpm cliente modulos"). `modulos` ya descuenta los que no pueden funcionar porque
@@ -19,7 +19,8 @@ export function useModulos() {
     // Se vuelve a leer cada minuto: un cambio de licencia llega a las pantallas abiertas sin recargar.
     refetchInterval: 60_000,
   });
-  const modulos = useMemo(() => efectivos(normalizarModulos(data)), [data]);
+  // Sin licencia leída (por ejemplo, un corte de conexión al abrir) no se oculta nada: la base de datos protege igual.
+  const modulos = useMemo(() => efectivos(data == null ? TODOS_ACTIVOS : normalizarModulos(data)), [data]);
   const integ = useMemo(() => integraciones(modulos), [modulos]);
   return { modulos, integ, listo: !isLoading };
 }

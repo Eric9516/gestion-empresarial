@@ -1,28 +1,44 @@
 import { describe, expect, it } from 'vitest';
-import { MODULOS, efectivos, hayModulosDeDirectorio, integraciones, normalizarModulos, type Modulos } from './modulos';
+import { MODULOS, TODOS_ACTIVOS, efectivos, hayModulosDeDirectorio, integraciones, normalizarModulos, type Modulos } from './modulos';
 
-const todos = (): Modulos => normalizarModulos({});
+const todos = (): Modulos => ({ ...TODOS_ACTIVOS });
 
-describe('normalizarModulos', () => {
-  it('todo activo cuando no hay nada guardado o el dato es inválido', () => {
+describe('normalizarModulos (lo que no figura expresamente activo, está apagado)', () => {
+  it('sin licencia o con un dato inválido no hay ningún módulo activo', () => {
     for (const v of [undefined, null, {}, [], 'x', 5]) {
       const m = normalizarModulos(v);
-      expect(MODULOS.every(mod => m[mod.id] === true)).toBe(true);
+      expect(MODULOS.every(mod => m[mod.id] === false)).toBe(true);
     }
   });
 
-  it('solo se apaga lo que dice false de forma explícita', () => {
-    const m = normalizarModulos({ proveedores: false, tareas: 0, comisionistas: null, envios: 'no' });
-    expect(m.proveedores).toBe(false);
-    expect(m.tareas).toBe(true);
-    expect(m.comisionistas).toBe(true);
-    expect(m.envios).toBe(true);
+  it('solo cuenta como activo lo que dice true de forma expresa', () => {
+    const m = normalizarModulos({ proveedores: true, tareas: 1, comisionistas: 'si', envios: null, deposito: false });
+    expect(m.proveedores).toBe(true);
+    expect(m.tareas).toBe(false);
+    expect(m.comisionistas).toBe(false);
+    expect(m.envios).toBe(false);
+    expect(m.deposito).toBe(false);
+  });
+
+  it('un módulo nuevo que no está en la licencia nace apagado', () => {
+    // Una licencia de antes de que existiera un módulo: lista solo los que tenía.
+    const licenciaVieja = Object.fromEntries(MODULOS.slice(0, -1).map(m => [m.id, true]));
+    const m = normalizarModulos(licenciaVieja);
+    expect(m[MODULOS.at(-1)!.id]).toBe(false);
+    expect(MODULOS.slice(0, -1).every(mod => m[mod.id] === true)).toBe(true);
   });
 
   it('ignora claves desconocidas y devuelve siempre todas las conocidas', () => {
-    const m = normalizarModulos({ inventado: false, deposito: false });
+    const m = normalizarModulos({ inventado: true, deposito: true });
     expect(Object.keys(m).sort()).toEqual(MODULOS.map(x => x.id).sort());
-    expect(m.deposito).toBe(false);
+    expect(m.deposito).toBe(true);
+    expect(Object.keys(m).includes('inventado')).toBe(false);
+  });
+});
+
+describe('TODOS_ACTIVOS', () => {
+  it('es lo que se usa solo mientras la licencia no se pudo leer, y tiene todos los módulos', () => {
+    expect(MODULOS.every(m => TODOS_ACTIVOS[m.id] === true)).toBe(true);
   });
 });
 

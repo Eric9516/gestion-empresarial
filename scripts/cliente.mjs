@@ -205,7 +205,8 @@ function validarDependencias(estado) {
 async function leerLicencia(ref, servicio) {
   const r = await api(`https://${ref}.supabase.co`, servicio, '/rest/v1/licencia?select=modulos&id=eq.1');
   if (r.estado >= 300 || !r.datos?.[0]) falla('No pude leer la licencia. ¿El proyecto ya tiene instaladas todas las migraciones? Probá con "pnpm cliente actualizar".');
-  return Object.fromEntries(IDS_MODULOS.map(id => [id, r.datos[0].modulos?.[id] !== false]));
+  // Solo cuenta como activo lo que la licencia dice de forma expresa (igual que la base de datos).
+  return Object.fromEntries(IDS_MODULOS.map(id => [id, r.datos[0].modulos?.[id] === true]));
 }
 
 async function escribirLicencia(ref, servicio, estado) {
@@ -249,8 +250,10 @@ async function nuevo(op) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) falla('El email no parece válido.');
   const id = slug(nombre);
   if (!id) falla('El nombre no sirve para armar un identificador.');
-  // Módulos que contrata este cliente (por defecto, todos). Se validan antes de crear nada.
-  const activos = op.modulos === undefined ? IDS_MODULOS : listaDeModulos(op.modulos, 'modulos');
+  // Módulos que contrata este cliente. Hay que decirlos de forma expresa (o poner "todos"): así nunca se
+  // activa por descuido un módulo que el cliente no compró. Se validan antes de crear nada.
+  if (op.modulos === undefined || op.modulos === true) falla(`Falta --modulos: indicá qué contrata el cliente. Ejemplo: --modulos proveedores,deposito (o --modulos todos). Módulos: ${IDS_MODULOS.join(', ')}`);
+  const activos = op.modulos === 'todos' ? IDS_MODULOS : listaDeModulos(op.modulos, 'modulos');
   const licencia = Object.fromEntries(IDS_MODULOS.map(m => [m, activos.includes(m)]));
   validarDependencias(licencia);
 
@@ -314,13 +317,13 @@ async function actualizar(op) {
 }
 
 const AYUDA = `Uso:
-  pnpm cliente nuevo --nombre "Nombre del cliente" --email dueno@cliente.com [--modulos a,b,c] [--region sa-east-1] [--org <id>] [--ref <proyecto-vacío>]
+  pnpm cliente nuevo --nombre "Nombre del cliente" --email dueno@cliente.com --modulos a,b,c [--region sa-east-1] [--org <id>] [--ref <proyecto-vacío>]
   pnpm cliente actualizar --ref <identificador> [--solo-base] [--marcar-hasta <migración> | --marcar-aplicadas]
   pnpm cliente modulos --ref <identificador> [--activar a,b] [--desactivar c] [--confirmo]
 
   nuevo        Crea el proyecto en Supabase (o usa uno vacío con --ref), instala la base, publica las
-               funciones y crea al primer dueño. --modulos elige los que contrata el cliente
-               (por defecto, todos). Módulos: ${IDS_MODULOS.join(', ')}.
+               funciones y crea al primer dueño. --modulos es obligatorio: los que contrata el cliente
+               (o "todos"). Módulos: ${IDS_MODULOS.join(', ')}.
   modulos      Muestra y cambia los módulos de un cliente. Sin --confirmo solo simula. Valida las dependencias
                (por ejemplo, envios necesita proveedores). Es lo único que puede cambiar la licencia: el cliente no.
   actualizar   Aplica las migraciones que falten y vuelve a publicar las funciones.

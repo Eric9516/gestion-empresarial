@@ -31,7 +31,7 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas.
 - **Probar el asistente y los módulos con un cliente real** y ajustar el orden y los textos de los pasos.
 - **Licencia sin esperar:** la app lee la licencia cada minuto; un cambio se nota en hasta un minuto.
 - **Carpetas públicas:** los archivos ya subidos se abren con su dirección exacta aunque el módulo esté apagado.
-- **Cada módulo nuevo** (equipos, órdenes de trabajo) debería entrar como módulo propio de la licencia.
+- **Equipos y órdenes de trabajo** deberían entrar como módulos propios (ya nacen apagados; ver `NUEVO-MODULO.md`).
 
 ## Funciones nuevas planeadas
 

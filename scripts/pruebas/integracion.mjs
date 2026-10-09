@@ -321,6 +321,22 @@ desvios = comparar(await verTodas(dueno.token), ['proveedores', 'envios', 'tarea
 ok('Con varios apagados a la vez, cada tabla sigue a sus módulos', desvios.length === 0, desvios.join(', '));
 await poner([]);
 
+// Un módulo que NO figura en la licencia está apagado: así un módulo nuevo no llega a ningún cliente sin comprarlo.
+const ponerCrudo = async m => {
+  const x = await admin('/rest/v1/licencia?id=eq.1', { metodo: 'PATCH', cuerpo: { modulos: m } });
+  if (x.estado >= 300) throw new Error('No se pudo cambiar la licencia: ' + JSON.stringify(x.datos));
+};
+await ponerCrudo({ proveedores: true, comisionistas: true, envios: true, deposito: true }); // sin "tareas"
+r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'No debería' } });
+ok('Un módulo que no figura en la licencia está apagado (aunque los demás sí estén activos)', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
+desvios = comparar(await verTodas(dueno.token), ['tareas']);
+ok('…sus tablas quedan bloqueadas y las de los demás módulos siguen disponibles', desvios.length === 0, desvios.join(', '));
+await ponerCrudo({});
+const conLicenciaVacia = await verTodas(dueno.token);
+ok('Con la licencia vacía no hay ningún módulo activo', Object.values(conLicenciaVacia).every(v => v === false));
+await poner([]);
+ok('Y al ponerlos expresamente activos, todo vuelve', Object.values(await verTodas(dueno.token)).every(v => v === true));
+
 const reglas = sql(`select count(*)::int as n from pg_policies where policyname = 'bloqueo_modulo' and permissive = 'RESTRICTIVE'`);
 ok('Cada tabla de módulo tiene su regla de bloqueo (22 reglas)', /"n":\s*22/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
 const regStorage = sql(`select count(*)::int as n from pg_policies where tablename = 'objects' and policyname like 'bloqueo_modulo_%'`);

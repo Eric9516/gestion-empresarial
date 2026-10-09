@@ -20,12 +20,16 @@ export interface ModuloInfo {
 
 export const MODULOS = datos.modulos as ModuloInfo[];
 
-// Un módulo está activo salvo que se lo haya apagado de forma explícita: así una instalación vieja,
-// o un módulo nuevo que se agregue después, no desaparece solo.
+// Un módulo está activo SOLO si la licencia lo dice de forma expresa. Lo que no figura cuenta como apagado:
+// así un módulo nuevo que se agregue al sistema no llega a ningún cliente hasta que se le active.
+// (La base de datos usa la misma regla en modulo_activo().)
 export function normalizarModulos(valor: unknown): Modulos {
   const guardado = valor && typeof valor === 'object' && !Array.isArray(valor) ? (valor as Record<string, unknown>) : {};
-  return Object.fromEntries(MODULOS.map(m => [m.id, guardado[m.id] !== false])) as Modulos;
+  return Object.fromEntries(MODULOS.map(m => [m.id, guardado[m.id] === true])) as Modulos;
 }
+
+// Cuando la licencia todavía no se pudo leer, la pantalla no oculta nada: lo que protege es la base de datos.
+export const TODOS_ACTIVOS: Modulos = Object.fromEntries(MODULOS.map(m => [m.id, true])) as Modulos;
 
 // Un módulo solo funciona si también están activos los que necesita.
 export function efectivos(m: Modulos): Modulos {

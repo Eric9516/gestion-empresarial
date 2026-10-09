@@ -16,8 +16,12 @@ propio sitio publicado. El código es el mismo para todos; lo que cambia es la c
 pnpm cliente nuevo --nombre "Nombre del Cliente SA" --email dueno@cliente.com --modulos proveedores,envios,deposito
 ```
 
-`--modulos` es la lista de lo que **contrata el cliente** (por defecto, todos). Los módulos son: `proveedores`,
-`comisionistas`, `envios` (necesita `proveedores`), `deposito` y `tareas`. Se validan las dependencias antes de crear nada.
+`--modulos` es **obligatorio**: la lista de lo que **contrata el cliente** (o `--modulos todos`). Así nunca se activa por
+descuido algo que no compró. Los módulos son: `proveedores`, `comisionistas`, `envios` (necesita `proveedores`), `deposito`
+y `tareas`. Se validan las dependencias antes de crear nada.
+
+Si el cliente va a tener su propia cuenta de Supabase, se instala en su organización con `--org <identificador>`
+(se averigua con `npx supabase orgs list`, después de que él te invite a su organización).
 
 El comando, sin pedir nada más:
 
@@ -63,6 +67,8 @@ pnpm cliente modulos --ref <identificador> --desactivar tareas --confirmo   # lo
 - Un módulo apagado queda **bloqueado en la base de datos para todos**, incluido el dueño: sus tablas, sus funciones y sus
   carpetas de archivos. Los datos no se borran; si se vuelve a activar, vuelven a estar.
 - Cada cambio queda en el Historial del cliente como "Administración del sistema".
+- **Un módulo nuevo del sistema nace apagado** en todos los clientes: solo está activo lo que la licencia dice de forma
+  expresa. Ver `NUEVO-MODULO.md`.
 
 ## Actualizar un cliente
 

@@ -8,8 +8,10 @@ Plantilla de aplicaci처n interna para empresas: proveedores, comisionistas, env�
 
 ## Documentaci처n
 
-- [Instalar y actualizar un cliente](docs/NUEVO-CLIENTE.md)
+- [**Manual paso a paso** (instalar, m처dulos, permisos, entrega, problemas)](docs/MANUAL-PASO-A-PASO.md)
+- [Instalar y actualizar un cliente (versi처n corta)](docs/NUEVO-CLIENTE.md)
 - [Arquitectura](docs/ARQUITECTURA.md)
+- [Agregar un m처dulo nuevo](docs/NUEVO-MODULO.md)
 - [Seguridad y permisos](docs/SEGURIDAD.md)
 - [Pendientes para que sea un producto](docs/PENDIENTES.md)
 - [Servidor de archivos](servidor-manuales/README.md)

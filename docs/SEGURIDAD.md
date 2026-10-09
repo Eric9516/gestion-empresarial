@@ -38,7 +38,8 @@ Cada persona tiene en `usuarios_perfil`:
 Qué módulos tiene cada instalación lo define solo quien vende, con `pnpm cliente modulos` (clave de servicio). Vive en la
 tabla `licencia`, que ningún usuario con sesión puede escribir (se probó con el dueño y con un usuario común). Un módulo
 apagado queda **bloqueado para todos, incluido el dueño**, con una regla de seguridad por tabla (22 tablas), una por carpeta
-de archivos (3) y una guarda en las funciones del servidor que se saltan las reglas de tabla (9, más 3 consultas). Los
+de archivos (3) y una guarda en las funciones del servidor que se saltan las reglas de tabla (9, más 3 consultas). **Solo
+está activo lo que la licencia dice de forma expresa:** un módulo que no figura (por ejemplo, uno nuevo) está apagado. Los
 módulos que dependen de otros se bloquean si falta alguno (por ejemplo, las reparaciones necesitan Depósito y Proveedores).
 
 ## Qué no queda en el historial (todavía)

@@ -50,6 +50,7 @@ clientes/            datos privados de cada cliente (no se sube a Git)
      también está `proveedores`; elegir un comisionista al armar un envío existe solo si también está `comisionistas`.
   3. *Independientes:* `comisionistas`, `deposito` (su núcleo) y `tareas`.
   Las tablas siempre existen; lo que cambia es el acceso. Por eso un módulo se puede apagar y volver a prender sin perder datos.
+- **Un módulo nuevo nace apagado** (solo está activo lo que la licencia dice de forma expresa). Cómo se agrega uno: `NUEVO-MODULO.md`.
 - **Asistente de configuración inicial** (`src/features/inicial`): se abre solo la primera vez que entra el dueño y reúne,
   paso a paso, las pantallas de configuración de los módulos activos. Queda siempre en *Configuración → General*.
 - **Marca** (`configuracion.color_primario` y `color_deposito`): dos colores; el resto de las variantes se
@@ -65,6 +66,7 @@ clientes/            datos privados de cada cliente (no se sube a Git)
 - `20260101000200_modulos_y_marca.sql`: colores de marca (y la primera versión de los módulos, que `...0300` mueve a la licencia).
 - `20260101000300_licencia_y_bloqueo_de_modulos.sql`: la licencia, el bloqueo por módulo y su historial.
 - `20260101000400_configuracion_inicial.sql`: marca de cierre del asistente de configuración inicial.
+- `20260101000500_modulos_apagados_por_defecto.sql`: lo que no figura en la licencia está apagado.
 
 Una migración nueva se agrega como un archivo con fecha mayor; `pnpm cliente actualizar` la aplica en cada cliente.
 **Nunca se edita una migración que ya se aplicó en algún cliente.**
