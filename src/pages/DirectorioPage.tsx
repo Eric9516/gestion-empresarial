@@ -4,7 +4,9 @@ import { useAuth } from '../auth/AuthContext';
 import { isDirectorioDesactivado, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
+import SinModulos from '../components/SinModulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
+import { useModulos } from '../features/config/useModulos';
 import ProveedoresList from '../features/proveedores/ProveedoresList';
 import ComisionistasList from '../features/comisionistas/ComisionistasList';
 import RotulosScreen from '../features/rotulos/RotulosScreen';
@@ -13,7 +15,7 @@ import TareasScreen from '../features/tareas/TareasScreen';
 type Tab = 'proveedores' | 'comisionistas' | 'rotulos' | 'tareas';
 
 // Un usuario con Directorio desactivado (rol='disabled', no owner) no debe ver
-// esta pantalla en absoluto — espeja mantenimientoOnly de mantenimiento.js.
+// esta pantalla en absoluto.
 export default function DirectorioPage() {
   const { profile } = useAuth();
   if (isDirectorioDesactivado(profile)) return <Navigate to="/mantenimiento" replace />;
@@ -24,7 +26,8 @@ function DirectorioContent() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { data: config } = useConfiguracionQuery();
-  const [tab, setTab] = useState<Tab>('proveedores');
+  const { modulos, listo } = useModulos();
+  const [tabElegida, setTabElegida] = useState<Tab>('proveedores');
   const [menuOpen, setMenuOpen] = useState(false);
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
@@ -33,12 +36,22 @@ function DirectorioContent() {
     document.title = `Directorio — ${nombreEmpresa}`;
   }, [nombreEmpresa]);
 
+  // Solo las pestañas de los módulos activos; si la elegida se desactivó, se usa la primera.
+  const pestañas: { id: Tab; icon: string; label: string }[] = [
+    ...(modulos.proveedores ? [{ id: 'proveedores' as const, icon: '🏭', label: 'Proveedores' }] : []),
+    ...(modulos.comisionistas ? [{ id: 'comisionistas' as const, icon: '🤝', label: 'Comisionistas' }] : []),
+    ...(modulos.envios ? [{ id: 'rotulos' as const, icon: '📦', label: 'Envíos' }] : []),
+    ...(modulos.tareas ? [{ id: 'tareas' as const, icon: '✅', label: 'Tareas' }] : []),
+  ];
+  const tab = pestañas.some(p => p.id === tabElegida) ? tabElegida : pestañas[0]?.id;
+  const puedeIrAlDeposito = modulos.deposito && tieneAccesoMantenimiento(profile);
+
+  if (!listo) return <div className="loading-screen">Cargando...</div>;
+  if (!tab) return puedeIrAlDeposito ? <Navigate to="/mantenimiento" replace /> : <SinModulos />;
+
   const navItems = [
-    { icon: '🏭', label: 'Proveedores', onClick: () => setTab('proveedores'), active: tab === 'proveedores' },
-    { icon: '🤝', label: 'Comisionistas', onClick: () => setTab('comisionistas'), active: tab === 'comisionistas' },
-    { icon: '📦', label: 'Envíos', onClick: () => setTab('rotulos'), active: tab === 'rotulos' },
-    { icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' },
-    ...(tieneAccesoMantenimiento(profile) ? [{ icon: '🔧', label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
+    ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
+    ...(puedeIrAlDeposito ? [{ icon: '🔧', label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
   ];
 
   return (
@@ -52,7 +65,7 @@ function DirectorioContent() {
           </div>
         </div>
         <div className="header-right">
-          {tieneAccesoMantenimiento(profile) && (
+          {puedeIrAlDeposito && (
             <Link to="/mantenimiento" className="btn-mantenimiento" title="Depósito de mantenimiento" style={{ display: 'flex' }}>🔧 <span className="hide-mobile">Depósito</span></Link>
           )}
           <UserMenu />
@@ -65,10 +78,9 @@ function DirectorioContent() {
       </header>
 
       <nav className="app-nav">
-        <button className={`nav-tab${tab === 'proveedores' ? ' active' : ''}`} onClick={() => setTab('proveedores')}>🏭 Proveedores</button>
-        <button className={`nav-tab${tab === 'comisionistas' ? ' active' : ''}`} onClick={() => setTab('comisionistas')}>🤝 Comisionistas</button>
-        <button className={`nav-tab${tab === 'rotulos' ? ' active' : ''}`} onClick={() => setTab('rotulos')}>📦 Envíos</button>
-        <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}>✅ Tareas</button>
+        {pestañas.map(p => (
+          <button key={p.id} className={`nav-tab${tab === p.id ? ' active' : ''}`} onClick={() => setTabElegida(p.id)}>{p.icon} {p.label}</button>
+        ))}
       </nav>
 
       <main className="app-main">

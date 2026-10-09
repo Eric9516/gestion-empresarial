@@ -48,7 +48,21 @@ Deno.serve(async (req) => {
 
     const supabaseAdmin = createClient(SUPABASE_URL, secretKey);
 
-    await supabaseAdmin.from('usuarios_perfil').delete().eq('id', userId);
+    // A un dueño no se lo puede eliminar: primero hay que quitarle el cargo. Se chequea acá,
+    // antes de tocar nada, para no dejar la cuenta a medias (sin acceso pero con perfil).
+    const { data: objetivo, error: objetivoErr } = await supabaseAdmin
+      .from('usuarios_perfil')
+      .select('es_owner')
+      .eq('id', userId)
+      .maybeSingle();
+    if (objetivoErr) throw objetivoErr;
+    if (objetivo?.es_owner === true) {
+      throw new Error('No se puede eliminar a un dueño del sistema. Quitale primero el cargo de dueño.');
+    }
+
+    // Primero el perfil, y si la base lo rechaza se corta acá: la cuenta de acceso no se toca.
+    const { error: perfilDelErr } = await supabaseAdmin.from('usuarios_perfil').delete().eq('id', userId);
+    if (perfilDelErr) throw perfilDelErr;
 
     const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (delErr) throw delErr;

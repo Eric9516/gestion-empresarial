@@ -6,6 +6,7 @@ import { useUsuariosQuery, type Usuario } from './useUsuarios';
 import UsuarioForm from './UsuarioForm';
 import ResetPasswordModal from './ResetPasswordModal';
 import { Button } from '@/components/ui/button';
+import { useModulos } from '../config/useModulos';
 
 const MANT_LABELS: Record<string, string> = { admin: 'Admin', comun: 'Usuario' };
 const ROL_BADGE: Record<string, { cls: string; label: string }> = {
@@ -17,6 +18,7 @@ const ROL_BADGE: Record<string, { cls: string; label: string }> = {
 export default function UsuariosPane() {
   const { profile } = useAuth();
   const { data: usuarios, isLoading, isError } = useUsuariosQuery();
+  const { modulos } = useModulos();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Usuario | null>(null);
@@ -33,8 +35,8 @@ export default function UsuariosPane() {
   function badges(u: Usuario) {
     return (
       <>
-        {u.mantenimiento_rol ? <span className="badge badge-rubro">{MANT_LABELS[u.mantenimiento_rol]}</span> : <span className="badge badge-inactive">Desactivado</span>}
-        {u.mantenimiento_rol && u.puede_ver_retiros && <span className="badge badge-active" title="Puede ver los retiros de todos"> 👁 Retiros</span>}
+        {modulos.deposito && (u.mantenimiento_rol ? <span className="badge badge-rubro">{MANT_LABELS[u.mantenimiento_rol]}</span> : <span className="badge badge-inactive">Desactivado</span>)}
+        {modulos.deposito && u.mantenimiento_rol && u.puede_ver_retiros &&<span className="badge badge-active" title="Puede ver los retiros de todos"> 👁 Retiros</span>}
         {u.puede_ver_errores && <span className="badge badge-active" title="Puede ver el log de errores"> 🐞</span>}
       </>
     );
@@ -59,7 +61,7 @@ export default function UsuariosPane() {
     { header: 'Nombre', render: u => <strong>{u.nombre} {u.apellido}</strong> },
     { header: 'Email', render: u => u.email },
     { header: 'Rol', render: u => { const r = ROL_BADGE[u.rol ?? 'user'] ?? ROL_BADGE.user; return <><span className={`badge ${r.cls}`}>{r.label}</span>{u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema"> 👑 Dueño</span>}</>; } },
-    { header: 'Depósito', render: badges },
+    { header: modulos.deposito ? 'Depósito' : 'Permisos', render: badges },
     { header: 'Estado', render: u => <span className={`badge ${u.activo !== false ? 'badge-active' : 'badge-inactive'}`}>{u.activo !== false ? 'Activo' : 'Inactivo'}</span> },
     { header: '', render: acciones },
   ];

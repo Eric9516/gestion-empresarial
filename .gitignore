@@ -26,3 +26,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Clientes y archivos temporales de los scripts
+clientes/
+scripts/.consulta-*.sql
+scripts/pruebas/.tmp.sql
+credenciales-pruebas.local
+
+# Archivos temporales de la herramienta de Supabase (identifican el proyecto vinculado)
+supabase/.temp/
+supabase/.branches/

@@ -1,0 +1,41 @@
+{
+  "modulos": [
+    {
+      "id": "proveedores",
+      "nombre": "Proveedores",
+      "descripcion": "Directorio de proveedores, con sus contactos y rubros.",
+      "requiere": [],
+      "bloquea": "los datos de proveedores y sus contactos (y con eso, Envíos, Reparaciones y proveedores por repuesto)"
+    },
+    {
+      "id": "comisionistas",
+      "nombre": "Comisionistas",
+      "descripcion": "Directorio de comisionistas, con campos personalizables.",
+      "requiere": [],
+      "bloquea": "los datos de comisionistas"
+    },
+    {
+      "id": "envios",
+      "nombre": "Envíos con rótulos",
+      "descripcion": "Rótulos de envío en PDF, con el diseño de la empresa. Cada envío es de un proveedor.",
+      "requiere": [
+        "proveedores"
+      ],
+      "bloquea": "los envíos, sus bultos y fotos, los diseños de rótulo y la carpeta de archivos de envíos"
+    },
+    {
+      "id": "deposito",
+      "nombre": "Depósito de mantenimiento",
+      "descripcion": "Repuestos, stock, retiros e informe de reposición. Las reparaciones y los proveedores por repuesto necesitan además el módulo de proveedores.",
+      "requiere": [],
+      "bloquea": "repuestos, familias, stock, retiros, sectores, equipos, reparaciones, planilla de familias y la carpeta de fotos de repuestos"
+    },
+    {
+      "id": "tareas",
+      "nombre": "Tareas",
+      "descripcion": "Tareas con semáforo para cada persona.",
+      "requiere": [],
+      "bloquea": "las tareas y su historial"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { useComisionistasQuery } from '../comisionistas/useComisionistas';
 import { useProveedoresQuery } from '../proveedores/useProveedores';
 import { useRotuloParaEditarQuery } from './useRotulos';
 import { Button } from '@/components/ui/button';
+import { useModulos } from '../config/useModulos';
 
 interface Props {
   open: boolean;
@@ -20,6 +21,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
   const { data: editData, isLoading, isError } = useRotuloParaEditarQuery(rotuloId);
   const { data: proveedores } = useProveedoresQuery();
   const { data: comisionistas } = useComisionistasQuery();
+  const { integ } = useModulos();
   const toast = useToast();
   const [generandoTodos, setGenerandoTodos] = useState(false);
 
@@ -35,7 +37,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
     },
     { etiqueta: 'Fecha', valor: new Date(rotulo.created_at).toLocaleDateString('es-AR') },
     { etiqueta: 'Proveedor', valor: proveedor?.nombre ?? '(proveedor eliminado)' },
-    { etiqueta: 'Comisionista', valor: comisionista ? (comisionista.empresa || comisionista.nombre || '—') : 'Sin comisionista' },
+    ...(integ.enviosConComisionistas ? [{ etiqueta: 'Comisionista', valor: comisionista ? (comisionista.empresa || comisionista.nombre || '—') : 'Sin comisionista' }] : []),
     ...(rotulo.valor_declarado ? [{ etiqueta: 'Valor declarado', valor: rotulo.valor_declarado }] : []),
   ] : [];
 

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -109,12 +109,15 @@ export type Database = {
       }
       configuracion: {
         Row: {
+          color_deposito: string | null
+          color_primario: string | null
           comisionistas_campos_custom: Json | null
           empresa_direccion: string | null
           empresa_email: string | null
           empresa_nombre: string | null
           empresa_telefono: string | null
           id: number
+          inicial_cerrada_at: string | null
           logo_base64: string | null
           rotulo_campos: Json | null
           rotulo_design: Json | null
@@ -122,12 +125,15 @@ export type Database = {
           rotulo_pie: string | null
         }
         Insert: {
+          color_deposito?: string | null
+          color_primario?: string | null
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
           empresa_email?: string | null
           empresa_nombre?: string | null
           empresa_telefono?: string | null
           id?: number
+          inicial_cerrada_at?: string | null
           logo_base64?: string | null
           rotulo_campos?: Json | null
           rotulo_design?: Json | null
@@ -135,12 +141,15 @@ export type Database = {
           rotulo_pie?: string | null
         }
         Update: {
+          color_deposito?: string | null
+          color_primario?: string | null
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
           empresa_email?: string | null
           empresa_nombre?: string | null
           empresa_telefono?: string | null
           id?: number
+          inicial_cerrada_at?: string | null
           logo_base64?: string | null
           rotulo_campos?: Json | null
           rotulo_design?: Json | null
@@ -500,6 +509,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      licencia: {
+        Row: {
+          actualizada_at: string
+          id: number
+          modulos: Json
+        }
+        Insert: {
+          actualizada_at?: string
+          id?: number
+          modulos?: Json
+        }
+        Update: {
+          actualizada_at?: string
+          id?: number
+          modulos?: Json
+        }
+        Relationships: []
+      }
+      migraciones_aplicadas: {
+        Row: {
+          aplicada_at: string
+          nombre: string
+        }
+        Insert: {
+          aplicada_at?: string
+          nombre: string
+        }
+        Update: {
+          aplicada_at?: string
+          nombre?: string
+        }
+        Relationships: []
       }
       planilla_familias: {
         Row: {
@@ -1341,10 +1383,12 @@ export type Database = {
         }
         Returns: string
       }
+      definir_dueno_inicial: { Args: { p_email: string }; Returns: undefined }
       eliminar_reparacion: {
         Args: { p_reparacion_id: string }
         Returns: undefined
       }
+      exigir_modulo: { Args: { p_modulos: string[] }; Returns: undefined }
       get_user_task_counts: {
         Args: { target_user_id: string }
         Returns: {
@@ -1371,6 +1415,7 @@ export type Database = {
       is_directorio_admin: { Args: never; Returns: boolean }
       is_mantenimiento_admin: { Args: never; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
+      modulo_activo: { Args: { p_modulo: string }; Returns: boolean }
       process_pending_tasks_for_user: {
         Args: { target_user_id: string }
         Returns: number
@@ -1391,10 +1436,6 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       tiene_acceso_mantenimiento: { Args: never; Returns: boolean }
-      transferir_ownership: {
-        Args: { p_nuevo_owner_id: string }
-        Returns: undefined
-      }
       update_task: {
         Args: {
           p_description: string

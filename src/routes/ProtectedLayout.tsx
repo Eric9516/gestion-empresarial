@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import PuertaConfiguracionInicial from './PuertaConfiguracionInicial';
 
 export default function ProtectedLayout() {
   const { user, loading } = useAuth();
@@ -10,5 +11,9 @@ export default function ProtectedLayout() {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  return <Outlet />;
+  return (
+    <PuertaConfiguracionInicial>
+      <Outlet />
+    </PuertaConfiguracionInicial>
+  );
 }

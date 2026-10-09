@@ -5,10 +5,12 @@ import { useAuth } from '../auth/AuthContext';
 import { isDirectorioAdmin, isDirectorioDesactivado, isMantenimientoAdmin, isOwner, tieneAccesoMantenimiento } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useModulos } from '../features/config/useModulos';
 
 export default function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile, updateOwnProfile } = useAuth();
   const toast = useToast();
+  const { modulos } = useModulos();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [saving, setSaving] = useState(false);
@@ -36,7 +38,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
 
   const rolDirectorio = isDirectorioDesactivado(profile) ? 'Sin acceso' : isDirectorioAdmin(profile) ? 'Administrador' : 'Usuario';
   const rolMantenimiento = !tieneAccesoMantenimiento(profile) ? 'Sin acceso' : isMantenimientoAdmin(profile) ? 'Administrador' : 'Usuario';
-  const filasRol = [['Directorio', rolDirectorio], ['Depósito de mantenimiento', rolMantenimiento]];
+  const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [['Depósito de mantenimiento', rolMantenimiento]] : [])];
 
   return (
     <Modal

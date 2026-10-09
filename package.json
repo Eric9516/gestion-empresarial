@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "cliente": "node scripts/cliente.mjs",
+    "pruebas:integracion": "node scripts/pruebas/integracion.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -43,5 +45,6 @@
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
     "vitest": "^5.0.2"
-  }
+  },
+  "packageManager": "pnpm@12.10.1"
 }

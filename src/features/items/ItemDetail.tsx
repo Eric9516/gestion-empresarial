@@ -14,6 +14,7 @@ import ProveedorDetail from '../proveedores/ProveedorDetail';
 import type { Proveedor } from '../proveedores/useProveedores';
 import { CAMPOS_POR_SLOT, SLOTS_FOTO, useDeleteItem, useDeleteItemFoto, useSwapItemFotos, useUploadItemFoto, type FotoSlot, type Item } from './useItems';
 import { useLineasPendientesPorItem } from '../reparaciones/useReparaciones';
+import { useModulos } from '../config/useModulos';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -180,6 +181,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
   const [verReparaciones, setVerReparaciones] = useState(false);
   const [proveedorVisto, setProveedorVisto] = useState<Proveedor | null>(null);
   const { lineas: lineasEnReparacion } = useLineasPendientesPorItem(item?.id);
+  const { integ } = useModulos();
 
   if (!item) return null;
   const admin = isMantenimientoAdmin(profile);
@@ -269,7 +271,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
             <p style={{ marginTop: 4, fontSize: 14, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{item.detalles}</p>
           </div>
         )}
-        {admin && <ProveedoresDeItem itemId={item.id} onVerProveedor={setProveedorVisto} />}
+        {admin && integ.depositoConProveedores && <ProveedoresDeItem itemId={item.id} onVerProveedor={setProveedorVisto} />}
         {admin && (
           <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>
             <Button variant="ghost" size="sm" onClick={onEdit}>✏️ Editar</Button>

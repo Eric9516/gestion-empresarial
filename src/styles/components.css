@@ -11,7 +11,7 @@
 }
 .badge-active { background: var(--success-bg); color: var(--success); }
 .badge-inactive { background: #f0f0f0; color: var(--text-muted); }
-.badge-rubro { background: rgba(26,58,107,0.08); color: var(--blue); }
+.badge-rubro { background: color-mix(in srgb, var(--blue) 8%, transparent); color: var(--blue); }
 
 /* ===== TOOLTIP =====
    .tooltip-bubble se porta a <body> y se posiciona con coordenadas reales

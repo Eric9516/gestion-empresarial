@@ -2,7 +2,17 @@
 
 Plantilla de aplicación interna para empresas: proveedores, comisionistas, envíos con rótulos, depósito de mantenimiento (repuestos, stock, retiros, reparaciones, reposición) y tareas. Los datos propios de cada empresa (nombre, logo, dirección, diseño de rótulos) se cargan desde **Configuración**, no están en el código.
 
-> **Estado:** proyecto en construcción, derivado de una instalación real. Falta el script de base de datos limpio (`supabase/migrations/` está vacío a propósito): hasta que se arme, no se puede iniciar sesión en una instalación nueva.
+> **Estado:** plantilla en construcción, derivada de una instalación real. La base de datos se instala completa y
+> sin datos con un solo comando (ver [docs/NUEVO-CLIENTE.md](docs/NUEVO-CLIENTE.md)). Lo que falta para ofrecerla a
+> otras empresas está en [docs/PENDIENTES.md](docs/PENDIENTES.md).
+
+## Documentación
+
+- [Instalar y actualizar un cliente](docs/NUEVO-CLIENTE.md)
+- [Arquitectura](docs/ARQUITECTURA.md)
+- [Seguridad y permisos](docs/SEGURIDAD.md)
+- [Pendientes para que sea un producto](docs/PENDIENTES.md)
+- [Servidor de archivos](servidor-manuales/README.md)
 
 ## Tecnología
 
@@ -48,6 +58,10 @@ Variables opcionales para Sentry (reporte de errores):
 | `pnpm build` | Chequea tipos y genera la versión de producción en `dist/` |
 | `pnpm lint` | Revisa el código con Oxlint |
 | `pnpm test` | Corre las pruebas |
+| `pnpm cliente nuevo ...` | Crea el proyecto de Supabase de un cliente nuevo y lo deja instalado |
+| `pnpm cliente actualizar --ref ...` | Aplica a un cliente las migraciones y funciones nuevas |
+| `pnpm cliente modulos --ref ...` | Ve y cambia los módulos que tiene contratados un cliente (solo lo hace quien vende) |
+| `pnpm pruebas:integracion ...` | Prueba de punta a punta de una instalación de pruebas |
 
 Antes de subir cambios conviene que `pnpm build` y `pnpm test` pasen sin errores.
 
@@ -64,8 +78,11 @@ src/
   routes/       protección de rutas
   styles/       hojas de estilo
 supabase/
-  migrations/   cambios de la base, en orden
+  migrations/   la base de datos, en orden
   functions/    Edge Functions: create-user, delete-user, reset-password
+servidor-manuales/  servidor de archivos (manuales, despieces, planos)
+scripts/            instalador de clientes y pruebas de integración
+docs/               documentación
 ```
 
 ## Permisos
@@ -81,21 +98,12 @@ Las reglas se aplican en la base (políticas RLS), no solo en la interfaz. Las f
 
 ## Base de datos
 
-Los cambios se aplican con la CLI de Supabase:
+La base de cada cliente se instala y se actualiza con `pnpm cliente` (ver [docs/NUEVO-CLIENTE.md](docs/NUEVO-CLIENTE.md)).
+Las migraciones están en `supabase/migrations/`, en orden; una mejora nueva es un archivo nuevo, y nunca se edita uno
+que ya se aplicó.
 
-```bash
-pnpm dlx supabase link --project-ref <ref-del-proyecto>
-pnpm dlx supabase db push --dry-run   # muestra qué se aplicaría, sin tocar nada
-pnpm dlx supabase db push
-```
-
-Las Edge Functions necesitan el secreto `PROJECT_SECRET_KEY` (la "Secret key" del proyecto) configurado en Supabase. Para publicarlas:
-
-```bash
-pnpm dlx supabase functions deploy create-user
-pnpm dlx supabase functions deploy delete-user
-pnpm dlx supabase functions deploy reset-password
-```
+Las Edge Functions necesitan el secreto `PROJECT_SECRET_KEY` (la clave de servicio del proyecto); el instalador lo
+configura y las publica.
 
 ## Errores
 

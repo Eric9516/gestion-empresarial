@@ -10,7 +10,7 @@ const botonVariantes = cva(
     variants: {
       variant: {
         base: '',
-        primary: 'bg-[var(--blue)] text-white hover:bg-[var(--blue-mid)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(26,58,107,0.3)]',
+        primary: 'bg-[var(--blue)] text-white hover:bg-[var(--blue-mid)] hover:-translate-y-px hover:shadow-[0_4px_12px_color-mix(in_srgb,var(--blue)_30%,transparent)]',
         red: 'bg-[var(--red)] text-white hover:bg-[var(--red-light)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(200,34,42,0.3)]',
         ghost: 'bg-transparent text-[var(--text-mid)] border-[1.5px] border-solid border-[var(--border)] hover:bg-[var(--surface2)] hover:border-[#b0bec5] hover:text-[var(--text)]',
         success: 'bg-[var(--success)] text-white hover:bg-[#1d8a54]',

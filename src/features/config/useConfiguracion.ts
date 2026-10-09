@@ -17,7 +17,11 @@ export function useConfiguracionQuery() {
 export function useSaveConfiguracion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { empresa_nombre: string; empresa_direccion: string; empresa_telefono: string; empresa_email: string; logo_base64?: string }) => {
+    mutationFn: async (body: {
+      empresa_nombre: string; empresa_direccion: string; empresa_telefono: string; empresa_email: string; logo_base64?: string;
+      // null = volver a los colores originales de la app
+      color_primario?: string | null; color_deposito?: string | null;
+    }) => {
       const { error } = await supabase.from('configuracion').update(body).eq('id', 1);
       if (error) throw error;
     },

@@ -421,7 +421,7 @@
   border: none;
   font-size: 26px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(26,58,107,0.4);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--blue) 40%, transparent);
   z-index: 140;
   transition: all 0.2s;
   align-items: center;

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isDirectorioDesactivado, isMantenimientoAdmin, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
+import SinModulos from '../components/SinModulos';
+import { hayModulosDeDirectorio } from '../lib/modulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
+import { useModulos } from '../features/config/useModulos';
 import { RetiroCartProvider, useRetiroCart } from '../features/retiros/RetiroCartContext';
 import ItemsList from '../features/items/ItemsList';
 import InformeReposicion from '../features/items/InformeReposicion';
@@ -20,26 +23,30 @@ function MantenimientoContent() {
   const { profile } = useAuth();
   const { cart } = useRetiroCart();
   const { data: config } = useConfiguracionQuery();
+  const { modulos, integ } = useModulos();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('buscar');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
+  useEffect(() => { document.title = `Depósito — ${nombreEmpresa}`; }, [nombreEmpresa]);
   // Reparaciones toca stock igual que retiros/edición de repuestos — se
   // reserva a admin de Mantenimiento, no satura la navegación del común.
   const esAdmin = isMantenimientoAdmin(profile);
+  const verReparaciones = esAdmin && integ.depositoConProveedores;
 
   // Un usuario con Directorio desactivado queda encerrado en Mantenimiento —
   // sin botón de "Volver", igual que exitMantenimiento() en la app vieja.
-  const canExit = !isDirectorioDesactivado(profile);
+  // (o si la empresa no usa ningún módulo del Directorio: no hay a dónde volver).
+  const canExit = !isDirectorioDesactivado(profile) && hayModulosDeDirectorio(modulos);
 
   const navItems = [
     { icon: '🔍', label: 'Buscar', onClick: () => setTab('buscar'), active: tab === 'buscar' },
     { icon: '🛒', label: `A retirar${cart.length ? ` (${cart.length})` : ''}`, onClick: () => setTab('carrito'), active: tab === 'carrito' },
     { icon: '📋', label: 'Retiros', onClick: () => setTab('retiros'), active: tab === 'retiros' },
-    ...(esAdmin ? [{ icon: '🔧', label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
-    { icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' },
+    ...(verReparaciones ? [{ icon: '🔧', label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
+    ...(modulos.tareas ? [{ icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
     ...(esAdmin ? [{ icon: '📊', label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
     ...(canExit ? [{ icon: '←', label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
@@ -73,8 +80,10 @@ function MantenimientoContent() {
           🛒 A retirar {cart.length > 0 && <span className="badge badge-rubro">{cart.length}</span>}
         </button>
         <button className={`nav-tab${tab === 'retiros' ? ' active' : ''}`} onClick={() => setTab('retiros')}>📋 Retiros</button>
-        <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}>✅ Tareas</button>
-        {esAdmin && (
+        {modulos.tareas && (
+          <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}>✅ Tareas</button>
+        )}
+        {verReparaciones && (
           <button className={`nav-tab${tab === 'reparaciones' ? ' active' : ''}`} onClick={() => setTab('reparaciones')}>🔧 Reparaciones</button>
         )}
         {esAdmin && (
@@ -93,8 +102,8 @@ function MantenimientoContent() {
         )}
         {tab === 'carrito' && <RetiroCartPanel />}
         {tab === 'retiros' && <HistorialRetiros />}
-        {tab === 'tareas' && <TareasScreen />}
-        {tab === 'reparaciones' && esAdmin && <ReparacionesScreen />}
+        {tab === 'tareas' && modulos.tareas && <TareasScreen />}
+        {tab === 'reparaciones' && verReparaciones && <ReparacionesScreen />}
         {tab === 'informe' && esAdmin && <InformeReposicion />}
       </main>
 
@@ -106,9 +115,14 @@ function MantenimientoContent() {
 
 export default function MantenimientoPage() {
   const { profile } = useAuth();
+  const { modulos, listo } = useModulos();
+  if (!listo) return <div className="loading-screen">Cargando...</div>;
   // Con Directorio desactivado, esta pantalla es la única a la que puede
   // entrar, tenga o no un rol de Mantenimiento propio asignado.
   if (!tieneAccesoMantenimiento(profile) && !isDirectorioDesactivado(profile)) return <Navigate to="/" replace />;
+  // Si la empresa no usa el Depósito, no hay pantalla: se vuelve al Directorio, salvo que la
+  // persona no pueda entrar allí (entonces se le explica en vez de rebotarla en círculo).
+  if (!modulos.deposito) return isDirectorioDesactivado(profile) ? <SinModulos /> : <Navigate to="/" replace />;
 
   return (
     <RetiroCartProvider>

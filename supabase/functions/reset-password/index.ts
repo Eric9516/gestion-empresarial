@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     const { data: perfil, error: perfilErr } = await supabaseAuth
       .from('usuarios_perfil')
-      .select('puede_resetear_contrasenas, es_owner')
+      .select('puede_resetear_contrasenas, es_owner, nombre, apellido')
       .eq('id', user.id)
       .single();
     if (perfilErr) throw perfilErr;
@@ -67,6 +67,20 @@ Deno.serve(async (req) => {
 
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });
     if (updateErr) throw updateErr;
+
+    // Queda en el historial quién restableció la contraseña de quién (nunca la contraseña).
+    // Si el registro falla no se deshace el cambio: se avisa en el log de la función.
+    const { data: afectado } = await supabaseAdmin.from('usuarios_perfil').select('nombre, apellido, email').eq('id', userId).maybeSingle();
+    const { error: auditErr } = await supabaseAdmin.from('audit_log').insert({
+      tabla: 'usuarios_perfil',
+      registro_id: userId,
+      descripcion: `Contraseña restablecida: ${[afectado?.nombre, afectado?.apellido].filter(Boolean).join(' ') || afectado?.email || userId}`,
+      accion: 'update',
+      usuario_id: user.id,
+      usuario_nombre: [perfil?.nombre, perfil?.apellido].filter(Boolean).join(' ') || null,
+      usuario_email: user.email ?? null,
+    });
+    if (auditErr) console.error('No se pudo registrar el cambio de contraseña en la auditoría:', auditErr.message);
 
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

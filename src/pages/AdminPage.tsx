@@ -1,10 +1,13 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isDirectorioAdmin, isMantenimientoAdmin, isOwner, puedeResetearContrasenas, puedeVerErrores, puedeVerSugerencias, tieneAccesoAdmin, type Profile } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
+import type { ModuloId } from '../lib/modulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
+import { useModulos } from '../features/config/useModulos';
+import ConfiguracionInicial from '../features/inicial/ConfiguracionInicial';
 import EmpresaPane from '../features/admin/EmpresaPane';
 import RotuloDesignPane from '../features/admin/RotuloDesignPane';
 import ComisionistasCamposPane from '../features/admin/ComisionistasCamposPane';
@@ -25,19 +28,25 @@ interface AdminTab {
   group: Grupo;
   label: string;
   check: (profile: Profile | null) => boolean;
+  // Si el módulo está desactivado, la pestaña no aparece (la configuración de algo que no se usa no sirve).
+  modulo?: ModuloId;
   Pane: () => ReactElement;
 }
 
 // Espeja ADMIN_TABS de main.js: una sola pantalla de Configuración con pestañas
 // agrupadas, cada una gateada por su propio permiso.
 const ADMIN_TABS: AdminTab[] = [
-  { id: 'empresa', group: 'directorio', label: '🏢 Empresa', check: isDirectorioAdmin, Pane: EmpresaPane },
-  { id: 'rotulo', group: 'directorio', label: '🏷️ Rótulo', check: isDirectorioAdmin, Pane: RotuloDesignPane },
-  { id: 'comisionistas', group: 'directorio', label: '🤝 Comisionistas', check: isDirectorioAdmin, Pane: ComisionistasCamposPane },
-  { id: 'repuestos', group: 'mantenimiento', label: '🔧 Repuestos', check: isMantenimientoAdmin, Pane: RepuestosPane },
-  { id: 'sectores', group: 'mantenimiento', label: '🏭 Sectores', check: isMantenimientoAdmin, Pane: SectoresPanel },
-  { id: 'fotos-pendientes', group: 'mantenimiento', label: '📷 Fotos pendientes', check: isOwner, Pane: FotosPendientesPane },
-  { id: 'familias', group: 'mantenimiento', label: '🏷️ Familias', check: isOwner, Pane: FamiliasPane },
+  // El asistente se abre solo la primera vez que entra el dueño (ver PuertaConfiguracionInicial) y
+  // queda siempre acá para retomarlo.
+  { id: 'inicial', group: 'general', label: '🚀 Configuración inicial', check: isOwner, Pane: ConfiguracionInicial },
+  // Empresa sirve a toda la aplicación, por eso está en General.
+  { id: 'empresa', group: 'general', label: '🏢 Empresa', check: isDirectorioAdmin, Pane: EmpresaPane },
+  { id: 'rotulo', group: 'directorio', label: '🏷️ Rótulo', check: isDirectorioAdmin, modulo: 'envios', Pane: RotuloDesignPane },
+  { id: 'comisionistas', group: 'directorio', label: '🤝 Comisionistas', check: isDirectorioAdmin, modulo: 'comisionistas', Pane: ComisionistasCamposPane },
+  { id: 'repuestos', group: 'mantenimiento', label: '🔧 Repuestos', check: isMantenimientoAdmin, modulo: 'deposito', Pane: RepuestosPane },
+  { id: 'sectores', group: 'mantenimiento', label: '🏭 Sectores', check: isMantenimientoAdmin, modulo: 'deposito', Pane: SectoresPanel },
+  { id: 'fotos-pendientes', group: 'mantenimiento', label: '📷 Fotos pendientes', check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
+  { id: 'familias', group: 'mantenimiento', label: '🏷️ Familias', check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
   { id: 'usuarios', group: 'general', label: '👥 Usuarios', check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
   { id: 'historial', group: 'general', label: '📜 Historial', check: isOwner, Pane: HistorialPane },
   { id: 'errores', group: 'general', label: '🐞 Errores', check: puedeVerErrores, Pane: ErroresPane },
@@ -57,21 +66,35 @@ function AdminContent() {
   const { data: config } = useConfiguracionQuery();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const { modulos, listo } = useModulos();
+
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
+  useEffect(() => { document.title = `Configuración — ${nombreEmpresa}`; }, [nombreEmpresa]);
 
-  const visibles = useMemo(() => ADMIN_TABS.filter(t => t.check(profile)), [profile]);
-  const [tabId, setTabId] = useState<string>(() => visibles[0]?.id ?? '');
+  const visibles = useMemo(
+    () => ADMIN_TABS.filter(t => t.check(profile) && (!t.modulo || modulos[t.modulo])),
+    [profile, modulos],
+  );
+  const [tabId, setTabId] = useState<string>('');
 
-  const tabActual = visibles.find(t => t.id === tabId) ?? visibles[0];
+  // Mientras el asistente no se cerró, es lo primero que se ve; después, la primera pestaña "de trabajo".
+  const asistentePendiente = !!config && config.inicial_cerrada_at == null;
+  const primeraDelGrupo = (group?: Grupo) => visibles.find(t => t.group === group && !(t.id === 'inicial' && !asistentePendiente))
+    ?? visibles.find(t => t.group === group);
+  const porDefecto = (asistentePendiente && visibles.find(t => t.id === 'inicial'))
+    || visibles.find(t => t.id !== 'inicial') || visibles[0];
+
+  const tabActual = visibles.find(t => t.id === tabId) ?? porDefecto;
   const grupoActivo = tabActual?.group;
 
   function selectGroup(group: Grupo) {
-    const primera = visibles.find(t => t.group === group);
+    const primera = primeraDelGrupo(group);
     if (primera) setTabId(primera.id);
   }
 
   const navItems = [{ icon: '←', label: 'Volver', onClick: () => navigate(-1) }];
 
+  if (!listo) return <div className="loading-screen">Cargando...</div>;
   if (!tabActual) return null;
 
   return (

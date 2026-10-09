@@ -9,6 +9,7 @@ import { useCreateUsuario, useDeleteUsuario, useToggleUsuarioActivo, useAgregarD
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { useModulos } from '../config/useModulos';
 
 interface Props {
   open: boolean;
@@ -26,6 +27,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
   const toast = useToast();
   const confirmar = useConfirm();
   const { profile } = useAuth();
+  const { modulos } = useModulos();
   const createUsuario = useCreateUsuario();
   const updateUsuario = useUpdateUsuario();
   const toggleActivo = useToggleUsuarioActivo();
@@ -157,21 +159,21 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
                 <option value="disabled">Desactivado</option>
               </Select>
             </div>
-            <div className="form-group">
+            {modulos.deposito && <div className="form-group">
               <label htmlFor="usuario-form-6">Rol en Depósito</label>
               <Select id="usuario-form-6" value={input.mantenimiento_rol ?? ''} disabled={esUnoMismo} onChange={e => cambiarRolMantenimiento(e.target.value)}>
                 <option value="comun">Usuario</option>
                 <option value="admin">Administrador</option>
                 <option value="">Desactivado</option>
               </Select>
-            </div>
+            </div>}
           </div>
           {esUnoMismo && (
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: -8, marginBottom: 16 }}>
               No podés cambiar tu propio rol ni tus propios permisos desde acá — es a propósito, para que nunca te bloquees tu propia cuenta sin querer.
             </p>
           )}
-          {input.mantenimiento_rol !== null && (
+          {modulos.deposito && input.mantenimiento_rol !== null && (
             <div className="form-group">
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
                 <input type="checkbox" checked={input.puede_ver_retiros} disabled={esUnoMismo} onChange={e => setInput(v => ({ ...v, puede_ver_retiros: e.target.checked }))} />

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useModulos } from '../config/useModulos';
 
 interface Props {
   open: boolean;
@@ -36,6 +37,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
   const { data: config } = useConfiguracionQuery();
   const { data: proveedores } = useProveedoresQuery();
   const { data: comisionistas } = useComisionistasQuery();
+  const { integ } = useModulos();
   const { data: editData } = useRotuloParaEditarQuery(editingId);
   const guardarRotulo = useGuardarRotulo();
 
@@ -93,7 +95,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
   async function handleGuardar() {
     if (!proveedor) return;
     if (editingId && !motivo.trim()) { toast('Contá el motivo de la edición antes de guardar', 'error'); return; }
-    if (!comisionistaId && !(await confirmar('No seleccionaste un comisionista para este envío. ¿Guardar igual?', { textoConfirmar: 'Guardar igual' }))) return;
+    if (integ.enviosConComisionistas && !comisionistaId && !(await confirmar('No seleccionaste un comisionista para este envío. ¿Guardar igual?', { textoConfirmar: 'Guardar igual' }))) return;
 
     setSaving(true);
     try {
@@ -129,13 +131,13 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
           </div>
 
           <Separador texto="📋 Envío" />
-          <div className="form-group">
+          {integ.enviosConComisionistas && <div className="form-group">
             <label htmlFor="rotulo-form-1">Comisionista (opcional — solo para control interno, no se imprime)</label>
             <Select id="rotulo-form-1" value={comisionistaId} onChange={e => setComisionistaId(e.target.value)}>
               <option value="">Sin comisionista</option>
               {comisionistasOrdenados.map(c => <option key={c.id} value={c.id}>{c.empresa || c.nombre}</option>)}
             </Select>
-          </div>
+          </div>}
           <div className="form-group">
             <label htmlFor="rotulo-form-2">Documento (opcional)</label>
             <div style={{ display: 'flex', gap: 8 }}>
