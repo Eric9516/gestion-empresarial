@@ -71,6 +71,8 @@ clientes/            datos privados de cada cliente (no se sube a Git)
   eran públicos); se quitan los permisos de tabla del rol sin sesión y se cierran las funciones que quedaban abiertas.
 - `20260101000700_usuarios_bloqueados_sin_permisos.sql`: `usuario_activo()`; los permisos (dueño, administradores, ver retiros, etc.)
   exigen un usuario activo y cada tabla y las carpetas de archivos suman la regla `requiere_usuario_activo`.
+- `20260101000900_ajuste_de_inventario.sql`: el permiso `puede_ajustar_inventario`, las tablas `ajustes_inventario` y `ajuste_items` (no se editan ni se
+  borran; solo se anulan), las funciones `crear_ajuste_inventario`, `anular_ajuste_inventario` e `historial_ajustes_por_item`, y su registro en el historial del sistema.
 - `20260101000800_zona_horaria_de_la_empresa.sql`: `configuracion.zona_horaria`, `hoy_local()` y `fecha_local()`; las tareas y la
   corrección de retiros "del mismo día" usan el día de la empresa y no el de la hora universal.
 

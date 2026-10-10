@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajuste_items: {
+        Row: {
+          ajuste_id: string
+          cantidad: number
+          id: string
+          item_id: string
+          stock_antes: number | null
+          stock_despues: number | null
+          tipo: string
+        }
+        Insert: never
+        Update: never
+        Relationships: [
+          { foreignKeyName: "ajuste_items_ajuste_id_fkey"; columns: ["ajuste_id"]; isOneToOne: false; referencedRelation: "ajustes_inventario"; referencedColumns: ["id"] },
+          { foreignKeyName: "ajuste_items_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "items"; referencedColumns: ["id"] },
+        ]
+      }
+      ajustes_inventario: {
+        Row: {
+          anulado: boolean
+          anulado_at: string | null
+          anulado_por: string | null
+          created_at: string
+          id: string
+          motivo: string
+          motivo_anulacion: string | null
+          usuario_id: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       audit_log: {
         Row: {
           accion: string
@@ -1303,6 +1335,7 @@ export type Database = {
           last_login_at: string | null
           mantenimiento_rol: string | null
           nombre: string | null
+          puede_ajustar_inventario: boolean
           puede_resetear_contrasenas: boolean
           puede_ver_errores: boolean
           puede_ver_retiros: boolean
@@ -1322,6 +1355,7 @@ export type Database = {
           last_login_at?: string | null
           mantenimiento_rol?: string | null
           nombre?: string | null
+          puede_ajustar_inventario?: boolean
           puede_resetear_contrasenas?: boolean
           puede_ver_errores?: boolean
           puede_ver_retiros?: boolean
@@ -1341,6 +1375,7 @@ export type Database = {
           last_login_at?: string | null
           mantenimiento_rol?: string | null
           nombre?: string | null
+          puede_ajustar_inventario?: boolean
           puede_resetear_contrasenas?: boolean
           puede_ver_errores?: boolean
           puede_ver_retiros?: boolean
@@ -1400,6 +1435,25 @@ export type Database = {
           pending: number
           stagnant: number
           total: number
+        }[]
+      }
+      anular_ajuste_inventario: { Args: { p_ajuste_id: string; p_motivo: string }; Returns: undefined }
+      can_ajustar_inventario: { Args: never; Returns: boolean }
+      crear_ajuste_inventario: { Args: { p_lineas: Json; p_motivo: string }; Returns: string }
+      historial_ajustes_por_item: {
+        Args: { p_item_id: string }
+        Returns: {
+          anulado: boolean
+          anulado_at: string | null
+          cantidad: number
+          created_at: string
+          id: string
+          motivo: string
+          motivo_anulacion: string | null
+          stock_antes: number | null
+          stock_despues: number | null
+          tipo: string
+          usuario_id: string
         }[]
       }
       has_active_access: { Args: { user_uuid: string }; Returns: boolean }

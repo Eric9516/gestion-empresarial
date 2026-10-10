@@ -39,6 +39,12 @@ export function puedeResetearContrasenas(profile: Profile | null): boolean {
   return profile?.puede_resetear_contrasenas === true || isOwner(profile);
 }
 
+// Ajustar el inventario (sumar o restar stock de varios repuestos de una vez): lo hacen los dueños y los administradores
+// del Depósito a quienes un dueño les dio el permiso. La base lo impone igual; esto solo muestra u oculta la pantalla.
+export function puedeAjustarInventario(profile: Profile | null): boolean {
+  return isOwner(profile) || (profile?.mantenimiento_rol === 'admin' && profile?.puede_ajustar_inventario === true);
+}
+
 export function puedeVerSugerencias(profile: Profile | null): boolean {
   return profile?.puede_ver_sugerencias === true || isOwner(profile);
 }

@@ -12,6 +12,7 @@ capítulo 4 y seguilo punto por punto. Los demás son de consulta.
 | 2. Qué necesitás antes de empezar | Cuentas y programas (una sola vez) |
 | 3. Decisiones antes de vender | Cuenta de Supabase, plan, contraseñas |
 | **4. Instalar un cliente nuevo** | **El paso a paso principal** |
+| **4B. Instalar un cliente en SU PROPIA cuenta** | **Cuando el cliente quiere que la base de datos (y, si quiere, el sitio) sea suyo** |
 | 5. Módulos | Qué se vende por separado y cómo se activa |
 | 6. Usuarios y permisos | Quién puede hacer qué |
 | 7. El asistente de configuración inicial | Lo que ve el cliente la primera vez |
@@ -126,6 +127,8 @@ npx supabase orgs list
 
 > Dependés de que él te mantenga como miembro. Si te saca de su organización, no podés actualizar ni cambiar módulos.
 > Conviene dejarlo acordado.
+>
+> **El paso a paso completo de este camino está en el capítulo 4B.**
 
 ### 3.2 El plan de Supabase
 
@@ -310,6 +313,110 @@ capítulo 14.**
 
 ---
 
+## 4B. Instalar un cliente en SU PROPIA cuenta
+
+Es el mismo procedimiento del capítulo 4, con **tres cambios**:
+
+1. **Antes de instalar**, el cliente prepara su cuenta de Supabase y te invita.
+2. **Al instalar**, el comando lleva una opción más: `--org`.
+3. **Decidís dónde va el sitio publicado** (Netlify): en tu cuenta o en la suya.
+
+Todo lo demás (cerrar el registro, publicar, probar, entregar) es igual.
+
+### Quién hace qué
+
+| | Lo hace el cliente | Lo hacés vos |
+|---|---|---|
+| Crear su cuenta y su organización en Supabase | ✅ | |
+| Invitarte a esa organización | ✅ | |
+| Aceptar la invitación | | ✅ |
+| Averiguar el identificador de su organización | | ✅ |
+| Instalar la aplicación con `--org` | | ✅ |
+| Cerrar el registro, publicar y probar | | ✅ (igual que el capítulo 4) |
+| Pagar Supabase (si hace falta un plan pago) | ✅ | |
+
+### Parte A. Lo que hace el cliente
+
+Podés mandarle este mensaje tal cual (cambiá lo que haga falta):
+
+> Hola. Para instalarte el sistema en tu propia cuenta necesito que hagas esto, son 10 minutos:
+> 1. Entrá a **supabase.com** y creá una cuenta (podés usar tu correo o tu cuenta de GitHub).
+> 2. Creá una **organización** con el nombre de tu empresa (te la pide al registrarte; si no, está en el selector de organizaciones, arriba a la izquierda).
+> 3. Dentro de esa organización, entrá a **Team → Invite member** (invitar miembro). Escribí **este correo: ____________** y elegí el rol **Administrator**. Enviá la invitación.
+> 4. Avisame cuando esté hecho.
+
+Los nombres de los botones pueden cambiar con el tiempo: lo que se busca es **invitar a una persona a la organización, con un rol que le permita crear proyectos**.
+
+### Parte B. Lo que hacés vos
+
+**1. Aceptá la invitación.** Te llega un correo de Supabase; tocá el botón para aceptarla (con el mismo correo con el que entraste a Supabase desde la terminal).
+
+**2. Averiguá el identificador de su organización.** En la terminal, en la carpeta del proyecto:
+
+```bash
+cd ~/OneDrive/Desktop/"Gestion empresarial"
+```
+
+```bash
+npx supabase orgs list
+```
+
+Aparecen **todas** las organizaciones a las que tenés acceso: la tuya y la del cliente. Reconocés la suya por el nombre. Copiá su identificador (una palabra de unas 20 letras). Si **no aparece**, ver "Si algo falla" más abajo.
+
+**3. Instalá.** Es el mismo comando del capítulo 4, con `--org` al final:
+
+```bash
+pnpm cliente nuevo --nombre "Nombre del Cliente SA" --email dueno@cliente.com --modulos proveedores,deposito --org IDENTIFICADOR-DE-SU-ORGANIZACION
+```
+
+**4. Comprobá que quedó en su cuenta.** Entrá a supabase.com, abrí el selector de organizaciones (arriba a la izquierda) y elegí la del cliente: tiene que aparecer el proyecto nuevo. Si aparece en la tuya, ver "Si algo falla".
+
+**5. Seguí con el capítulo 4 desde el Paso 4** (guardar el archivo privado, cerrar el registro público, publicar, poner la dirección en Supabase, probar y entregar). El proyecto que abrís en Supabase para esos pasos es el que está **dentro de la organización del cliente**.
+
+### Parte C. ¿Dónde va el sitio publicado (Netlify)?
+
+Es una decisión independiente de la base de datos. Tres caminos:
+
+| Camino | Cómo es | Conviene cuando |
+|---|---|---|
+| **1. En tu cuenta de Netlify** | Lo publicás vos, como en el capítulo 4. Se actualiza solo cuando subís cambios | Es lo más simple. Recomendado |
+| **2. En la cuenta de Netlify del cliente** | El sitio está en su equipo; vos lo administrás como miembro | El cliente quiere que todo figure a su nombre |
+| **3. Que el cliente tenga el código** | Se le da acceso al repositorio | **No lo recomiendo:** el repositorio es tu producto y lo recibiría completo |
+
+**Si elegís el camino 2:**
+
+*El cliente:*
+1. Entra a **netlify.com**, crea una cuenta (se crea con ella un **equipo**, o "team").
+2. En la configuración del equipo (*Team settings → Members*), te invita con tu correo y un rol que permita crear sitios.
+
+*Vos:*
+1. Aceptás la invitación.
+2. En Netlify, arriba a la izquierda, elegí el **equipo del cliente** en el selector de equipos.
+3. Creá el sitio como en el Paso 6 del capítulo 4 (*Add new site → Import an existing project → GitHub → repositorio `gestion-empresarial`*), con las mismas dos variables.
+
+Tener en cuenta: el sitio queda conectado a **tu** cuenta de GitHub. Si algún día te sacan del equipo, no podés actualizarlo.
+
+### Parte D. Qué dejar acordado con el cliente
+
+Conviene hablarlo **antes** de instalar, y dejarlo por escrito:
+
+- [ ] **Vos seguís como miembro** de su organización mientras trabajen juntos (sin eso no podés actualizar ni cambiar módulos).
+- [ ] **Quién paga Supabase.** El plan gratis no tiene copias de seguridad restaurables y los proyectos se pausan si no se usan: para una empresa que lo usa todos los días, conviene un plan pago (verificá precios y condiciones vigentes en supabase.com/pricing). Se contrata desde la organización del cliente, con su tarjeta.
+- [ ] **Quién guarda las claves.** El archivo `clientes/....env.local` que deja el instalador queda en tu PC y tiene las claves de **su** proyecto. Es información suya: guardalo bien.
+- [ ] **Qué pasa si dejan de trabajar juntos.** La base de datos ya es suya y sigue funcionando. Lo que cambia: dejás de poder actualizarla, y el sitio publicado, si estaba en tu Netlify, hay que pasarlo a su cuenta.
+
+### Si algo falla
+
+| Qué pasa | Qué hacer |
+|---|---|
+| `orgs list` no muestra la organización del cliente | Casi seguro falta **aceptar la invitación** (revisá el correo, también en no deseados), o entraste a Supabase desde la terminal con otro correo. Repetí `npx supabase login` con el correo al que llegó la invitación |
+| El comando dice que no tenés permiso para crear el proyecto | Tu rol en su organización es demasiado bajo. Pedile que te suba a **Administrator** (o Owner) |
+| El proyecto se creó en **tu** cuenta y no en la suya | Faltó `--org`, o el identificador estaba mal. Borrá ese proyecto desde el panel de Supabase y repetí el comando con `--org` |
+| Supabase pide una tarjeta | Es porque la organización del cliente necesita un plan pago para ese proyecto. La carga él |
+| El cliente no encuentra "Team" o "Invite" | Los nombres cambian: buscá en el menú de la organización la opción de **miembros** o **invitar personas** |
+
+---
+
 ## 5. Módulos
 
 Un módulo es una parte de la aplicación que se vende por separado.
@@ -402,6 +509,7 @@ Cada persona tiene **dos roles independientes** y algunos **permisos sueltos**:
 | Ver el log de errores | Ver los errores que tuvo la aplicación |
 | Resetear contraseñas | Resetear la contraseña de otros usuarios |
 | Ver las sugerencias | Leer y borrar las sugerencias que mandan los usuarios |
+| Ajustar el inventario | Sumar o restar stock de varios repuestos de una vez (solo para administradores del Depósito; los dueños siempre pueden). Ver el capítulo 8.6 |
 
 **Dueño:** una persona con **todos** los poderes. **Puede haber varios dueños, todos iguales**, y el sistema nunca queda sin
 ninguno. Un dueño puede crear, editar, bloquear y eliminar usuarios, ver el historial completo y agregar o quitar otros dueños.
@@ -426,6 +534,8 @@ Esto es lo que impone **la base de datos**, que es lo que realmente cuenta:
 | Editar o eliminar familias | ❌ | ❌ | ❌ | ✅ |
 | Ver y crear reparaciones | ❌ | ❌ | ✅ | ✅ |
 | Eliminar una reparación | ❌ | ❌ | ❌ | ✅ |
+| Ajustar el inventario (con el permiso suelto) | ❌ | ❌ | ✅ solo con el permiso | ✅ |
+| Anular un ajuste de inventario | ❌ | ❌ | ❌ | ✅ |
 | Crear, ver, editar y borrar usuarios; asignar roles | ❌ | ❌ | ❌ | ✅ |
 | Ver el historial de cambios | ❌ | ❌ | ❌ | ✅ |
 
@@ -435,7 +545,7 @@ Esto es lo que impone **la base de datos**, que es lo que realmente cuenta:
 - Corregir o borrar **sus** retiros durante las primeras 24 horas.
 - Ver los repuestos y su stock.
 
-**Acciones que dependen de un permiso suelto:** ver todos los retiros, ver errores, ver sugerencias, resetear contraseñas.
+**Acciones que dependen de un permiso suelto:** ver todos los retiros, ver errores, ver sugerencias, resetear contraseñas, ajustar el inventario.
 
 **Tareas:** cada persona ve y maneja las suyas.
 
@@ -544,13 +654,36 @@ El bloqueo **corta todo en la base de datos**: la persona no puede leer ni escri
 aplicación abierta o entre por otro camino. Su pantalla la saca sola en menos de un minuto con el aviso "Tu cuenta está
 desactivada". Se puede **desbloquear** con el mismo botón y vuelve a funcionar sin más trámite.
 
-### 8.6 Quién cambió qué
+### 8.6 Ajustar el inventario (cuando salió material sin anotarse)
+
+Sirve para corregir el stock de **varios repuestos de una vez**, sin hacerlo uno por uno. Es la forma de dejar registrado lo que
+salió (o entró) sin anotarse en la aplicación.
+
+**Dar el permiso:** un dueño abre *Configuración → General → Usuarios → Editar* a un administrador del Depósito y tilda
+**"Puede ajustar el inventario"**. Los dueños ya lo tienen. Un usuario común no puede tenerlo.
+
+**Hacer un ajuste:** en el Depósito, pestaña **⚖️ Ajustes → + Nuevo ajuste**.
+1. Buscá un artículo y tocá **＋ Agregar**. Repetí con todos los que necesites.
+2. En cada uno elegí **➕ Suma** o **➖ Resta** y la cantidad. Te muestra cómo va a quedar el stock. **Restar no puede dejar el stock en negativo.**
+3. Escribí el **motivo** (obligatorio), por ejemplo "conteo de octubre".
+4. **Confirmar ajuste**. El sistema te pide una confirmación más, porque no se puede editar ni borrar.
+
+**Dónde queda registrado**
+- **En cada repuesto:** en su historial de movimientos aparece como "Ajuste (suma)" o "Ajuste (resta)", con el stock de antes y de después y el motivo.
+- **En la pestaña Ajustes:** la lista de todos los ajustes, con filtros (por ejemplo "Con restas", que es lo que salió sin anotarse), fechas y exportación a Excel.
+- **En el Historial del sistema** (*Configuración → General → Historial*): cada ajuste y cada línea, con quién lo hizo.
+
+**Si hubo un error:** un ajuste **no se edita ni se borra**. Un **dueño** puede **anularlo** (botón "Anular", con el motivo): el stock vuelve a como estaba,
+el ajuste sigue en la lista marcado como "Anulado" (con quién, cuándo y por qué) y la anulación también queda en el Historial.
+No se puede anular una suma si después salió material y el stock quedaría en negativo: en ese caso se hace otro ajuste que lo corrija.
+
+### 8.7 Quién cambió qué
 
 *Configuración → General → Historial* (solo dueños). Muestra, con quién y cuándo: cambios de repuestos y stock, retiros corregidos
-o borrados, usuarios, proveedores, comisionistas, contactos y reparaciones, restablecimientos de contraseña y cambios de módulos.
-Muestra los últimos 200 movimientos.
+o borrados, **ajustes de inventario y sus anulaciones**, usuarios (también cuando se da o se saca el permiso de ajustar), proveedores,
+comisionistas, contactos y reparaciones, restablecimientos de contraseña y cambios de módulos. Muestra los últimos 200 movimientos.
 
-### 8.7 Errores y sugerencias
+### 8.8 Errores y sugerencias
 
 - **Errores:** *Configuración → General → Errores*, para quien tenga ese permiso.
 - **Sugerencias:** *Configuración → General → Sugerencias*, para quien tenga ese permiso. Las manda cada usuario desde su menú.

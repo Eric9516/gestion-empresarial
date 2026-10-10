@@ -32,6 +32,7 @@ export type UsuarioInput = {
   puede_ver_errores: boolean;
   puede_resetear_contrasenas: boolean;
   puede_ver_sugerencias: boolean;
+  puede_ajustar_inventario: boolean;
 };
 
 const QUERY_KEY = ['usuarios_perfil'] as const;

@@ -21,7 +21,7 @@ interface Props {
 const emptyInput: UsuarioInput = {
   nombre: '', apellido: '', email: '', rol: 'user', mantenimiento_rol: null,
   puede_ver_retiros: false, puede_ver_errores: false, puede_resetear_contrasenas: false,
-  puede_ver_sugerencias: false,
+  puede_ver_sugerencias: false, puede_ajustar_inventario: false,
 };
 
 export default function UsuarioForm({ open, onClose, usuario }: Props) {
@@ -54,6 +54,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
         puede_ver_errores: usuario.puede_ver_errores === true,
         puede_resetear_contrasenas: usuario.puede_resetear_contrasenas === true,
         puede_ver_sugerencias: usuario.puede_ver_sugerencias === true,
+        puede_ajustar_inventario: usuario.puede_ajustar_inventario === true,
       }
       : emptyInput);
   }, [open, usuario]);
@@ -61,7 +62,8 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
   // Al subir a Administrador del Depósito se tilda "ver los retiros de todos"
   // (se puede destildar); al desactivar o bajar a Usuario, se destilda.
   function cambiarRolMantenimiento(valor: string) {
-    setInput(v => ({ ...v, mantenimiento_rol: valor || null, puede_ver_retiros: valor === 'admin' }));
+    // El permiso de ajustar el inventario es solo de administradores del Depósito: al cambiar el rol, se saca.
+    setInput(v => ({ ...v, mantenimiento_rol: valor || null, puede_ver_retiros: valor === 'admin', puede_ajustar_inventario: valor === 'admin' ? v.puede_ajustar_inventario : false }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -185,6 +187,18 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
                   ? 'Los administradores lo tienen tildado por defecto. Si lo destildás, solo ve sus propios retiros.'
                   : 'Si no está tildado, solo ve sus propios retiros.'}
                 {' '}Quien puede ver los retiros de todos también puede corregirlos y borrarlos; queda registrado en el Historial.
+              </p>
+            </div>
+          )}
+          {modulos.deposito && input.mantenimiento_rol === 'admin' && (
+            <div className="form-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
+                <input type="checkbox" checked={input.puede_ajustar_inventario} disabled={esUnoMismo} onChange={e => setInput(v => ({ ...v, puede_ajustar_inventario: e.target.checked }))} />
+                Puede ajustar el inventario (Depósito)
+              </label>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 24px' }}>
+                Puede sumar o restar stock de varios repuestos a la vez, para corregir lo que salió o entró sin anotarse.
+                Cada ajuste queda registrado en el Historial y en el historial de cada repuesto; solo un dueño puede anularlo.
               </p>
             </div>
           )}

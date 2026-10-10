@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioDesactivado, isMantenimientoAdmin, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import SinModulos from '../components/SinModulos';
@@ -16,8 +16,9 @@ import HistorialRetiros from '../features/retiros/HistorialRetiros';
 import QrScannerModal from '../features/scanner/QrScannerModal';
 import TareasScreen from '../features/tareas/TareasScreen';
 import ReparacionesScreen from '../features/reparaciones/ReparacionesScreen';
+import AjustesScreen from '../features/ajustes/AjustesScreen';
 
-type Tab = 'buscar' | 'carrito' | 'retiros' | 'tareas' | 'reparaciones' | 'informe';
+type Tab = 'buscar' | 'carrito' | 'retiros' | 'tareas' | 'reparaciones' | 'informe' | 'ajustes';
 
 function MantenimientoContent() {
   const { profile } = useAuth();
@@ -35,6 +36,8 @@ function MantenimientoContent() {
   // reserva a admin de Mantenimiento, no satura la navegación del común.
   const esAdmin = isMantenimientoAdmin(profile);
   const verReparaciones = esAdmin && integ.depositoConProveedores;
+  // Ajuste de inventario: solo quien tiene el permiso (la base lo impone igual).
+  const verAjustes = puedeAjustarInventario(profile);
 
   // Un usuario con Directorio desactivado queda encerrado en Mantenimiento —
   // sin botón de "Volver", igual que exitMantenimiento() en la app vieja.
@@ -48,6 +51,7 @@ function MantenimientoContent() {
     ...(verReparaciones ? [{ icon: '🔧', label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
     ...(modulos.tareas ? [{ icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
     ...(esAdmin ? [{ icon: '📊', label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
+    ...(verAjustes ? [{ icon: '⚖️', label: 'Ajustes', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
     ...(canExit ? [{ icon: '←', label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
 
@@ -89,6 +93,9 @@ function MantenimientoContent() {
         {esAdmin && (
           <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}>📊 Informe</button>
         )}
+        {verAjustes && (
+          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}>⚖️ Ajustes</button>
+        )}
       </nav>
 
       <main className="app-main">
@@ -105,6 +112,7 @@ function MantenimientoContent() {
         {tab === 'tareas' && modulos.tareas && <TareasScreen />}
         {tab === 'reparaciones' && verReparaciones && <ReparacionesScreen />}
         {tab === 'informe' && esAdmin && <InformeReposicion />}
+        {tab === 'ajustes' && verAjustes && <AjustesScreen />}
       </main>
 
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} navItems={navItems} />

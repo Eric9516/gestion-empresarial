@@ -58,11 +58,14 @@ const ajenos = todos.filter(u => !u.email.endsWith('@prueba-plantilla.com') && u
 if (ajenos.length) { console.error(`Este proyecto tiene usuarios que no son de prueba (${ajenos.length}). No toco nada.`); process.exit(1); }
 
 const limpieza = `
-truncate public.reparacion_entregas, public.reparacion_items, public.reparaciones, public.item_proveedores,
+-- Los ajustes de inventario no se borran (ni vaciando la tabla): para limpiar la instalación de pruebas se apagan las protecciones solo en esta sesión.
+set session_replication_role = replica;
+truncate public.ajuste_items, public.ajustes_inventario, public.reparacion_entregas, public.reparacion_items, public.reparaciones, public.item_proveedores,
   public.equipo_items, public.equipos, public.retiro_items, public.retiros, public.items, public.subfamilias,
   public.familias, public.sectores, public.planilla_familias, public.rotulos_bultos, public.rotulos_fotos,
   public.rotulos_generados, public.contactos, public.proveedores, public.comisionistas,
   public.task_history, public.tasks restart identity cascade;
+set session_replication_role = origin;
 -- (rotulo_disenos se borra aparte: la configuración apunta a esa tabla y un "cascade" también la vaciaría)
 delete from public.rotulo_disenos;
 alter table public.usuarios_perfil disable trigger trg_evitar_borrar_dueno;
@@ -338,13 +341,109 @@ await poner([]);
 ok('Y al ponerlos expresamente activos, todo vuelve', Object.values(await verTodas(dueno.token)).every(v => v === true));
 
 const reglas = sql(`select count(*)::int as n from pg_policies where policyname = 'bloqueo_modulo' and permissive = 'RESTRICTIVE'`);
-ok('Cada tabla de módulo tiene su regla de bloqueo (22 reglas)', /"n":\s*22/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
+ok('Cada tabla de módulo tiene su regla de bloqueo (24 reglas)', /"n":\s*24/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
 const regStorage = sql(`select count(*)::int as n from pg_policies where tablename = 'objects' and policyname like 'bloqueo_modulo_%'`);
 ok('Cada carpeta de archivos tiene su regla (3 reglas)', /"n":\s*3/.test(regStorage));
 const audLic = await http('/rest/v1/audit_log?select=descripcion,usuario_nombre&tabla=eq.licencia&order=id.desc', { token: dueno.token });
 ok('Cada cambio de la licencia quedó en el historial', audLic.datos?.length >= 6 && audLic.datos.some(x => /apagado/.test(x.descripcion)), audLic.datos?.[0]?.descripcion);
 r = await http('/rest/v1/audit_log?select=id&tabla=eq.licencia', { token: comun.token });
 ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length === 0 : r.estado >= 400);
+
+// ---------- 10b) ajuste de inventario ----------
+{ // (en su propio bloque para no chocar con los nombres de las secciones anteriores)
+const nuevoItem = async stock => (await admin('/rest/v1/items', { metodo: 'POST', cuerpo: { codigo: 'AJ' + randomBytes(3).toString('hex').toUpperCase(), numero: 1, descripcion: 'Repuesto de ajuste', familia_id: familiaId, subfamilia_id: subId, stock } })).datos?.[0]?.id;
+const stockDe = async id => Number((await admin(`/rest/v1/items?select=stock&id=eq.${id}`)).datos?.[0]?.stock);
+const ajustar = (token, motivo, lineas) => http('/rest/v1/rpc/crear_ajuste_inventario', { metodo: 'POST', token, cuerpo: { p_motivo: motivo, p_lineas: lineas } });
+const anular = (token, id, motivo) => http('/rest/v1/rpc/anular_ajuste_inventario', { metodo: 'POST', token, cuerpo: { p_ajuste_id: id, p_motivo: motivo } });
+const maxAudit = async () => Number((await admin('/rest/v1/audit_log?select=id&order=id.desc&limit=1')).datos?.[0]?.id ?? 0);
+const ajustador = { email: 'ajustador@prueba-plantilla.com', nombre: 'Admin con permiso', clave: clave() };
+const idAjustador = (await admin('/auth/v1/admin/users', { metodo: 'POST', cuerpo: { email: ajustador.email, password: ajustador.clave, email_confirm: true, user_metadata: { full_name: ajustador.nombre } } })).datos?.id;
+ajustador.id = idAjustador;
+ajustador.token = await ingresar(ajustador.email, ajustador.clave);
+const itemA = await nuevoItem(100), itemB = await nuevoItem(10);
+
+r = await ajustar(comun.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
+ok('Un usuario común del Depósito no puede ajustar el inventario', r.estado >= 400);
+await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: dueno.token, cuerpo: { mantenimiento_rol: 'admin' } });
+r = await ajustar(ajustador.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
+ok('Un administrador del Depósito SIN el permiso tampoco', r.estado >= 400);
+r = await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: ajustador.token, cuerpo: { puede_ajustar_inventario: true } });
+ok('Nadie se da el permiso a sí mismo', r.estado >= 400);
+let auditoriaAntes = await maxAudit();
+r = await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: dueno.token, cuerpo: { puede_ajustar_inventario: true } });
+ok('El dueño le da el permiso', r.estado < 300);
+let aud = (await admin(`/rest/v1/audit_log?select=descripcion&id=gt.${auditoriaAntes}&tabla=eq.usuarios_perfil`)).datos ?? [];
+ok('Dar el permiso queda en el historial', aud.some(x => /ajustar el inventario no → sí/.test(x.descripcion)), aud.map(x => x.descripcion).join(' | ').slice(0, 120));
+
+auditoriaAntes = await maxAudit();
+r = await ajustar(ajustador.token, 'conteo de prueba', [{ item_id: itemA, tipo: 'suma', cantidad: 5 }, { item_id: itemB, tipo: 'resta', cantidad: 4 }]);
+const ajusteId = r.datos;
+ok('Un administrador con el permiso ajusta dos repuestos de una vez', r.estado === 200 && typeof ajusteId === 'string', msg(r));
+ok('El stock cambió: +5 y -4', (await stockDe(itemA)) === 105 && (await stockDe(itemB)) === 6);
+aud = (await admin(`/rest/v1/audit_log?select=tabla,descripcion,usuario_email&id=gt.${auditoriaAntes}&order=id.asc`)).datos ?? [];
+ok('Quedó en el historial: el ajuste y cada línea (suma o resta, cuánto, stock de antes y de después), con quién lo hizo', aud.filter(x => x.tabla === 'ajustes_inventario').length === 1 && aud.filter(x => x.tabla === 'ajuste_items').length === 2 && aud.every(x => x.usuario_email === ajustador.email) && aud.some(x => /resta 4 \(stock 10 → 6\)/.test(x.descripcion)), aud.map(x => x.descripcion).join(' | ').slice(0, 200));
+ok('El cambio de stock no se duplica como edición suelta del repuesto', !aud.some(x => x.tabla === 'items'));
+const nAjustes = (await admin('/rest/v1/ajustes_inventario?select=id')).datos.length;
+r = await ajustar(ajustador.token, 'dejar en negativo', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }, { item_id: itemB, tipo: 'resta', cantidad: 7 }]);
+ok('Restar más de lo que hay se rechaza', r.estado >= 400 && /No se puede restar/.test(msg(r)), msg(r));
+ok('…y no queda nada a medias (ni ajuste ni cambio de stock)', (await admin('/rest/v1/ajustes_inventario?select=id')).datos.length === nAjustes && (await stockDe(itemA)) === 105 && (await stockDe(itemB)) === 6);
+for (const [nombre, motivo, lineas] of [['sin motivo', '  ', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]], ['sin artículos', 'x', []], ['con un artículo repetido', 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }, { item_id: itemA, tipo: 'resta', cantidad: 1 }]], ['con cantidad cero', 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 0 }]], ['con un tipo inventado', 'x', [{ item_id: itemA, tipo: 'multiplicar', cantidad: 2 }]]]) {
+  r = await ajustar(ajustador.token, motivo, lineas);
+  ok(`Un ajuste ${nombre} se rechaza`, r.estado >= 400, msg(r));
+}
+const sinPermisoLista = await http('/rest/v1/ajustes_inventario?select=id', { token: comun.token });
+const conPermisoLista = await http('/rest/v1/ajustes_inventario?select=id', { token: ajustador.token });
+ok('La lista de ajustes la ve quien puede ajustar, y nadie más', !(Array.isArray(sinPermisoLista.datos) && sinPermisoLista.datos.length) && conPermisoLista.datos?.length >= 1);
+const hist = await http('/rest/v1/rpc/historial_ajustes_por_item', { metodo: 'POST', token: comun.token, cuerpo: { p_item_id: itemB } });
+ok('Cualquiera del Depósito ve los ajustes en el historial del repuesto', hist.estado === 200 && hist.datos?.length === 1 && hist.datos[0].tipo === 'resta' && Number(hist.datos[0].stock_despues) === 6);
+
+for (const [quien, token] of [['El dueño', dueno.token], ['El administrador con permiso', ajustador.token]]) {
+  const intentos = [
+    await http('/rest/v1/ajustes_inventario', { metodo: 'POST', token, cuerpo: { usuario_id: dueno.id, motivo: 'a mano' } }),
+    await http(`/rest/v1/ajustes_inventario?id=eq.${ajusteId}`, { metodo: 'PATCH', token, cuerpo: { motivo: 'cambiado' } }),
+    await http(`/rest/v1/ajustes_inventario?id=eq.${ajusteId}`, { metodo: 'DELETE', token }),
+    await http(`/rest/v1/ajuste_items?ajuste_id=eq.${ajusteId}`, { metodo: 'PATCH', token, cuerpo: { cantidad: 1 } }),
+    await http(`/rest/v1/ajuste_items?ajuste_id=eq.${ajusteId}`, { metodo: 'DELETE', token }),
+  ];
+  ok(`${quien} no puede crear, editar ni borrar ajustes por la API directa`, intentos.every(x => x.estado >= 400 || (Array.isArray(x.datos) && x.datos.length === 0)), intentos.map(x => x.estado).join(','));
+}
+r = await admin(`/rest/v1/ajustes_inventario?id=eq.${ajusteId}`, { metodo: 'DELETE' });
+ok('Ni con la clave de servicio se borra un ajuste', r.estado >= 400 && /no se borran/i.test(msg(r)), msg(r));
+r = await admin(`/rest/v1/ajuste_items?ajuste_id=eq.${ajusteId}`, { metodo: 'PATCH', cuerpo: { cantidad: 1 } });
+ok('…ni se cambia una línea', r.estado >= 400);
+
+r = await anular(ajustador.token, ajusteId, 'quiero deshacerlo');
+ok('Un administrador con permiso NO puede anular: solo un dueño', r.estado >= 400 && /due[ñn]o/i.test(msg(r)), msg(r));
+r = await anular(dueno.token, ajusteId, '   ');
+ok('Anular sin motivo se rechaza', r.estado >= 400);
+auditoriaAntes = await maxAudit();
+r = await anular(dueno.token, ajusteId, 'cargué mal las cantidades');
+ok('El dueño anula el ajuste', r.estado < 300, msg(r));
+ok('El stock volvió a como estaba (100 y 10)', (await stockDe(itemA)) === 100 && (await stockDe(itemB)) === 10);
+const anulado = (await admin(`/rest/v1/ajustes_inventario?select=anulado,anulado_por,motivo_anulacion&id=eq.${ajusteId}`)).datos?.[0];
+ok('El ajuste sigue en la lista, marcado como anulado, con quién y por qué', anulado?.anulado === true && anulado.anulado_por === dueno.id && anulado.motivo_anulacion === 'cargué mal las cantidades');
+aud = (await admin(`/rest/v1/audit_log?select=tabla,descripcion,usuario_email&id=gt.${auditoriaAntes}&order=id.asc`)).datos ?? [];
+ok('La anulación quedó en el historial (el ajuste y cada línea), con el dueño como autor', aud.filter(x => x.tabla === 'ajustes_inventario').length === 1 && aud.filter(x => x.tabla === 'ajuste_items').length === 2 && aud.every(x => x.usuario_email === dueno.email), aud.map(x => x.descripcion).join(' | ').slice(0, 200));
+r = await anular(dueno.token, ajusteId, 'otra vez');
+ok('Un ajuste anulado no se anula dos veces', r.estado >= 400);
+r = await admin(`/rest/v1/ajustes_inventario?id=eq.${ajusteId}`, { metodo: 'PATCH', cuerpo: { motivo_anulacion: 'borrar la huella' } });
+ok('…y los datos de la anulación no se pueden cambiar después', r.estado >= 400);
+
+// anular una SUMA cuando después salió material: no se puede (dejaría el stock en negativo)
+const itemC = await nuevoItem(0);
+const aSuma = await ajustar(ajustador.token, 'ingreso sin anotar', [{ item_id: itemC, tipo: 'suma', cantidad: 10 }]);
+await ajustar(ajustador.token, 'salieron 7 sin anotar', [{ item_id: itemC, tipo: 'resta', cantidad: 7 }]);
+r = await anular(dueno.token, aSuma.datos, 'error');
+ok('No se puede anular una suma si después salieron unidades (dejaría el stock en negativo)', r.estado >= 400 && /ya salieron unidades/i.test(msg(r)) && (await stockDe(itemC)) === 3, msg(r));
+
+r = await http('/rest/v1/rpc/crear_ajuste_inventario', { metodo: 'POST', cuerpo: { p_motivo: 'x', p_lineas: [{ item_id: itemA, tipo: 'suma', cantidad: 1 }] } });
+ok('Sin sesión no se puede ajustar', r.estado >= 400);
+await poner(['deposito']); // Depósito apagado
+r = await ajustar(dueno.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
+ok('Con el módulo Depósito apagado no se ajusta (ni el dueño)', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
+await poner([]);
+
+}
 
 // ---------- 11) sin sesión: solo se ve la configuración de la empresa ----------
 const provSinSesion = (await admin('/rest/v1/proveedores', { metodo: 'POST', cuerpo: { nombre: 'Proveedor de prueba sin sesión' } })).datos?.[0]?.id;

@@ -44,11 +44,26 @@ Cada persona tiene en `usuarios_perfil`:
 - **Los archivos de las carpetas públicas** (fotos de repuestos, rótulos) se pueden abrir con su dirección exacta aunque
   el módulo esté apagado; lo que el bloqueo impide es subir, borrar y listar. Las direcciones no se pueden adivinar.
 
+## Ajuste de inventario
+
+Sumar o restar stock de varios repuestos de una vez (para corregir lo que salió o entró sin anotarse). Las reglas:
+
+- **Permiso propio** ("Puede ajustar el inventario"): solo lo da un dueño, solo sirve para administradores del Depósito, y los dueños siempre lo tienen.
+  Darlo o sacarlo queda en el historial.
+- **No se edita ni se borra, ni con la clave de servicio, ni vaciando las tablas:** la protección está en la base (disparadores), no en la pantalla.
+  Un error lo **anula un dueño**: el ajuste queda en la lista como anulado (quién, cuándo y por qué) y el stock vuelve a como estaba.
+- **Restar nunca deja el stock en negativo**, y un ajuste es todo o nada: si una línea falla, no queda ninguna.
+- **El historial del sistema registra todo:** el ajuste, cada línea (suma o resta, cuánto, stock de antes y de después, motivo, quién), la anulación
+  (cabecera y una fila por línea) y el cambio del permiso. El cambio de stock que hace el ajuste no se duplica como edición suelta del repuesto.
+- Los ajustes los lee quien puede ajustar; el historial de **un** repuesto lo ve cualquiera del Depósito (igual que sus retiros).
+- Pertenece al módulo **Depósito**: apagado, no se ajusta, no se anula, no se lee (ni el dueño). Al volver a prenderlo, los ajustes siguen ahí.
+- Para limpiar una instalación **de pruebas** hace falta apagar esas protecciones solo en la sesión (`session_replication_role = replica`); la prueba automática lo hace.
+
 ## Licencia de módulos
 
 Qué módulos tiene cada instalación lo define solo quien vende, con `pnpm cliente modulos` (clave de servicio). Vive en la
 tabla `licencia`, que ningún usuario con sesión puede escribir (se probó con el dueño y con un usuario común). Un módulo
-apagado queda **bloqueado para todos, incluido el dueño**, con una regla de seguridad por tabla (22 tablas), una por carpeta
+apagado queda **bloqueado para todos, incluido el dueño**, con una regla de seguridad por tabla (24 tablas), una por carpeta
 de archivos (3) y una guarda en las funciones del servidor que se saltan las reglas de tabla (9, más 3 consultas). **Solo
 está activo lo que la licencia dice de forma expresa:** un módulo que no figura (por ejemplo, uno nuevo) está apagado. Los
 módulos que dependen de otros se bloquean si falta alguno (por ejemplo, las reparaciones necesitan Depósito y Proveedores).

@@ -25,8 +25,8 @@ export default function Modal({ open, onClose, title, children, footer, large }:
             className={`modal${large ? ' modal-lg' : ''}`}
             aria-describedby={undefined}
             onEscapeKeyDown={e => {
-              // Con un menú desplegable abierto adentro, Esc cierra primero el menú.
-              if ((e.target as HTMLElement | null)?.closest?.('[role="menu"]')) e.preventDefault();
+              // Con un menú o una lista desplegable abierta adentro, Esc cierra primero eso.
+              if ((e.target as HTMLElement | null)?.closest?.('[role="menu"], [role="combobox"][aria-expanded="true"]')) e.preventDefault();
             }}
             onOpenAutoFocus={e => {
               // El foco va al campo marcado con data-autofocus; si no hay, a la ventana

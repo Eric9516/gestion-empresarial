@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     if (perfilErr || perfil?.activo !== true) throw new Error('No autorizado — tu cuenta está desactivada');
     if (perfil?.es_owner !== true) throw new Error('No autorizado — solo el propietario puede crear usuarios');
 
-    const { email, password, nombre, apellido, rol, mantenimiento_rol, puede_ver_retiros, puede_ver_errores, puede_resetear_contrasenas, puede_ver_sugerencias } = await req.json();
+    const { email, password, nombre, apellido, rol, mantenimiento_rol, puede_ver_retiros, puede_ver_errores, puede_resetear_contrasenas, puede_ver_sugerencias, puede_ajustar_inventario } = await req.json();
     if (!email || !password || !nombre) throw new Error('Faltan datos obligatorios');
     if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
     if (mantenimiento_rol && !['comun', 'admin'].includes(mantenimiento_rol)) {
@@ -83,6 +83,8 @@ Deno.serve(async (req) => {
       puede_ver_errores: puede_ver_errores === true,
       puede_resetear_contrasenas: puede_resetear_contrasenas === true,
       puede_ver_sugerencias: puede_ver_sugerencias === true,
+      // solo tiene sentido para administradores del Depósito
+      puede_ajustar_inventario: puede_ajustar_inventario === true && mantenimiento_rol === 'admin',
       activo: true,
     });
     if (insertErr) {

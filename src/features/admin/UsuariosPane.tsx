@@ -60,7 +60,7 @@ export default function UsuariosPane() {
   const columns: Column<Usuario>[] = [
     { header: 'Nombre', render: u => <strong>{u.nombre} {u.apellido}</strong> },
     { header: 'Email', render: u => u.email },
-    { header: 'Rol', render: u => { const r = ROL_BADGE[u.rol ?? 'user'] ?? ROL_BADGE.user; return <><span className={`badge ${r.cls}`}>{r.label}</span>{u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema"> 👑 Dueño</span>}</>; } },
+    { header: 'Directorio', render: u => { const r = ROL_BADGE[u.rol ?? 'user'] ?? ROL_BADGE.user; return <><span className={`badge ${r.cls}`}>{r.label}</span>{u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema"> 👑 Dueño</span>}</>; } },
     { header: modulos.deposito ? 'Depósito' : 'Permisos', render: badges },
     { header: 'Estado', render: u => <span className={`badge ${u.activo !== false ? 'badge-active' : 'badge-inactive'}`}>{u.activo !== false ? 'Activo' : 'Inactivo'}</span> },
     { header: '', render: acciones },
