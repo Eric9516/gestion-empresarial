@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
+  useEffect(() => { document.title = nombreEmpresa; }, [nombreEmpresa]);
 
   // authError cubre fallas DESPUÉS del login (ej: no se pudo cargar el perfil,
   // cuenta desactivada) — error local cubre fallas del login en sí. Se muestra
