@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -56,7 +57,7 @@ export default function ProveedorForm({ open, onClose, proveedor }: Props) {
       toast(proveedor ? 'Proveedor actualizado' : 'Proveedor agregado', 'success');
       onClose();
     } catch (e) {
-      toast('Error al guardar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al guardar: ' + mensajeDeError(e), 'error');
     }
   }
 

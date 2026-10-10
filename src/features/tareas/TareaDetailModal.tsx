@@ -6,6 +6,7 @@ import ReprogramarModal from './ReprogramarModal';
 import TareaForm from './TareaForm';
 import { useCancelarTarea, useCompletarTarea, useTareaHistorialQuery, useTareasQuery } from './useTareas';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 const TRAFFIC_LABEL: Record<string, string> = { green: 'Normal', yellow: 'Atención', red: 'Crítica' };
 const ESTADO_LABEL: Record<string, string> = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' };
@@ -45,7 +46,7 @@ export default function TareaDetailModal({ open, onClose, taskId }: Props) {
       toast('Tarea completada', 'success');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -56,7 +57,7 @@ export default function TareaDetailModal({ open, onClose, taskId }: Props) {
       toast('Tarea cancelada', 'success');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 

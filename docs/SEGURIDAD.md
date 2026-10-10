@@ -20,7 +20,16 @@ Cada persona tiene en `usuarios_perfil`:
 - A un dueño no se lo puede bloquear ni eliminar (ni desde la app ni desde las funciones del servidor): primero se
   le quita el cargo. No se puede quitar al último.
 - El primer dueño se define una sola vez, al instalar, con la clave de servicio. Después esa función se rechaza.
-- Sin sesión no se ve ningún dato privado.
+- **Sin sesión solo se lee la configuración de la empresa** (nombre, logo y colores del ingreso). El rol sin sesión no tiene
+  ningún permiso de tabla ni puede ejecutar funciones propias. La prueba lo comprueba tabla por tabla y funciona como alarma:
+  si una tabla o función nueva queda abierta, falla.
+- **Un usuario bloqueado no puede nada en la base**, aunque ya tenga la sesión abierta o entre por la API directa: ni lee, ni
+  escribe, ni sube archivos, ni ejecuta funciones. Solo lee su propio perfil (la pantalla lo necesita para avisarle que su cuenta
+  está desactivada y cerrarle la sesión, lo que hace en menos de un minuto). Una regla de seguridad por tabla (`requiere_usuario_activo`)
+  se suma a todas las demás.
+- **"Hoy" es el día de la empresa**, no el de la hora universal: la zona horaria se elige en *Configuración → Empresa* (por defecto
+  Argentina). De 21:00 a 24:00 en Argentina ya es "mañana" en hora universal; antes eso impedía crear tareas.
+- Eliminar usuarios solo requiere ser dueño (antes también exigía ser administrador del Directorio, aunque la pantalla mostraba el botón).
 - Un módulo apagado no se puede leer ni escribir (tablas, funciones y archivos), y cada cambio de la licencia queda en el historial.
 - Cada cambio de repuestos (a mano), de retiros (correcciones y borrados), de usuarios, de proveedores, de comisionistas, de
   contactos y de reparaciones queda en el historial con quién lo hizo y qué cambió. El ajuste automático de stock que
@@ -28,8 +37,10 @@ Cada persona tiene en `usuarios_perfil`:
 
 ## Cosas que son así a propósito
 
-- **La configuración se puede leer sin iniciar sesión** (nombre, dirección, teléfono, email, logo y diseño del rótulo):
-  la pantalla de ingreso muestra el nombre y el logo. No poner ahí nada que no deba ser público.
+- **La configuración se puede leer sin iniciar sesión** (nombre, dirección, teléfono, email, logo, colores, zona horaria y diseño
+  del rótulo): la pantalla de ingreso muestra el nombre y el logo. No poner ahí nada que no deba ser público.
+- **Las funciones nuevas hay que cerrarlas a mano.** Postgres da permiso de ejecución a todo el mundo a cada función que se crea.
+  Cada función nueva lleva `revoke execute ... from public, anon` y un `grant` a quien corresponda (ver `NUEVO-MODULO.md`).
 - **Los archivos de las carpetas públicas** (fotos de repuestos, rótulos) se pueden abrir con su dirección exacta aunque
   el módulo esté apagado; lo que el bloqueo impide es subir, borrar y listar. Las direcciones no se pueden adivinar.
 
@@ -45,11 +56,13 @@ módulos que dependen de otros se bloquean si falta alguno (por ejemplo, las rep
 ## Qué no queda en el historial (todavía)
 
 Envíos (rótulos), configuración de la empresa y del rótulo, sectores, familias y subfamilias, y proveedores por repuesto.
+Tampoco queda **el alta de un retiro** (sí sus correcciones y borrados): registrar cada retiro llenaría el historial de ruido.
 El historial muestra los últimos 200 movimientos.
 
 ## Para cada instalación
 
-- Desactivar el registro público en Supabase (*Authentication → Sign In / Providers*). Ver `NUEVO-CLIENTE.md`.
+- Desactivar el registro público en Supabase (*Authentication → Sign In / Providers*). Ver `NUEVO-CLIENTE.md`. El instalador
+  lo comprueba al terminar (`nuevo` y `actualizar`) y avisa en pantalla si sigue abierto.
 - La clave de servicio y la contraseña de la base **nunca** van en el hosting ni en Git: solo en `clientes/` (privado)
   y como secreto de las funciones.
 - Las claves públicas (`VITE_SUPABASE_*`) sí van en el hosting; están pensadas para eso, porque los permisos reales

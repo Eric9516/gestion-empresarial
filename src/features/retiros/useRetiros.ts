@@ -5,6 +5,7 @@ import { puedeVerTodosLosRetiros } from '../../lib/types';
 import { exportarExcel } from '../../lib/exportExcel';
 import { nombreUsuario, type UsuarioBasico } from '../../lib/usuarios';
 import type { RetiroCartLine } from './RetiroCartContext';
+import { finDelDiaISO, inicioDelDiaISO } from '../../lib/fechaHoy';
 
 export interface RetiroHistorialItem {
   id: string;
@@ -69,7 +70,7 @@ export function useHistorialRetirosQuery(fechaFiltro: string, usuarioFiltro: str
         .order('created_at', { ascending: false });
 
       if (fechaFiltro) {
-        query = query.gte('created_at', `${fechaFiltro}T00:00:00`).lte('created_at', `${fechaFiltro}T23:59:59`);
+        query = query.gte('created_at', inicioDelDiaISO(fechaFiltro)).lte('created_at', finDelDiaISO(fechaFiltro));
       } else {
         const desde = new Date();
         desde.setDate(desde.getDate() - 30);
@@ -171,8 +172,8 @@ export function useExportarRetirosPeriodo() {
       const { data: retiros, error } = await supabase
         .from('retiros')
         .select('id, usuario_id, created_at, observacion_general, sectores(nombre), retiro_items(id, cantidad, observacion, items(codigo, descripcion))')
-        .gte('created_at', `${desde}T00:00:00`)
-        .lte('created_at', `${hasta}T23:59:59`)
+        .gte('created_at', inicioDelDiaISO(desde))
+        .lte('created_at', finDelDiaISO(hasta))
         .order('created_at', { ascending: true });
       if (error) throw error;
       if (!retiros?.length) return 0;

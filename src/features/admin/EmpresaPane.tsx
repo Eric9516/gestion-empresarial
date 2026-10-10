@@ -5,6 +5,9 @@ import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
 import { COLOR_DEPOSITO_ORIGINAL, COLOR_PRIMARIO_ORIGINAL, esColorValido, textoLegibleConBlanco } from '../../lib/marca';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { ZONAS_HORARIAS, ZONA_HORARIA_POR_DEFECTO } from '../../lib/zonasHorarias';
+import { mensajeDeError } from '@/lib/errores';
 
 // Selector de un color de marca. Vacío ('') significa "el color original de la app".
 function ColorMarca({ etiqueta, valor, original, onChange }: { etiqueta: string; valor: string; original: string; onChange: (v: string) => void }) {
@@ -43,12 +46,14 @@ export default function EmpresaPane() {
   const [logoBase64, setLogoBase64] = useState('');
   const [colorPrimario, setColorPrimario] = useState('');
   const [colorDeposito, setColorDeposito] = useState('');
+  const [zonaHoraria, setZonaHoraria] = useState(ZONA_HORARIA_POR_DEFECTO);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!config) return;
     setColorPrimario(esColorValido(config.color_primario) ? config.color_primario : '');
     setColorDeposito(esColorValido(config.color_deposito) ? config.color_deposito : '');
+    setZonaHoraria(config.zona_horaria || ZONA_HORARIA_POR_DEFECTO);
     setNombre(config.empresa_nombre ?? '');
     setDireccion(config.empresa_direccion ?? '');
     setTelefono(config.empresa_telefono ?? '');
@@ -83,10 +88,11 @@ export default function EmpresaPane() {
         logo_base64: logoBase64,
         color_primario: colorPrimario || null,
         color_deposito: colorDeposito || null,
+        zona_horaria: zonaHoraria,
       });
       toast('Configuración guardada', 'success');
-    } catch {
-      toast('Error al guardar configuración', 'error');
+    } catch (e) {
+      toast('Error al guardar configuración: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }
@@ -119,6 +125,14 @@ export default function EmpresaPane() {
         <div className="form-group"><label htmlFor="empresa-pane-2">Dirección</label><Input id="empresa-pane-2" value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Av. Principal 1234" /></div>
         <div className="form-group"><label htmlFor="empresa-pane-3">Teléfono</label><Input id="empresa-pane-3" type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="(0000) 000-0000" /></div>
         <div className="form-group"><label htmlFor="empresa-pane-4">Email</label><Input id="empresa-pane-4" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="contacto@empresa.com" /></div>
+        <div className="form-group">
+          <label htmlFor="empresa-pane-zona">Zona horaria</label>
+          <Select id="empresa-pane-zona" value={zonaHoraria} onChange={e => setZonaHoraria(e.target.value)}>
+            {ZONAS_HORARIAS.some(z => z.id === zonaHoraria) ? null : <option value={zonaHoraria}>{zonaHoraria}</option>}
+            {ZONAS_HORARIAS.map(z => <option key={z.id} value={z.id}>{z.etiqueta}</option>)}
+          </Select>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Define qué día es "hoy" para las tareas y para corregir retiros del mismo día.</p>
+        </div>
         <div className="form-group">
           <label>Colores de la marca</label>
           <ColorMarca etiqueta="Color principal" valor={colorPrimario} original={COLOR_PRIMARIO_ORIGINAL} onChange={setColorPrimario} />

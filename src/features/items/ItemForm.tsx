@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -60,7 +61,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
       setInput(prev => ({ ...prev, familia_id: nueva.id, subfamilia_id: '' }));
       setNuevoCodigo(null);
       toast('Familia creada', 'success');
-    } catch (e) { toast('Error al crear la familia: ' + (e instanceof Error ? e.message : ''), 'error'); }
+    } catch (e) { toast('Error al crear la familia: ' + mensajeDeError(e), 'error'); }
   }
 
   function abrirNuevaSubfamilia() {
@@ -74,7 +75,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
       setInput(prev => ({ ...prev, subfamilia_id: nueva.id }));
       setNuevoCodigo(null);
       toast('Subfamilia creada', 'success');
-    } catch (e) { toast('Error al crear la subfamilia: ' + (e instanceof Error ? e.message : ''), 'error'); }
+    } catch (e) { toast('Error al crear la subfamilia: ' + mensajeDeError(e), 'error'); }
   }
 
   async function handleSave() {
@@ -89,7 +90,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
       toast(item ? 'Repuesto actualizado' : 'Repuesto agregado', 'success');
       onClose();
     } catch (e) {
-      toast('Error al guardar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al guardar: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

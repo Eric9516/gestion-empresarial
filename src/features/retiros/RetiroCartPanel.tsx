@@ -8,6 +8,7 @@ import { useConfirmarRetiro } from './useRetiros';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 const SUGERENCIA_STOCK_INCORRECTO = 'El stock registrado es incorrecto: hay más unidades disponibles.';
 
@@ -51,7 +52,7 @@ export default function RetiroCartPanel() {
       setResumenAbierto(false);
       setPendiente(null);
     } catch (e) {
-      toast('Error al confirmar el retiro: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al confirmar el retiro: ' + mensajeDeError(e), 'error');
     } finally {
       setConfirmando(false);
     }

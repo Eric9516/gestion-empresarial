@@ -144,6 +144,23 @@ function obtenerClaves(ref) {
   return { anon, servicio };
 }
 
+// El registro público de usuarios se cierra a mano en el panel de Supabase (la CLI no lo permite). Este aviso lo
+// comprueba de verdad, para que no se pase por alto: sin cerrarlo, cualquiera con la dirección del proyecto puede
+// crearse una cuenta (quedaría sin permisos, pero conviene que no exista).
+async function avisarSiElRegistroEstaAbierto(ref, anon) {
+  try {
+    const r = await fetch(`https://${ref}.supabase.co/auth/v1/settings`, { headers: { apikey: anon } });
+    const ajustes = await r.json();
+    if (ajustes.disable_signup === false) {
+      log(`\n ⚠ ATENCIÓN: el registro público de usuarios de ${ref} está ABIERTO.\n   Cerralo en Supabase → Authentication → Sign In / Providers → "Allow new users to sign up" (apagado).`);
+    } else if (ajustes.disable_signup === true) {
+      log('  ✔ El registro público de usuarios está cerrado.');
+    }
+  } catch {
+    // Sin conexión o respuesta rara: no se avisa nada (es solo una ayuda).
+  }
+}
+
 function publicarFunciones(ref, claveServicio) {
   paso('Publicando las funciones del servidor');
   supabase(['secrets', 'set', `PROJECT_SECRET_KEY=${claveServicio}`, '--project-ref', ref], { silencioso: true });
@@ -283,6 +300,8 @@ async function nuevo(op) {
     '',
   ].join('\n'), { mode: 0o600 });
 
+  await avisarSiElRegistroEstaAbierto(ref, anon);
+
   log(`
 ══════════════════════════════════════════════════════════════
  ✔ Listo: ${nombre}
@@ -312,6 +331,7 @@ async function actualizar(op) {
   if (!op['solo-base']) {
     const claves = obtenerClaves(op.ref);
     publicarFunciones(op.ref, claves.servicio);
+    await avisarSiElRegistroEstaAbierto(op.ref, claves.anon);
   }
   log('\n✔ Cliente actualizado.');
 }

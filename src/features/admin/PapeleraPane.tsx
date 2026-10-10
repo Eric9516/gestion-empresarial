@@ -3,6 +3,7 @@ import { useConfirm } from '../../components/ConfirmProvider';
 import { registrarErrorAccion } from '../../lib/errorLogging';
 import { usePapeleraQuery, useRestaurarDePapelera, usePurgarDePapelera, type FilaPapelera } from './usePapelera';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 const ETIQUETA_TIPO: Record<FilaPapelera['tipo'], string> = {
   proveedor: '🏭 Proveedor',
@@ -24,7 +25,7 @@ export default function PapeleraPane() {
       toast('Restaurado', 'success');
     } catch (e) {
       await registrarErrorAccion('Error al restaurar desde la Papelera', e);
-      toast('Error al restaurar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al restaurar: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -35,7 +36,7 @@ export default function PapeleraPane() {
       toast('Eliminado definitivamente', 'success');
     } catch (e) {
       await registrarErrorAccion('Error al purgar desde la Papelera', e);
-      toast('Error al eliminar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al eliminar: ' + mensajeDeError(e), 'error');
     }
   }
 

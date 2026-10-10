@@ -14,7 +14,7 @@ export default function SinModulos() {
       <div style={{ fontSize: 40 }}>🧩</div>
       <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)' }}>No hay módulos disponibles</div>
       <p style={{ maxWidth: 380, color: 'var(--text-mid)', fontSize: 14 }}>
-        Los módulos a los que tenés acceso están desactivados. Pedile al dueño del sistema que los active en Configuración → General → Módulos.
+        Los módulos a los que tenés acceso no están activos en esta instalación. Los activa quien te brinda el sistema: comunicate con ellos.
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {tieneAccesoAdmin(profile) && <Button variant="primary" onClick={() => navigate('/admin')}>Ir a Configuración</Button>}

@@ -5,6 +5,7 @@ import { fechaHoyISO } from '../../lib/fechaHoy';
 import { useReprogramarTarea } from './useTareas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -31,7 +32,7 @@ export default function ReprogramarModal({ open, onClose, taskId, onReprogramada
       onClose();
       onReprogramada();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

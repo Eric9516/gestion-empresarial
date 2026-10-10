@@ -36,10 +36,11 @@ Deno.serve(async (req) => {
 
     const { data: perfil, error: perfilErr } = await supabaseAuth
       .from('usuarios_perfil')
-      .select('puede_resetear_contrasenas, es_owner, nombre, apellido')
+      .select('puede_resetear_contrasenas, es_owner, nombre, apellido, activo')
       .eq('id', user.id)
       .single();
     if (perfilErr) throw perfilErr;
+    if (perfil?.activo !== true) throw new Error('No autorizado — tu cuenta está desactivada');
     const esOwner = perfil?.es_owner === true;
     if (!esOwner && perfil?.puede_resetear_contrasenas !== true) {
       throw new Error('No autorizado — no tenés permiso para resetear contraseñas');

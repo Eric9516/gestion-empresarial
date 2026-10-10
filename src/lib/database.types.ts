@@ -111,6 +111,7 @@ export type Database = {
         Row: {
           color_deposito: string | null
           color_primario: string | null
+          zona_horaria: string
           comisionistas_campos_custom: Json | null
           empresa_direccion: string | null
           empresa_email: string | null
@@ -127,6 +128,7 @@ export type Database = {
         Insert: {
           color_deposito?: string | null
           color_primario?: string | null
+          zona_horaria?: string
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
           empresa_email?: string | null
@@ -143,6 +145,7 @@ export type Database = {
         Update: {
           color_deposito?: string | null
           color_primario?: string | null
+          zona_horaria?: string
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
           empresa_email?: string | null
@@ -1416,6 +1419,10 @@ export type Database = {
       is_mantenimiento_admin: { Args: never; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       modulo_activo: { Args: { p_modulo: string }; Returns: boolean }
+      usuario_activo: { Args: never; Returns: boolean }
+      hoy_local: { Args: never; Returns: string }
+      fecha_local: { Args: { p: string }; Returns: string }
+      zona_horaria_valida: { Args: { p: string }; Returns: boolean }
       process_pending_tasks_for_user: {
         Args: { target_user_id: string }
         Returns: number

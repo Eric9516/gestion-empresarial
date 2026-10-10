@@ -4,6 +4,7 @@ import { useToast } from './ToastProvider';
 import { useEnviarSugerencia } from '../features/admin/useSugerencias';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { mensajeDeError } from '@/lib/errores';
 
 export default function SugerenciaModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mensaje, setMensaje] = useState('');
@@ -22,7 +23,7 @@ export default function SugerenciaModal({ open, onClose }: { open: boolean; onCl
       toast('¡Gracias! Tu sugerencia fue enviada', 'success');
       handleClose();
     } catch (e) {
-      toast('Error al enviar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al enviar: ' + mensajeDeError(e), 'error');
     }
   }
 

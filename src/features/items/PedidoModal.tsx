@@ -14,6 +14,7 @@ import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery, type Item
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   items: Item[];
@@ -114,7 +115,7 @@ export default function PedidoModal({ items, onClose, onDescargado }: Props) {
       });
     } catch (err) {
       await registrarErrorAccion('Error al generar el PDF de la solicitud de presupuesto', err);
-      toast('No se pudo generar el PDF: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('No se pudo generar el PDF: ' + mensajeDeError(err), 'error');
       return null;
     }
   }

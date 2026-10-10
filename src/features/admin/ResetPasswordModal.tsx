@@ -5,6 +5,7 @@ import { useResetPasswordUsuario } from './useUsuarios';
 import type { Usuario } from './useUsuarios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -29,7 +30,7 @@ export default function ResetPasswordModal({ open, onClose, usuario }: Props) {
       toast('Contraseña actualizada', 'success');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

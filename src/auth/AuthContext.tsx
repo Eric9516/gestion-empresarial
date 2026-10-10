@@ -93,7 +93,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function refrescar() {
       if (document.visibilityState !== 'visible') return;
       const { data } = await supabase.from('usuarios_perfil').select('*').eq('id', userId as string).single();
-      if (!activo || !data || data.activo === false) return;
+      if (!activo || !data) return;
+      if (data.activo === false) {
+        // Lo bloquearon con la sesión abierta: se lo saca ya, igual que si intentara entrar de nuevo.
+        await supabase.auth.signOut();
+        setUser(null); setProfile(null);
+        setAuthError('Tu cuenta está desactivada. Contactá al administrador.');
+        return;
+      }
       setProfile(prev => (prev && JSON.stringify(prev) === JSON.stringify(data) ? prev : data));
     }
     const intervalo = window.setInterval(() => void refrescar(), 60_000);

@@ -10,6 +10,7 @@ import { useProveedoresQuery } from '../proveedores/useProveedores';
 import { useRotuloParaEditarQuery } from './useRotulos';
 import { Button } from '@/components/ui/button';
 import { useModulos } from '../config/useModulos';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -57,7 +58,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
       abrirPdfBlob(blob);
     } catch (err) {
       await registrarErrorAccion('Error al generar el PDF de un rótulo', err);
-      toast('No se pudo generar el PDF: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('No se pudo generar el PDF: ' + mensajeDeError(err), 'error');
     }
   }
 
@@ -69,7 +70,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
       abrirPdfBlob(blob);
     } catch (err) {
       await registrarErrorAccion('Error al generar el PDF combinado de un envío', err);
-      toast('No se pudo generar el PDF: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('No se pudo generar el PDF: ' + mensajeDeError(err), 'error');
     } finally {
       setGenerandoTodos(false);
     }

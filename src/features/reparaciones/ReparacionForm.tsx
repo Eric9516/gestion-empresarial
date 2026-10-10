@@ -10,6 +10,7 @@ import { useCrearReparacion } from './useReparaciones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 interface LineaNueva {
   item_id: string;
@@ -84,7 +85,7 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
       handleClose();
     } catch (err) {
       await registrarErrorAccion('Error al crear una reparación', err);
-      toast('Error al guardar la reparación: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al guardar la reparación: ' + mensajeDeError(err), 'error');
     }
   }
 

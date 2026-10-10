@@ -6,6 +6,7 @@ import TareaForm from './TareaForm';
 import TareasStats from './TareasStats';
 import { useCompletarTarea, useProcesarTareasPendientes, useTareasQuery, type Tarea } from './useTareas';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 type Filtro = 'todas' | 'green' | 'yellow' | 'red' | 'stagnant' | 'completed';
 type Vista = 'wide' | 'list' | 'grid';
@@ -88,7 +89,7 @@ export default function TareasScreen() {
       await completarTarea.mutateAsync(id);
       toast('Tarea completada', 'success');
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 

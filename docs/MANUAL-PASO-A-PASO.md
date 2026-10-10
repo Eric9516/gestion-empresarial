@@ -242,6 +242,10 @@ Sin esto, cualquiera que conozca la dirección del proyecto podría crearse una 
 
 > Los nombres de los botones de Supabase pueden cambiar con el tiempo. Lo que buscás es la opción que permite o impide
 > que la gente se registre sola.
+>
+> **No hace falta fiarse de la memoria:** el instalador (`pnpm cliente nuevo` y `pnpm cliente actualizar`) comprueba de verdad si el
+> registro sigue abierto y, si lo está, escribe un aviso con `⚠ ATENCIÓN` al terminar. Si dice `✔ El registro público de usuarios está
+> cerrado`, ya está.
 
 ### Paso 6. Publicá la aplicación en Netlify
 
@@ -471,7 +475,7 @@ la configuración de los módulos que el cliente tiene. Queda siempre disponible
 
 | Paso | Qué se completa | Si el módulo falta |
 |---|---|---|
-| Empresa y marca | Logo, nombre, dirección, teléfono, email, **colores** | — (siempre) |
+| Empresa y marca | Logo, nombre, dirección, teléfono, email, **zona horaria**, **colores** | — (siempre) |
 | Rótulos de envío | Diseño del rótulo | Sin `envios`, no aparece |
 | Campos de comisionistas | Datos propios de cada comisionista | Sin `comisionistas`, no aparece |
 | Sectores | Las áreas de la empresa | Sin `deposito`, no aparece |
@@ -536,6 +540,10 @@ dueño**, no hay quién lo resetee: por eso conviene tener **dos dueños** (cap�
 
 *Configuración → General → Usuarios → Editar → Bloquear*. No se puede bloquear a un dueño (primero se le quita el cargo).
 
+El bloqueo **corta todo en la base de datos**: la persona no puede leer ni escribir nada ni subir archivos, aunque ya tenga la
+aplicación abierta o entre por otro camino. Su pantalla la saca sola en menos de un minuto con el aviso "Tu cuenta está
+desactivada". Se puede **desbloquear** con el mismo botón y vuelve a funcionar sin más trámite.
+
 ### 8.6 Quién cambió qué
 
 *Configuración → General → Historial* (solo dueños). Muestra, con quién y cuándo: cambios de repuestos y stock, retiros corregidos
@@ -565,7 +573,8 @@ Muestra los últimos 200 movimientos.
 | El cliente **ve un módulo** que no contrató | Corré el mismo comando y revisá. Si figura activo, apagalo con `--desactivar ... --confirmo`. |
 | La pantalla dice **"No hay módulos disponibles"** | Todos los módulos a los que tiene acceso están apagados. Revisá la licencia. |
 | Netlify publicó pero la página sale en blanco o no deja entrar | Casi seguro las dos variables de Netlify están mal copiadas o faltan. Revisalas y volvé a publicar. |
-| Un cliente dice que se registró solo | Falta cerrar el registro público (capítulo 4, paso 5). |
+| Un cliente dice que se registró solo | Falta cerrar el registro público (capítulo 4, paso 5). El instalador avisa si está abierto. |
+| Las tareas "de hoy" aparecen en el día equivocado, o no se puede crear una tarea de noche | La **zona horaria** de la empresa está mal. Se cambia en *Configuración → General → Empresa → Zona horaria* (por defecto Argentina). |
 | Algo extraño que no figura acá | Copiá el mensaje completo y consultame. No cambies nada en la base de datos a mano. |
 
 **Regla de oro:** si un comando muestra un mensaje que empieza con `✖`, **no es un desastre**: es el sistema avisando que no
@@ -593,8 +602,10 @@ pnpm cliente actualizar --ref IDENTIFICADOR-DE-CREMAC --marcar-hasta 20260101000
 ```
 
 **Qué hace:** registra como "ya hechas" las migraciones hasta la base inicial (que Cremac ya tiene), sin ejecutarlas, y aplica las siguientes:
-las mejoras de la plantilla, los colores, la **licencia de módulos** (con todos los módulos activos), el bloqueo y el asistente
-(que **no se abre** en una instalación que ya tenía dueño).
+las mejoras de la plantilla, los colores, la **licencia de módulos** (con todos los módulos activos), el bloqueo, el asistente
+(que **no se abre** en una instalación que ya tenía dueño), y tres correcciones de seguridad y de hora que salieron de la prueba
+exhaustiva: los contactos de proveedores dejan de ser legibles sin iniciar sesión, un usuario bloqueado deja de tener permisos en
+la base, y "hoy" pasa a ser el día de la empresa (se podían crear tareas de noche).
 
 **Después:**
 
@@ -602,8 +613,8 @@ las mejoras de la plantilla, los colores, la **licencia de módulos** (con todos
    con las mismas dos variables de siempre).
 2. Revisar que todo funcione como antes.
 
-**Importante:** hay una corrección pendiente de aplicar en las funciones de Cremac (la de eliminar usuarios). Se aplica sola
-al hacer este paso, porque la plantilla ya la trae corregida.
+**Importante:** las funciones de Cremac que crean, resetean y eliminan usuarios también se corrigen solas con este paso, porque
+la plantilla ya las trae corregidas (eliminar usuarios ya no deja una cuenta a medias, y solo pide ser dueño).
 
 ---
 

@@ -16,6 +16,7 @@ import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery, useMarcar
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 const stockDe = (it: Item) => it.stock ?? 0;
 
@@ -225,7 +226,7 @@ export default function InformeReposicion() {
       descargarPdfBlob(blob, `informe_reposicion_${fechaHoyISO()}.pdf`);
     } catch (err) {
       await registrarErrorAccion('Error al exportar el informe de reposición a PDF', err);
-      toast('No se pudo generar el PDF: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('No se pudo generar el PDF: ' + mensajeDeError(err), 'error');
     }
   }
 

@@ -4,6 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { registrarErrorAccion } from '../../lib/errorLogging';
 import { analizarExcelFamilias, useAplicarImportacionFamilias, useSubirPlanillaFamilias, type AnalisisFamilias } from './useImportarFamilias';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 export default function ImportarFamiliasModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast = useToast();
@@ -81,7 +82,7 @@ export default function ImportarFamiliasModal({ open, onClose }: { open: boolean
       handleClose();
     } catch (err) {
       await registrarErrorAccion('Error al importar familias/subfamilias desde Excel', err);
-      toast('Error al guardar los cambios: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al guardar los cambios: ' + mensajeDeError(err), 'error');
     }
   }
 

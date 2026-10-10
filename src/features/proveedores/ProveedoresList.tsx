@@ -13,6 +13,7 @@ import RotuloForm from '../rotulos/RotuloForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 export default function ProveedoresList() {
   const { profile } = useAuth();
@@ -53,7 +54,7 @@ export default function ProveedoresList() {
       await deleteProveedor.mutateAsync(p.id);
       toast('Proveedor eliminado', 'error');
     } catch (e) {
-      toast('Error al eliminar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al eliminar: ' + mensajeDeError(e), 'error');
     }
   }
 

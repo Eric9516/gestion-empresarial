@@ -16,6 +16,7 @@ import { CAMPOS_POR_SLOT, SLOTS_FOTO, useDeleteItem, useDeleteItemFoto, useSwapI
 import { useLineasPendientesPorItem } from '../reparaciones/useReparaciones';
 import { useModulos } from '../config/useModulos';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   item: Item | null;
@@ -68,7 +69,7 @@ function FotoCarousel({ item, admin, puedeSubir }: { item: Item; admin: boolean;
       await uploadFoto.mutateAsync({ id: item.id, file, slot });
       toast('Foto actualizada', 'success');
     } catch (err) {
-      toast('Error al subir la foto: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al subir la foto: ' + mensajeDeError(err), 'error');
     } finally {
       e.target.value = '';
     }
@@ -80,7 +81,7 @@ function FotoCarousel({ item, admin, puedeSubir }: { item: Item; admin: boolean;
       await deleteFoto.mutateAsync({ id: item.id, fotoUrl: url, slot });
       toast('Foto eliminada', 'success');
     } catch (err) {
-      toast('Error al eliminar la foto: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al eliminar la foto: ' + mensajeDeError(err), 'error');
     }
   }
 

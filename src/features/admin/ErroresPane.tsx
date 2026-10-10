@@ -3,6 +3,7 @@ import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
 import { useErrorLogsQuery, useLimpiarErrorLogs, type ErrorLogRow } from './useErrorLogs';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 const columns: Column<ErrorLogRow>[] = [
   { header: 'Fecha', render: r => <span style={{ whiteSpace: 'nowrap' }}>{new Date(r.created_at).toLocaleString('es-AR')}</span> },
@@ -40,7 +41,7 @@ export default function ErroresPane() {
       await limpiar.mutateAsync();
       toast('Log de errores limpiado', 'success');
     } catch (e) {
-      toast('Error al limpiar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al limpiar: ' + mensajeDeError(e), 'error');
     }
   }
 

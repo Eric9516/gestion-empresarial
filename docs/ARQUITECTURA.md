@@ -67,6 +67,12 @@ clientes/            datos privados de cada cliente (no se sube a Git)
 - `20260101000300_licencia_y_bloqueo_de_modulos.sql`: la licencia, el bloqueo por módulo y su historial.
 - `20260101000400_configuracion_inicial.sql`: marca de cierre del asistente de configuración inicial.
 - `20260101000500_modulos_apagados_por_defecto.sql`: lo que no figura en la licencia está apagado.
+- `20260101000600_cierre_de_lecturas_publicas.sql`: sin sesión solo se lee la configuración (contactos y planilla de familias
+  eran públicos); se quitan los permisos de tabla del rol sin sesión y se cierran las funciones que quedaban abiertas.
+- `20260101000700_usuarios_bloqueados_sin_permisos.sql`: `usuario_activo()`; los permisos (dueño, administradores, ver retiros, etc.)
+  exigen un usuario activo y cada tabla y las carpetas de archivos suman la regla `requiere_usuario_activo`.
+- `20260101000800_zona_horaria_de_la_empresa.sql`: `configuracion.zona_horaria`, `hoy_local()` y `fecha_local()`; las tareas y la
+  corrección de retiros "del mismo día" usan el día de la empresa y no el de la hora universal.
 
 Una migración nueva se agrega como un archivo con fecha mayor; `pnpm cliente actualizar` la aplica en cada cliente.
 **Nunca se edita una migración que ya se aplicó en algún cliente.**

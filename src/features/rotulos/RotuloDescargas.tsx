@@ -5,6 +5,7 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import type { Contacto, Proveedor } from '../proveedores/useProveedores';
 import type { RotuloBulto, RotuloGenerado } from './useRotulos';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   rotulo: RotuloGenerado;
@@ -25,7 +26,7 @@ export default function RotuloDescargas({ rotulo, bultos, proveedor, contactos }
       return await generarRotuloBlob(rotulo, b, proveedor, contactos);
     } catch (err) {
       await registrarErrorAccion('Error al generar el PDF de un rótulo', err);
-      toast('No se pudo generar el PDF: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('No se pudo generar el PDF: ' + mensajeDeError(err), 'error');
       return null;
     }
   }

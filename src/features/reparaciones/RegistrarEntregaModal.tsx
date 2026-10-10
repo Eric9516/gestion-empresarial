@@ -8,6 +8,7 @@ import { cantidadPendiente, useRegistrarEntrega, type ReparacionItemConDetalle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   linea: ReparacionItemConDetalle | null;
@@ -62,7 +63,7 @@ export default function RegistrarEntregaModal({ linea, onClose }: Props) {
       onClose();
     } catch (err) {
       await registrarErrorAccion('Error al registrar una entrega de reparación', err);
-      toast('Error al registrar la entrega: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al registrar la entrega: ' + mensajeDeError(err), 'error');
     }
   }
 

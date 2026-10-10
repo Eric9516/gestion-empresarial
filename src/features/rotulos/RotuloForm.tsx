@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useModulos } from '../config/useModulos';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -110,7 +111,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
       setMotivo('');
       toast('Envío guardado', 'success');
     } catch (e) {
-      toast('No se pudo guardar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('No se pudo guardar: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

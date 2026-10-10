@@ -4,6 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { useExportarRetirosPeriodo } from './useRetiros';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -27,7 +28,7 @@ export default function ExportarPeriodoModal({ open, onClose }: Props) {
       if (!cantidad) { toast('No hay retiros para exportar', 'error'); return; }
       onClose();
     } catch (e) {
-      toast('Error al exportar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al exportar: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

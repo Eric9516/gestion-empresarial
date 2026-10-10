@@ -13,6 +13,8 @@ import ExportarPeriodoModal from './ExportarPeriodoModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
+import { fechaHoyISO, fechaLocalDe } from '../../lib/fechaHoy';
 
 const VENTANA_DEVOLUCION_MS = 24 * 60 * 60 * 1000;
 
@@ -49,7 +51,7 @@ interface FilaHistorial {
 function groupByDay(retiros: RetiroHistorial[]) {
   const groups: Record<string, RetiroHistorial[]> = {};
   for (const r of retiros) {
-    const day = r.created_at.slice(0, 10);
+    const day = fechaLocalDe(r.created_at);
     (groups[day] ??= []).push(r);
   }
   return groups;
@@ -61,7 +63,7 @@ export default function HistorialRetiros() {
   const [usuarioFiltro, setUsuarioFiltro] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [vista, setVista] = useState<Vista>('tabla');
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaHoyISO();
   const [diasAbiertos, setDiasAbiertos] = useState<Set<string>>(() => new Set([hoy]));
   const [retirosAbiertos, setRetirosAbiertos] = useState<Set<string>>(new Set());
 
@@ -145,7 +147,7 @@ export default function HistorialRetiros() {
       toast(`Devolviste ${n} unidad(es) de ${devolviendo.codigo}`, 'success');
       setDevolviendo(null);
     } catch (e) {
-      toast('Error al registrar la devolución: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al registrar la devolución: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -154,7 +156,7 @@ export default function HistorialRetiros() {
     try {
       await deleteItemMut.mutateAsync({ retiroItemId, retiroId });
       toast('Ítem eliminado', 'success');
-    } catch (e) { toast('Error al eliminar: ' + (e instanceof Error ? e.message : ''), 'error'); }
+    } catch (e) { toast('Error al eliminar: ' + mensajeDeError(e), 'error'); }
   }
 
   async function handleExportarPendientes() {
@@ -163,7 +165,7 @@ export default function HistorialRetiros() {
       if (!cantidad) { toast('No hay retiros pendientes de exportar', 'error'); return; }
       toast(`${cantidad} retiro(s) exportado(s) y marcados`, 'success');
     } catch (e) {
-      toast('Error al exportar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al exportar: ' + mensajeDeError(e), 'error');
     }
   }
 

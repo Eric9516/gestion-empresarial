@@ -346,6 +346,75 @@ ok('Cada cambio de la licencia quedó en el historial', audLic.datos?.length >= 
 r = await http('/rest/v1/audit_log?select=id&tabla=eq.licencia', { token: comun.token });
 ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length === 0 : r.estado >= 400);
 
+// ---------- 11) sin sesión: solo se ve la configuración de la empresa ----------
+const provSinSesion = (await admin('/rest/v1/proveedores', { metodo: 'POST', cuerpo: { nombre: 'Proveedor de prueba sin sesión' } })).datos?.[0]?.id;
+await admin('/rest/v1/contactos', { metodo: 'POST', cuerpo: { proveedor_id: provSinSesion, nombre: 'Contacto de prueba', email: 'contacto@prueba-plantilla.com', celular: '3510000000' } });
+for (const t of ['contactos', 'planilla_familias', 'proveedores', 'items', 'comisionistas', 'usuarios_perfil', 'audit_log', 'licencia', 'tasks', 'retiros']) {
+  r = await http(`/rest/v1/${t}?select=*&limit=1`);
+  ok(`Sin sesión no se puede leer ${t}`, r.estado >= 400 || (Array.isArray(r.datos) && r.datos.length === 0), `HTTP ${r.estado}`);
+}
+r = await http('/rest/v1/configuracion?select=empresa_nombre&limit=1');
+ok('Sin sesión SÍ se lee el nombre de la empresa (lo necesita la pantalla de ingreso)', r.estado === 200 && r.datos?.length === 1);
+r = await http('/rest/v1/proveedores', { metodo: 'POST', cuerpo: { nombre: 'No debería' } });
+ok('Sin sesión no se puede escribir', r.estado >= 400);
+r = await http('/rest/v1/rpc/exigir_modulo', { metodo: 'POST', cuerpo: { p_modulos: ['deposito'] } });
+ok('Sin sesión no se ejecutan funciones de la base', r.estado >= 400);
+const abiertas = sql(`select count(*)::int as n from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prorettype not in ('trigger'::regtype, 'event_trigger'::regtype) and has_function_privilege('anon', p.oid, 'execute') and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')`);
+ok('Ninguna función propia se puede ejecutar sin sesión (una función nueva hay que cerrarla: ver NUEVO-MODULO.md)', /"n":\s*0\b/.test(abiertas), (abiertas.match(/"n":\s*\d+/) || [''])[0]);
+const permisosAnon = sql(`select count(*)::int as n from information_schema.role_table_grants where grantee = 'anon' and table_schema = 'public' and not (table_name = 'configuracion' and privilege_type = 'SELECT')`);
+ok('Sin sesión no hay permisos de tabla, salvo leer la configuración', /"n":\s*0\b/.test(permisosAnon), (permisosAnon.match(/"n":\s*\d+/) || [''])[0]);
+const sinRegla = sql(`select count(*)::int as n from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r' and c.relrowsecurity and c.relname not in ('configuracion', 'licencia', 'usuarios_perfil', 'migraciones_aplicadas') and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = c.relname and p.policyname = 'requiere_usuario_activo')`);
+ok('Toda tabla tiene su regla de "usuario activo" (una tabla nueva necesita la suya: ver NUEVO-MODULO.md)', /"n":\s*0\b/.test(sinRegla), (sinRegla.match(/"n":\s*\d+/) || [''])[0]);
+
+// ---------- 12) usuarios bloqueados ----------
+await admin('/rest/v1/proveedores', { metodo: 'POST', cuerpo: { nombre: 'Proveedor visible para activos' } });
+r = await http('/rest/v1/proveedores?select=id&limit=1', { token: comun.token });
+ok('Un usuario activo ve los proveedores', Array.isArray(r.datos) && r.datos.length > 0);
+await admin(`/rest/v1/usuarios_perfil?id=eq.${comun.id}`, { metodo: 'PATCH', cuerpo: { activo: false } });
+for (const t of ['proveedores', 'items', 'contactos', 'retiros', 'sectores', 'familias']) {
+  r = await http(`/rest/v1/${t}?select=*&limit=1`, { token: comun.token });
+  ok(`Un usuario BLOQUEADO con sesión abierta no lee ${t}`, r.estado >= 400 || (Array.isArray(r.datos) && r.datos.length === 0), `HTTP ${r.estado}`);
+}
+r = await http('/rest/v1/retiros', { metodo: 'POST', token: comun.token, cuerpo: { usuario_id: comun.id } });
+ok('…no puede crear retiros', r.estado >= 400);
+r = await http('/rest/v1/usuarios_perfil?select=email', { token: comun.token });
+ok('…solo puede leer su propio perfil (la pantalla lo necesita para avisarle)', Array.isArray(r.datos) && r.datos.length === 1 && r.datos[0].email === comun.email, `${r.datos?.length} perfiles`);
+r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: comun.token, cuerpo: { p_title: 'No debería' } });
+ok('…tampoco crea tareas', r.estado >= 400);
+const subidaBloqueado = await fetch(`${URL}/storage/v1/object/items/prueba-bloqueado.txt`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${comun.token}`, 'Content-Type': 'text/plain' }, body: 'x' });
+ok('…ni sube archivos', subidaBloqueado.status >= 400, `HTTP ${subidaBloqueado.status}`);
+await admin(`/rest/v1/usuarios_perfil?id=eq.${comun.id}`, { metodo: 'PATCH', cuerpo: { activo: true } });
+r = await http('/rest/v1/proveedores?select=id&limit=1', { token: comun.token });
+ok('Al desbloquearlo, todo vuelve a funcionar sin volver a iniciar sesión', Array.isArray(r.datos) && r.datos.length > 0);
+// el dueño sigue siendo dueño aunque otro quiera bloquearlo
+r = await http(`/rest/v1/usuarios_perfil?id=eq.${dueno.id}`, { metodo: 'PATCH', token: deposito.token, cuerpo: { activo: false } });
+ok('A un dueño sigue sin poder bloqueárselo', r.estado >= 400);
+
+// ---------- 13) eliminar usuarios: solo hace falta ser dueño ----------
+const aBorrar = (await admin('/auth/v1/admin/users', { metodo: 'POST', cuerpo: { email: 'borrar@prueba-plantilla.com', password: clave(), email_confirm: true } })).datos?.id;
+r = await funcion('delete-user', deposito.token, { userId: aBorrar });
+const perfilDeposito = await perfil(deposito.email);
+ok('Un dueño con rol "usuario" en el Directorio SÍ puede eliminar usuarios (antes fallaba con "solo administradores")', r.estado === 200 && perfilDeposito?.es_owner === true && perfilDeposito?.rol === 'user', msg(r));
+r = await funcion('delete-user', comun.token, { userId: deposito.id });
+ok('Un usuario que no es dueño no elimina usuarios', r.estado >= 400);
+
+// ---------- 14) zona horaria de la empresa ----------
+const diaEn = zona => new Date().toLocaleDateString('sv-SE', { timeZone: zona });
+const hoyBase = async () => (await http('/rest/v1/rpc/hoy_local', { metodo: 'POST', token: dueno.token, cuerpo: {} })).datos;
+let hb = await hoyBase();
+ok('La fecha de "hoy" de la base sigue la zona de la empresa (Argentina por defecto)', hb === diaEn('America/Argentina/Buenos_Aires'), `${hb}`);
+r = await http('/rest/v1/configuracion?id=eq.1', { metodo: 'PATCH', token: dueno.token, cuerpo: { zona_horaria: 'Pacific/Kiritimati' } });
+ok('El dueño puede cambiar la zona horaria', r.estado < 300);
+hb = await hoyBase();
+ok('Cambiarla cambia el "hoy" de la base (Kiritimati va 14 horas adelante de UTC)', hb === diaEn('Pacific/Kiritimati'), `${hb}`);
+r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'Tarea de hoy en esa zona', p_description: '', p_traffic_level: 'green', p_assigned_date: hb } });
+ok('Se puede crear una tarea para el "hoy" de la zona de la empresa (aunque en hora universal sea otro día)', r.estado === 200, msg(r));
+r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'Ayer', p_description: '', p_traffic_level: 'green', p_assigned_date: '2020-01-01' } });
+ok('Una fecha pasada se sigue rechazando', r.estado >= 400 && /anterior a hoy/.test(msg(r)), msg(r));
+r = await http('/rest/v1/configuracion?id=eq.1', { metodo: 'PATCH', token: dueno.token, cuerpo: { zona_horaria: 'Marte/Olimpo' } });
+ok('Una zona horaria inventada se rechaza', r.estado >= 400);
+await http('/rest/v1/configuracion?id=eq.1', { metodo: 'PATCH', token: dueno.token, cuerpo: { zona_horaria: 'America/Argentina/Buenos_Aires' } });
+
 // ---------- limpieza ----------
 await admin('/rest/v1/configuracion?id=eq.1', { metodo: 'PATCH', cuerpo: configOriginal });
 sql(limpieza);

@@ -33,10 +33,10 @@ Deno.serve(async (req) => {
 
     const { data: perfil, error: perfilErr } = await supabaseAuth
       .from('usuarios_perfil')
-      .select('rol, es_owner')
+      .select('es_owner, activo')
       .eq('id', user.id)
       .single();
-    if (perfilErr || perfil?.rol !== 'admin') throw new Error('No autorizado — solo administradores');
+    if (perfilErr || perfil?.activo !== true) throw new Error('No autorizado — tu cuenta está desactivada');
     if (perfil?.es_owner !== true) throw new Error('No autorizado — solo el propietario puede eliminar usuarios');
 
     const { userId } = await req.json();

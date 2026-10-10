@@ -5,6 +5,7 @@ import { useAddSector, useDeleteSector, useRenameSector, useSectoresQuery, useTo
 import { useMenu } from '../../lib/useMenu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { mensajeDeError } from '@/lib/errores';
 
 function SectorMenu({ sector, onModificar, onToggle, onDelete }: { sector: Sector; onModificar: () => void; onToggle: () => void; onDelete: () => void }) {
   const { abierto: open, cerrar, contenedorRef, disparador, menu } = useMenu();
@@ -50,7 +51,7 @@ export default function SectoresPanel() {
       setNombre('');
       toast('Sector agregado', 'success');
     } catch (e) {
-      toast('Error al agregar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al agregar: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -85,7 +86,7 @@ export default function SectoresPanel() {
       toast(
         esConflictoDeUso
           ? `"${sector.nombre}" ya tiene retiros registrados — no se puede eliminar. Usá "Bloquear" en su lugar.`
-          : 'Error al eliminar: ' + (e instanceof Error ? e.message : ''),
+          : 'Error al eliminar: ' + mensajeDeError(e),
         'error',
       );
     }

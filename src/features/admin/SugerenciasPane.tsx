@@ -3,6 +3,7 @@ import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
 import { useLimpiarSugerencias, useSugerenciasQuery, type Sugerencia } from './useSugerencias';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 const columns: Column<Sugerencia>[] = [
   { header: 'Fecha', render: s => <span style={{ whiteSpace: 'nowrap' }}>{new Date(s.created_at).toLocaleString('es-AR')}</span> },
@@ -36,7 +37,7 @@ export default function SugerenciasPane() {
       await limpiar.mutateAsync();
       toast('Sugerencias limpiadas', 'success');
     } catch (e) {
-      toast('Error al limpiar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al limpiar: ' + mensajeDeError(e), 'error');
     }
   }
 

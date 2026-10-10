@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useModulos } from '../config/useModulos';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -85,7 +86,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
       }
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }
@@ -111,7 +112,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
       toast(`${nombre} ahora es dueño del sistema`, 'success');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -124,7 +125,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
       toast(`${nombre} ya no es dueño del sistema`, 'success');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -136,7 +137,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
       toast('Usuario eliminado', 'error');
       onClose();
     } catch (e) {
-      toast('Error: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error: ' + mensajeDeError(e), 'error');
     }
   }
 

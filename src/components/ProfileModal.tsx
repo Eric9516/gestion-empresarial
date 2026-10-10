@@ -6,6 +6,7 @@ import { isDirectorioAdmin, isDirectorioDesactivado, isMantenimientoAdmin, isOwn
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useModulos } from '../features/config/useModulos';
+import { mensajeDeError } from '@/lib/errores';
 
 export default function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile, updateOwnProfile } = useAuth();
@@ -30,7 +31,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
       toast('Perfil actualizado', 'success');
       onClose();
     } catch (e) {
-      toast('Error al guardar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al guardar: ' + mensajeDeError(e), 'error');
     } finally {
       setSaving(false);
     }

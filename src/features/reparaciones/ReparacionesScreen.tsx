@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 function coincide(rep: ReparacionConDetalle, query: string): boolean {
   const palabras = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -114,7 +115,7 @@ export default function ReparacionesScreen() {
       toast('Reparación eliminada', 'success');
     } catch (err) {
       await registrarErrorAccion('Error al eliminar una reparación', err);
-      toast('Error al eliminar: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al eliminar: ' + mensajeDeError(err), 'error');
     }
   }
 

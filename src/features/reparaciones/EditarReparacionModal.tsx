@@ -8,6 +8,7 @@ import { useEditarReparacion, type ReparacionConDetalle } from './useReparacione
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   reparacion: ReparacionConDetalle | null;
@@ -56,7 +57,7 @@ export default function EditarReparacionModal({ reparacion, onClose }: Props) {
       onClose();
     } catch (err) {
       await registrarErrorAccion('Error al editar una reparación', err);
-      toast('Error al guardar: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al guardar: ' + mensajeDeError(err), 'error');
     }
   }
 

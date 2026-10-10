@@ -4,6 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
 import { useAprobarFotoPendiente, useFotosPendientesQuery, useRechazarFotoPendiente, type FilaFotoPendiente } from './useFotosPendientes';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 export default function FotosPendientesPane() {
   const { data: filas, isLoading, isError } = useFotosPendientesQuery();
@@ -18,7 +19,7 @@ export default function FotosPendientesPane() {
       await aprobar.mutateAsync({ item_id: f.item_id, slot: f.slot });
       toast('Foto aprobada', 'success');
     } catch (e) {
-      toast('Error al aprobar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al aprobar: ' + mensajeDeError(e), 'error');
     }
   }
 
@@ -28,7 +29,7 @@ export default function FotosPendientesPane() {
       await rechazar.mutateAsync({ item_id: f.item_id, slot: f.slot, fotoUrl: f.foto_url });
       toast('Foto eliminada', 'success');
     } catch (e) {
-      toast('Error al eliminar: ' + (e instanceof Error ? e.message : ''), 'error');
+      toast('Error al eliminar: ' + mensajeDeError(e), 'error');
     }
   }
 

@@ -5,6 +5,7 @@ import { useConfirm } from '../../components/ConfirmProvider';
 import { publicUrl } from '../../lib/storage';
 import { MAX_FOTOS_ROTULO, useEliminarRotuloFoto, useRotuloFotosQuery, useSubirRotuloFotos } from './useRotuloFotos';
 import { Button } from '@/components/ui/button';
+import { mensajeDeError } from '@/lib/errores';
 
 interface Props {
   open: boolean;
@@ -41,7 +42,7 @@ export default function RotuloFotosModal({ open, onClose, grupoId, proveedorId, 
     try {
       await subirFotos.mutateAsync({ grupoId, proveedorId, proveedorNombre, files: files.slice(0, disponibles) });
     } catch (err) {
-      toast('Error al subir una foto: ' + (err instanceof Error ? err.message : ''), 'error');
+      toast('Error al subir una foto: ' + mensajeDeError(err), 'error');
     } finally {
       setSubiendo(false);
       e.target.value = '';

@@ -40,10 +40,11 @@ Deno.serve(async (req) => {
     // que ni él mismo tiene.
     const { data: perfil, error: perfilErr } = await supabaseAuth
       .from('usuarios_perfil')
-      .select('es_owner')
+      .select('es_owner, activo')
       .eq('id', user.id)
       .single();
-    if (perfilErr || perfil?.es_owner !== true) throw new Error('No autorizado — solo el propietario puede crear usuarios');
+    if (perfilErr || perfil?.activo !== true) throw new Error('No autorizado — tu cuenta está desactivada');
+    if (perfil?.es_owner !== true) throw new Error('No autorizado — solo el propietario puede crear usuarios');
 
     const { email, password, nombre, apellido, rol, mantenimiento_rol, puede_ver_retiros, puede_ver_errores, puede_resetear_contrasenas, puede_ver_sugerencias } = await req.json();
     if (!email || !password || !nombre) throw new Error('Faltan datos obligatorios');
