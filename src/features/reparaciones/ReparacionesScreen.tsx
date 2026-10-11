@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 function coincide(rep: ReparacionConDetalle, query: string): boolean {
   const palabras = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -132,8 +133,8 @@ export default function ReparacionesScreen() {
       header: '', render: r => (
         <div className="td-actions">
           <Button variant="primary" size="sm" onClick={() => setDetalleId(r.id)}>Ver</Button>
-          <Button variant="ghost" size="icon" title="Editar reparación" onClick={() => setEditando(r)}>✏️</Button>
-          <Button variant="dangerGhost" size="icon" title="Eliminar toda la reparación" onClick={() => void handleEliminar(r)}>🗑</Button>
+          <Button variant="ghost" size="icon" title="Editar reparación" onClick={() => setEditando(r)}><Icono n="editar" /></Button>
+          <Button variant="dangerGhost" size="icon" title="Eliminar toda la reparación" onClick={() => void handleEliminar(r)}><Icono n="borrar" /></Button>
         </div>
       ),
     },
@@ -161,8 +162,8 @@ export default function ReparacionesScreen() {
         </div>
         <div className="prov-card-actions">
           <Button variant="primary" size="sm" onClick={() => setDetalleId(r.id)}>Ver</Button>
-          <Button variant="ghost" size="sm" onClick={() => setEditando(r)}>✏️ Editar</Button>
-          <Button variant="dangerGhost" size="sm" onClick={() => void handleEliminar(r)}>🗑 Eliminar reparación</Button>
+          <Button variant="ghost" size="sm" onClick={() => setEditando(r)}><Icono n="editar" /> Editar</Button>
+          <Button variant="dangerGhost" size="sm" onClick={() => void handleEliminar(r)}><Icono n="borrar" /> Eliminar reparación</Button>
         </div>
       </div>
     );
@@ -171,7 +172,7 @@ export default function ReparacionesScreen() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">🔧 Reparaciones</div>
+        <div className="section-title"><Icono n="herramienta" /> Reparaciones</div>
       </div>
 
       <div className="toolbar">
@@ -195,7 +196,7 @@ export default function ReparacionesScreen() {
           data={filas}
           renderCard={renderCard}
           keyField={r => r.id}
-          emptyIcon="🔧"
+          emptyIcon={<Icono n="herramienta" />}
           emptyTitle="No hay reparaciones"
           emptyDescription={filtro === 'pendientes' ? 'No hay ninguna reparación pendiente en este momento.' : 'Probá con otro filtro o búsqueda.'}
         />

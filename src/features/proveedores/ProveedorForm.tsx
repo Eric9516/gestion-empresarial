@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -104,7 +105,7 @@ export default function ProveedorForm({ open, onClose, proveedor }: Props) {
 
         <div className="contacts-section full">
           <div className="contacts-header">
-            <div className="contacts-title">👤 Contactos</div>
+            <div className="contacts-title"><Icono n="usuario" /> Contactos</div>
             <Button
               type="button"
               variant="ghost" size="sm"
@@ -116,7 +117,7 @@ export default function ProveedorForm({ open, onClose, proveedor }: Props) {
           {fields.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Sin contactos aún. Hacé clic en "Agregar contacto".</p>}
           {fields.map((f, i) => (
             <div className="contact-row" key={f.id}>
-              <button type="button" className="btn-remove-contact" onClick={() => remove(i)}>✕</button>
+              <button type="button" className="btn-remove-contact" onClick={() => remove(i)}><Icono n="cerrar" /></button>
               <div className="contact-row-grid">
                 <div className="form-group">
                   <label htmlFor={`contacto-${f.id}-nombre`}>Nombre y apellido *</label>

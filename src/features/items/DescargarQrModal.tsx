@@ -4,6 +4,7 @@ import { generarQRPDF, type FormatoEtiqueta } from '../../lib/generarQrPdf';
 import FormatoEtiquetaSelect from './FormatoEtiquetaSelect';
 import type { Item } from './useItems';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -26,11 +27,11 @@ export default function DescargarQrModal({ open, onClose, item }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title={`🏷️ Descargar QR — ${item.codigo}`}
+      title={<><Icono n="etiqueta" /> Descargar QR — {item.codigo}</>}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button variant="success" onClick={handleDescargar}>📥 Descargar</Button>
+          <Button variant="success" onClick={handleDescargar}><Icono n="importar" /> Descargar</Button>
         </>
       }
     >

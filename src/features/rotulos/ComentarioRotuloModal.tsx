@@ -6,6 +6,7 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { useGuardarComentarioRotulo } from './useRotulos';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   rotuloId: string | null;
@@ -53,7 +54,7 @@ export default function ComentarioRotuloModal({ rotuloId, comentarioActual, pued
 
   if (!puedeEditar) {
     return (
-      <Modal open onClose={onClose} title="💬 Comentario" footer={<Button variant="ghost" onClick={onClose}>Cerrar</Button>}>
+      <Modal open onClose={onClose} title={<><Icono n="mensaje" /> Comentario</>} footer={<Button variant="ghost" onClick={onClose}>Cerrar</Button>}>
         <p style={{ fontSize: 14, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>
           {comentarioActual || 'Sin comentario.'}
         </p>
@@ -65,7 +66,7 @@ export default function ComentarioRotuloModal({ rotuloId, comentarioActual, pued
     <Modal
       open
       onClose={onClose}
-      title="💬 Comentario"
+      title={<><Icono n="mensaje" /> Comentario</>}
       footer={
         <>
           {comentarioActual && <Button variant="dangerGhost" disabled={guardar.isPending} onClick={() => void handleBorrar()}>Borrar</Button>}

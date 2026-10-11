@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono, Punto } from '@/components/Icono';
 
 export default function ProveedoresList() {
   const { profile } = useAuth();
@@ -88,9 +89,9 @@ export default function ProveedoresList() {
       header: 'Contactos',
       render: p => p.contactos.length === 0
         ? <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Sin contactos</span>
-        : p.contactos.map(c => <span className="contact-chip" key={c.id}>👤 {c.nombre}{c.cargo ? ` · ${c.cargo}` : ''}</span>),
+        : p.contactos.map(c => <span className="contact-chip" key={c.id}><Icono n="usuario" /> {c.nombre}{c.cargo ? ` · ${c.cargo}` : ''}</span>),
     },
-    { header: 'Estado', render: p => <span className={`badge ${p.activo ? 'badge-active' : 'badge-inactive'}`}>{p.activo ? '● Activo' : '○ Inactivo'}</span> },
+    { header: 'Estado', render: p => <span className={`badge ${p.activo ? 'badge-active' : 'badge-inactive'}`}>{p.activo ? <><Punto /> Activo</> : <><Punto hueco /> Inactivo</>}</span> },
     {
       header: 'Modificado',
       render: p => (
@@ -104,10 +105,10 @@ export default function ProveedoresList() {
       header: 'Acciones',
       render: p => (
         <div className="td-actions">
-          <Button variant="ghost" size="icon" title="Ver" onClick={() => setViewing(p)}>👁</Button>
-          {admin && <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(p); setFormOpen(true); }}>✏️</Button>}
-          <Button variant="ghost" size="icon" title="Rótulo" onClick={() => setRotuloProvId(p.id)}>🏷️</Button>
-          {admin && <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(p)}>🗑</Button>}
+          <Button variant="ghost" size="icon" title="Ver" onClick={() => setViewing(p)}><Icono n="ver" /></Button>
+          {admin && <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(p); setFormOpen(true); }}><Icono n="editar" /></Button>}
+          <Button variant="ghost" size="icon" title="Rótulo" onClick={() => setRotuloProvId(p.id)}><Icono n="etiqueta" /></Button>
+          {admin && <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(p)}><Icono n="borrar" /></Button>}
         </div>
       ),
     },
@@ -122,18 +123,18 @@ export default function ProveedoresList() {
             <div className="prov-card-name">{p.nombre}</div>
             {p.rubro && <span className="badge badge-rubro" style={{ marginTop: 4, display: 'inline-flex' }}>{p.rubro}</span>}
           </div>
-          <span className={`badge ${p.activo ? 'badge-active' : 'badge-inactive'}`}>{p.activo ? '● Activo' : '○ Inactivo'}</span>
+          <span className={`badge ${p.activo ? 'badge-active' : 'badge-inactive'}`}>{p.activo ? <><Punto /> Activo</> : <><Punto hueco /> Inactivo</>}</span>
         </div>
         <div className="prov-card-body">
-          {(p.localidad || p.provincia) && <div className="prov-card-row">📍 {[p.localidad, p.provincia].filter(Boolean).join(', ')}</div>}
-          {p.horario && <div className="prov-card-row">🕐 {p.horario}</div>}
-          {contacto && <div className="prov-card-row">👤 {contacto.nombre}{contacto.telefono ? ' — ' + contacto.telefono : ''}{contacto.celular ? ' / ' + contacto.celular : ''}</div>}
+          {(p.localidad || p.provincia) && <div className="prov-card-row"><Icono n="lugar" /> {[p.localidad, p.provincia].filter(Boolean).join(', ')}</div>}
+          {p.horario && <div className="prov-card-row"><Icono n="reloj" /> {p.horario}</div>}
+          {contacto && <div className="prov-card-row"><Icono n="usuario" /> {contacto.nombre}{contacto.telefono ? ' — ' + contacto.telefono : ''}{contacto.celular ? ' / ' + contacto.celular : ''}</div>}
         </div>
         <div className="prov-card-actions">
-          <Button variant="ghost" size="sm" onClick={() => setViewing(p)}>👁 Ver</Button>
-          {admin && <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setFormOpen(true); }}>✏️ Editar</Button>}
-          <Button variant="ghost" size="sm" onClick={() => setRotuloProvId(p.id)}>🏷️</Button>
-          {admin && <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(p)}>🗑</Button>}
+          <Button variant="ghost" size="sm" onClick={() => setViewing(p)}><Icono n="ver" /> Ver</Button>
+          {admin && <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setFormOpen(true); }}><Icono n="editar" /> Editar</Button>}
+          <Button variant="ghost" size="sm" onClick={() => setRotuloProvId(p.id)}><Icono n="etiqueta" /></Button>
+          {admin && <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(p)}><Icono n="borrar" /></Button>}
         </div>
       </div>
     );
@@ -142,13 +143,13 @@ export default function ProveedoresList() {
   return (
     <div>
       <StatsRow stats={[
-        { icon: '🏭', iconColor: 'blue', value: proveedores?.length ?? 0, label: 'Total' },
-        { icon: '✅', iconColor: 'green', value: activos, label: 'Activos' },
-        { icon: '📦', iconColor: 'red', value: rubros.length, label: 'Rubros' },
+        { icon: <Icono n="fabrica" />, iconColor: 'blue', value: proveedores?.length ?? 0, label: 'Total' },
+        { icon: <Icono n="exito" />, iconColor: 'green', value: activos, label: 'Activos' },
+        { icon: <Icono n="paquete" />, iconColor: 'red', value: rubros.length, label: 'Rubros' },
       ]} />
 
       <div className="section-header">
-        <div className="section-title">🏭 Proveedores</div>
+        <div className="section-title"><Icono n="fabrica" /> Proveedores</div>
         <div className="section-actions">
           <Button variant="ghost" size="sm" onClick={() => void handleExport()}>Excel</Button>
           {admin && <Button variant="primary" size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>+ Nuevo</Button>}
@@ -179,7 +180,7 @@ export default function ProveedoresList() {
           data={filtrados}
           renderCard={renderCard}
           keyField={p => p.id}
-          emptyIcon="🏭"
+          emptyIcon={<Icono n="fabrica" />}
           emptyTitle={proveedores?.length === 0 ? 'Sin proveedores aún' : 'Sin resultados'}
           emptyDescription={proveedores?.length === 0 ? 'Agregá el primer proveedor.' : 'Probá con otro filtro.'}
         />

@@ -6,6 +6,7 @@ import { useProveedoresQuery, type Proveedor } from '../proveedores/useProveedor
 import { useAgregarProveedorAItem, useProveedoresDeItemQuery, useQuitarProveedorDeItem } from './useItemProveedores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icono } from '@/components/Icono';
 
 const MAX_SUGERENCIAS = 6;
 
@@ -92,7 +93,7 @@ export default function ProveedoresDeItem({ itemId, onVerProveedor }: { itemId: 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)' }}>Proveedores</span>
         {!agregando && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setAgregando(true)}>＋ Agregar</Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setAgregando(true)}><Icono n="mas" /> Agregar</Button>
         )}
       </div>
       {isLoading && <p style={{ marginTop: 4, fontSize: 13, color: 'var(--text-muted)' }}>Cargando...</p>}
@@ -116,7 +117,7 @@ export default function ProveedoresDeItem({ itemId, onVerProveedor }: { itemId: 
             aria-label={`Quitar ${v.proveedor.nombre}`}
             onClick={() => void handleQuitar(v.id, v.proveedor.nombre)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16, padding: 4 }}
-          >✕</button>
+          ><Icono n="cerrar" /></button>
         </div>
       ))}
       {agregando && <AgregarProveedor itemId={itemId} yaVinculados={yaVinculados} onListo={() => setAgregando(false)} />}

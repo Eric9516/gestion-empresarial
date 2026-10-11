@@ -5,6 +5,7 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { analizarExcelFamilias, useAplicarImportacionFamilias, useSubirPlanillaFamilias, type AnalisisFamilias } from './useImportarFamilias';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 export default function ImportarFamiliasModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast = useToast();
@@ -96,13 +97,13 @@ export default function ImportarFamiliasModal({ open, onClose }: { open: boolean
       open={open}
       onClose={handleClose}
       large
-      title="🏷️ Importar familias y subfamilias"
+      title={<><Icono n="etiqueta" /> Importar familias y subfamilias</>}
       footer={
         analisis ? (
           <>
             <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
             <Button variant="success" disabled={cargando} onClick={() => void handleConfirmar()}>
-              {cargando ? 'Guardando...' : `✅ Confirmar (${totalCambios})`}
+              {cargando ? 'Guardando...' : <><Icono n="exito" /> Confirmar ({totalCambios})</>}
             </Button>
           </>
         ) : (
@@ -133,15 +134,15 @@ export default function ImportarFamiliasModal({ open, onClose }: { open: boolean
 
           <div className="stats-row" style={{ marginBottom: 16 }}>
             <div className="stat-card">
-              <div className="stat-icon green">🆕</div>
+              <div className="stat-icon green"><Icono n="nuevo" /></div>
               <div><div className="stat-number">{analisis.familiasNuevas.length + analisis.subfamiliasNuevas.length}</div><div className="stat-label">Nuevas</div></div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon blue">✏️</div>
+              <div className="stat-icon blue"><Icono n="editar" /></div>
               <div><div className="stat-number">{analisis.familiasCompletar.length + analisis.subfamiliasCompletar.length}</div><div className="stat-label">Nombres completados</div></div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">⚠️</div>
+              <div className="stat-icon"><Icono n="alerta" /></div>
               <div><div className="stat-number">{analisis.familiasConflicto.length + analisis.subfamiliasConflicto.length}</div><div className="stat-label">Nombres distintos</div></div>
             </div>
           </div>
@@ -152,7 +153,7 @@ export default function ImportarFamiliasModal({ open, onClose }: { open: boolean
 
           {(analisis.familiasConflicto.length > 0 || analisis.subfamiliasConflicto.length > 0) && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>⚠️ Ya tienen un nombre distinto</div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}><Icono n="alerta" /> Ya tienen un nombre distinto</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
                 Por defecto no se tocan. Tildá los que querés reemplazar por el nombre del Excel.
               </div>
@@ -185,7 +186,7 @@ export default function ImportarFamiliasModal({ open, onClose }: { open: boolean
 
           {analisis.noProcesados.length > 0 && (
             <div>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>⚠️ {analisis.noProcesados.length} fila(s) no procesadas</div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}><Icono n="alerta" /> {analisis.noProcesados.length} fila(s) no procesadas</div>
               <div style={{ maxHeight: 160, overflowY: 'auto', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                 {analisis.noProcesados.map((f, i) => (
                   <div key={i} style={{ padding: '8px 12px', fontSize: 12, borderBottom: '1px solid var(--border)' }}>

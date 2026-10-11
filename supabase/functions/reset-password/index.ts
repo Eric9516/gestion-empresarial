@@ -5,7 +5,7 @@
 // puede resetearle la contraseña AL propietario, y no te la podés resetear a
 // vos mismo por acá.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.112.3';
 
 // Supabase inyecta estos dos valores solo en cada proyecto, sin configurar
 // nada — así esta función funciona igual en cualquier instalación, sin tener

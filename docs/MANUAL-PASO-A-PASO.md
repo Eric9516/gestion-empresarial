@@ -13,7 +13,7 @@ capítulo 4 y seguilo punto por punto. Los demás son de consulta.
 | 3. Decisiones antes de vender | Cuenta de Supabase, plan, contraseñas |
 | **4. Instalar un cliente nuevo** | **El paso a paso principal** |
 | **4B. Instalar un cliente en SU PROPIA cuenta** | **Cuando el cliente quiere que la base de datos (y, si quiere, el sitio) sea suyo** |
-| 5. Módulos | Qué se vende por separado y cómo se activa |
+| 5. Módulos y componentes | Qué se vende por separado, qué se instala y cómo se activa |
 | 6. Usuarios y permisos | Quién puede hacer qué |
 | 7. El asistente de configuración inicial | Lo que ve el cliente la primera vez |
 | 8. El día a día | Actualizar, cambiar módulos, resolver pedidos del cliente |
@@ -31,21 +31,28 @@ capítulo 4 y seguilo punto por punto. Los demás son de consulta.
 Pensalo como **un edificio de oficinas**:
 
 - **El edificio es la aplicación.** Es siempre la misma para todos los clientes: el mismo código.
-- **Los pisos son los módulos** (Proveedores, Comisionistas, Envíos, Depósito, Tareas). Cada cliente compra algunos pisos,
-  y los que no compró quedan cerrados con llave.
+- **Los pisos son los módulos** (Proveedores, Comisionistas, Envíos, Depósito, Mantenimiento, Tareas). Cada cliente compra algunos pisos,
+  y los que no compró **no existen en su edificio**: no están cerrados con llave, directamente no están construidos. Por dentro, los pisos se agrupan en
+  tres **componentes** (Base, Abastecimiento y Mantenimiento); a cada cliente se le instalan solo los componentes de lo que contrata (capítulo 5).
 - **Cada cliente tiene su propia base de datos**, que es su "depósito" privado donde viven sus datos. Nadie ve los datos de otro.
 
-Las piezas concretas que intervienen son cuatro:
+Las piezas concretas que intervienen son cinco:
 
 | Pieza | Para qué sirve | Dónde vive |
 |---|---|---|
 | **La aplicación** (lo que ve el cliente en el navegador) | Las pantallas | Un sitio en **Netlify**, uno por cliente |
-| **Supabase** | Guarda los datos, los usuarios y los permisos | Un **proyecto** por cliente |
+| **Supabase** | Guarda los datos, los usuarios y los permisos | Un **proyecto** por cliente, en la cuenta del cliente |
 | **GitHub** | Guarda el código de la aplicación | Un solo repositorio, `gestion-empresarial` |
+| **Panel de administración** *(opcional: es lo mismo que los comandos, pero desde el celular)* | Crear clientes, actualizarlos, cambiar sus módulos e instalarles componentes | Un servidor propio, detrás de Tailscale. Ver [PANEL-INSTALACION.md](PANEL-INSTALACION.md) |
 | **Servidor de archivos** *(opcional, todavía no conectado a la app)* | Manuales y archivos pesados | Tu servidor de Digital Ocean |
 
 **Lo importante:** el código es uno solo. Lo que cambia entre clientes son (1) su proyecto de Supabase, (2) su sitio en
-Netlify, y (3) su **licencia de módulos**. Por eso instalar un cliente nuevo es repetir siempre los mismos pasos.
+Netlify, y (3) su **licencia de módulos** y los componentes instalados. Por eso instalar un cliente nuevo es repetir siempre los mismos pasos.
+
+> **Dos formas de hacer lo mismo.** En este manual los pasos se hacen con comandos en tu computadora (`pnpm cliente ...`). El **panel de administración**
+> hace lo mismo desde el celular, con firma de huella en cada operación. Cuando el panel esté instalado, los pasos del capítulo 4 que crean el proyecto, instalan la base,
+> definen los módulos y cierran el registro público se reemplazan por *Nuevo cliente* en el panel (que además muestra los "datos para publicar la app"); el resto
+> (publicar en Netlify, probar, entregar) sigue igual.
 
 ---
 
@@ -104,7 +111,7 @@ pnpm cliente
 
 ### 3.1 ¿En qué cuenta de Supabase vive el cliente?
 
-| | En tu cuenta | En la cuenta del cliente *(recomendado)* |
+| | En tu cuenta | En la cuenta del cliente *(el camino que se vende)* |
 |---|---|---|
 | De quién son los datos | Viven en tu cuenta | Son claramente de él |
 | Quién paga Supabase | Vos | Él, con su tarjeta |
@@ -132,11 +139,11 @@ npx supabase orgs list
 
 ### 3.2 El plan de Supabase
 
-- El plan **gratis** permite **2 proyectos activos por cuenta**. Hoy tu cuenta ya usa los dos (el de Cremac y el de pruebas).
-  Si intentás un tercero, el comando falla.
-- Los proyectos gratis **se pausan solos si pasan unos días sin uso** y **no tienen copias de seguridad restaurables**.
-  Para una empresa que usa la aplicación todos los días, conviene un plan pago, y es el cliente quien debería pagarlo
-  (por eso es mejor su propia cuenta). **Confirmá precios y condiciones vigentes en supabase.com/pricing.**
+- **Requisito para vender:** cada cliente va en **su propia cuenta (organización) de Supabase, con el plan Pro pagado por él**, y te invita como administrador.
+  Así los datos son suyos, el costo es suyo y vos no cargás con cada base.
+- El plan **gratis** permite **2 proyectos activos por cuenta** (hoy tu cuenta tiene el de Cremac y uno de pruebas), los proyectos **se pausan solos si pasan unos
+  días sin uso** y **no tienen copias de seguridad restaurables**. Por eso no sirve para un cliente que usa la aplicación todos los días.
+  **Confirmá precios y condiciones vigentes en supabase.com/pricing.**
 
 ### 3.3 Las contraseñas (un hueco que hay que conocer)
 
@@ -174,7 +181,7 @@ Anotá estos tres datos:
 1. **Nombre de la empresa**, por ejemplo `Metalúrgica Pérez SA`.
 2. **Correo del dueño**, por ejemplo `juan@metalurgicaperez.com`. Con ese correo va a entrar.
 3. **Módulos que contrata**, por ejemplo `proveedores,deposito`. Los nombres exactos son:
-   `proveedores`, `comisionistas`, `envios`, `deposito`, `tareas` (o `todos`).
+   `proveedores`, `comisionistas`, `envios`, `deposito`, `mantenimiento`, `tareas` (o `todos`). Solo se le instalan los componentes de esos módulos (capítulo 5).
 
 Y, si va en la cuenta del cliente, el **identificador de su organización** (capítulo 3.1).
 
@@ -211,7 +218,7 @@ pnpm cliente nuevo --nombre "Metalúrgica Pérez SA" --email juan@metalurgicaper
 7. Un cuadro final que dice `✔ Listo: Metalúrgica Pérez SA`, con el identificador del proyecto y el nombre del archivo
    privado del cliente.
 
-**Qué hace por dentro:** crea el proyecto, instala toda la base de datos vacía, publica las funciones de crear/resetear/eliminar
+**Qué hace por dentro:** crea el proyecto, instala la base de datos vacía (solo los componentes de los módulos que contrata), publica las funciones de crear/resetear/eliminar
 usuarios, crea al dueño con una contraseña aleatoria, y define la licencia de módulos.
 
 **Si el comando se detiene con un mensaje que empieza con `✖`:** leélo, porque dice qué falta (por ejemplo, "Falta --modulos"
@@ -373,6 +380,9 @@ pnpm cliente nuevo --nombre "Nombre del Cliente SA" --email dueno@cliente.com --
 
 **5. Seguí con el capítulo 4 desde el Paso 4** (guardar el archivo privado, cerrar el registro público, publicar, poner la dirección en Supabase, probar y entregar). El proyecto que abrís en Supabase para esos pasos es el que está **dentro de la organización del cliente**.
 
+**Si usás el panel en vez de los comandos:** el cliente no te invita a vos sino a la **cuenta de Supabase del panel** (una cuenta aparte, solo para eso), como Administrator. Después, en el panel:
+*Organizaciones → Agregar* (se firma con la huella) y listo: desde ahí *Nuevo cliente* permite elegir esa organización. Paso a paso en [PANEL-INSTALACION.md](PANEL-INSTALACION.md).
+
 ### Parte C. ¿Dónde va el sitio publicado (Netlify)?
 
 Es una decisión independiente de la base de datos. Tres caminos:
@@ -417,32 +427,46 @@ Conviene hablarlo **antes** de instalar, y dejarlo por escrito:
 
 ---
 
-## 5. Módulos
+## 5. Módulos y componentes
 
-Un módulo es una parte de la aplicación que se vende por separado.
+Un módulo es una parte de la aplicación que se vende por separado. Por dentro, los módulos se agrupan en **componentes**: cada cliente recibe solo los
+componentes de los módulos que contrata, y lo que no contrata **no existe** en su base de datos.
 
 ### 5.1 Los módulos que existen hoy
 
-| Módulo (nombre exacto) | Qué incluye | Necesita |
-|---|---|---|
-| `proveedores` | Directorio de proveedores, con sus contactos y rubros | — |
-| `comisionistas` | Directorio de comisionistas, con campos personalizables | — |
-| `envios` | Rótulos de envío en PDF, con el diseño de la empresa | `proveedores` |
-| `deposito` | Repuestos, stock, retiros, familias, sectores, informe de reposición | — |
-| `tareas` | Tareas con semáforo para cada persona | — |
+| Módulo (nombre exacto) | Qué incluye | Componente | Necesita |
+|---|---|---|---|
+| `proveedores` | Directorio de proveedores, con sus contactos y rubros | Abastecimiento | — |
+| `comisionistas` | Directorio de comisionistas, con campos personalizables | Abastecimiento | — |
+| `envios` | Rótulos de envío en PDF, con el diseño de la empresa | Abastecimiento | `proveedores` |
+| `deposito` | Repuestos, stock, retiros, ajustes de inventario, familias, sectores, informe de reposición | Abastecimiento | — |
+| `mantenimiento` | Equipos y reparaciones | Mantenimiento | `deposito` |
+| `tareas` | Tareas con semáforo para cada persona | Base | — |
+
+**Qué se instala según lo que contrata:** solo `tareas` → solo la **Base**; cualquiera de `proveedores`, `comisionistas`, `envios` o `deposito` → **Base + Abastecimiento**;
+`mantenimiento` → los **tres**. La Base (usuarios, permisos, historial, configuración) siempre está.
 
 ### 5.2 Cómo se relacionan (los pisos no son independientes)
 
 - **Envíos necesita Proveedores:** cada envío es de un proveedor. El comando **no te deja** activar uno sin el otro.
-- **Reparaciones** y **proveedores por repuesto** son del Depósito, pero necesitan además `proveedores`. Si el cliente no tiene
-  Proveedores, esas dos funciones **no aparecen**, y el resto del Depósito funciona normal.
+- **Mantenimiento necesita Depósito** (usa sus repuestos).
+- **Reparaciones** (de Mantenimiento) necesitan además `proveedores`, y los **proveedores por repuesto** (del Depósito) también. Si el cliente no tiene
+  Proveedores, esas dos funciones **no aparecen**, y el resto funciona normal.
 - **Elegir un comisionista al armar un envío** necesita `envios` y `comisionistas`.
 - Los demás funcionan solos.
 
-### 5.3 Quién los cambia
+### 5.3 Quién los cambia: dos llaves
 
-**Solo vos**, con un comando. El cliente **no ve ni cambia** los módulos: ni el dueño, ni por la pantalla, ni hablando
-directo con la base de datos.
+Para que un módulo funcione tienen que estar prendidas **las dos**:
+
+1. **La licencia: la manejás solo vos**, con un comando (o desde el panel). Dice qué módulos incluye el plan del cliente. Ni el dueño, ni la pantalla, ni hablando directo
+   con la base de datos pueden agregarle módulos al plan.
+2. **El interruptor del dueño:** dentro de lo que incluye su plan, el dueño puede **apagar y volver a prender** los módulos que no usa, en
+   *Configuración → General → Módulos*. No puede prender nada que no esté en su plan, y no puede dejar un módulo sin lo que necesita (por ejemplo, apagar Proveedores
+   con Envíos prendido). Cada cambio queda en el Historial con su nombre.
+
+> Lo que impide que un cliente "encienda" algo que no contrató no es la licencia sola: es que **sus tablas ni siquiera están instaladas**. Por eso los componentes
+> se instalan según el contrato.
 
 ### 5.4 Los comandos (desde la carpeta del proyecto)
 
@@ -474,21 +498,34 @@ Se pueden poner varios separados por coma: `--activar tareas,comisionistas`.
 
 - **`IDENTIFICADOR`** es el valor de `SUPABASE_PROJECT_REF` del archivo del cliente.
 - **Sin `--confirmo` solo simula.** Mostrá siempre primero la simulación y recién después aplicá.
-- El comando **rechaza combinaciones imposibles** (por ejemplo, apagar `proveedores` con `envios` activo).
+- El comando **rechaza combinaciones imposibles** (por ejemplo, apagar `proveedores` con `envios` activo) y **se niega a activar un módulo cuyo componente no está
+  instalado en ese cliente** (primero se instala, ver 5.5).
 
-### 5.5 Qué pasa cuando se apaga un módulo
+### 5.5 Agregarle un componente a un cliente que ya existe
+
+Por ejemplo, un cliente que tenía Base + Abastecimiento y ahora contrata Mantenimiento. **Sus datos no se tocan.**
+
+```bash
+pnpm cliente componente --ref IDENTIFICADOR --agregar mantenimiento              # simula: muestra qué se va a instalar
+pnpm cliente componente --ref IDENTIFICADOR --agregar mantenimiento --confirmo   # lo instala
+```
+
+Después activás sus módulos como siempre (`pnpm cliente modulos --activar mantenimiento --confirmo`): **quedan apagados hasta que los activás**. No se puede instalar un
+componente dos veces, ni sin lo que necesita (Mantenimiento necesita Abastecimiento). En el panel es el botón *Instalar componente* del detalle del cliente.
+
+### 5.6 Qué pasa cuando se apaga un módulo
 
 - Queda **bloqueado para todos, incluido el dueño**: sus tablas, sus funciones y sus carpetas de archivos.
 - Las pantallas desaparecen en un máximo de **un minuto** en los navegadores abiertos.
 - **Los datos no se borran.** Si lo volvés a activar, todo está donde estaba.
-- Cada cambio queda en el **Historial** del cliente, como "Administración del sistema".
+- Cada cambio queda en el **Historial** del cliente ("Administración del sistema" si lo hiciste vos; el nombre del dueño si lo apagó él).
 - Una excepción: las **fotos ya subidas** se pueden abrir con su dirección exacta aunque el módulo esté apagado (lo que no
   se puede es subir, borrar ni listar). Las direcciones no se pueden adivinar.
 
-### 5.6 Los módulos nuevos nacen apagados
+### 5.7 Los módulos nuevos nacen apagados
 
-Si en el futuro se agrega un módulo nuevo al sistema (por ejemplo, equipos), **ningún cliente lo recibe hasta que se lo
-activás**. Solo está activo lo que la licencia dice de forma expresa. Cómo se arma uno nuevo: `docs/NUEVO-MODULO.md`.
+Si en el futuro se agrega un módulo nuevo al sistema, **ningún cliente lo recibe hasta que se lo
+activás**. Solo está activo lo que la licencia dice de forma expresa. Cómo se arma uno nuevo: `docs/NUEVO-MODULO.md`. El detalle técnico de componentes y licencia está en `docs/COMPONENTES.md`.
 
 ---
 
@@ -633,13 +670,18 @@ pnpm cliente modulos --ref IDENTIFICADOR --activar nombre-del-modulo --confirmo
 
 (Primero corré la versión sin `--confirmo`, para ver la simulación.)
 
+**Si el módulo es de un componente que el cliente no tiene** (por ejemplo, compra `mantenimiento` y solo tenía Base + Abastecimiento), el comando te avisa y primero hay que
+instalarlo: `pnpm cliente componente --ref IDENTIFICADOR --agregar mantenimiento --confirmo` (capítulo 5.5). Después se activa el módulo. En el panel: *Instalar componente* y
+después *Aplicar cambios de módulos*.
+
 ### 8.3 Un cliente deja de pagar un módulo
 
 ```bash
 pnpm cliente modulos --ref IDENTIFICADOR --desactivar nombre-del-modulo --confirmo
 ```
 
-Sus datos no se borran. Si vuelve, se reactiva y todo está igual.
+Sus datos no se borran. Si vuelve, se reactiva y todo está igual. (Esto es distinto de cuando **el dueño** apaga un módulo que sí paga pero no usa: lo hace él, desde
+*Configuración → General → Módulos*, y también lo puede volver a prender.)
 
 ### 8.4 Un usuario del cliente se olvidó la contraseña
 
@@ -696,15 +738,17 @@ comisionistas, contactos y reparaciones, restablecimientos de contraseña y camb
 |---|---|
 | `pnpm cliente` dice que no encuentra el comando o `node` | Estás en la carpeta equivocada o falta instalar. Hacé el capítulo 2.3 de nuevo. |
 | El instalador dice `✖ Falta --modulos` | Agregá `--modulos proveedores,deposito` (o `--modulos todos`). |
-| `✖ Módulo desconocido` | Revisá cómo escribiste el nombre. Los válidos: `proveedores, comisionistas, envios, deposito, tareas`. |
-| `✖ "envios" necesita "proveedores"` | Sumá `proveedores` a la lista. |
+| `✖ Módulo desconocido` | Revisá cómo escribiste el nombre. Los válidos: `proveedores, comisionistas, envios, deposito, mantenimiento, tareas`. |
+| `✖ "envios" necesita "proveedores"` (o `"mantenimiento" necesita "deposito"`) | Sumá el que falta a la lista. |
+| `✖ "..." es del componente ..., que no está instalado en este cliente` | Instalá el componente primero (capítulo 5.5) y después activá el módulo. |
 | El instalador falla al **crear el proyecto** | Casi seguro llegaste al límite de 2 proyectos del plan gratis, o no tenés permiso en esa organización. Mirá el mensaje que imprime. |
 | `✖ Este proyecto ya tiene tablas pero no fue instalado con este script` | Estás apuntando a un proyecto que ya existía. No toca nada. Ver el capítulo 10 si es una instalación vieja que querés adoptar. |
 | Al entrar dice **"Email o contraseña incorrectos"** | Revisá que copiaste bien la contraseña del archivo. Si no coincide, otro dueño puede resetearla. |
 | Entra, pero no se abre el asistente | Probablemente ya se cerró antes. Entrá a *Configuración → General → Configuración inicial*. |
 | El cliente **no ve un módulo** que contrató | Corré `pnpm cliente modulos --ref IDENTIFICADOR` para ver su licencia. Si figura apagado, activalo. Si figura activo, esperá un minuto o recargá. |
 | El cliente **ve un módulo** que no contrató | Corré el mismo comando y revisá. Si figura activo, apagalo con `--desactivar ... --confirmo`. |
-| La pantalla dice **"No hay módulos disponibles"** | Todos los módulos a los que tiene acceso están apagados. Revisá la licencia. |
+| La pantalla dice **"No hay módulos disponibles"** | Todos los módulos a los que tiene acceso están apagados: por la licencia o porque el dueño los apagó. Revisá la licencia; si es el dueño, puede prenderlos en *Configuración → General → Módulos*. |
+| El dueño dice que **un módulo desapareció** y vos no lo tocaste | Probablemente lo apagó él en *Configuración → General → Módulos* (puede volver a prenderlo). Si ahí no figura el módulo, entonces no está en su plan. |
 | Netlify publicó pero la página sale en blanco o no deja entrar | Casi seguro las dos variables de Netlify están mal copiadas o faltan. Revisalas y volvé a publicar. |
 | Un cliente dice que se registró solo | Falta cerrar el registro público (capítulo 4, paso 5). El instalador avisa si está abierto. |
 | Las tareas "de hoy" aparecen en el día equivocado, o no se puede crear una tarea de noche | La **zona horaria** de la empresa está mal. Se cambia en *Configuración → General → Empresa → Zona horaria* (por defecto Argentina). |
@@ -739,12 +783,19 @@ las mejoras de la plantilla, los colores, la **licencia de módulos** (con todos
 (que **no se abre** en una instalación que ya tenía dueño), y tres correcciones de seguridad y de hora que salieron de la prueba
 exhaustiva: los contactos de proveedores dejan de ser legibles sin iniciar sesión, un usuario bloqueado deja de tener permisos en
 la base, y "hoy" pasa a ser el día de la empresa (se podían crear tareas de noche).
+Cremac se trata como instalación **completa** (Base + Abastecimiento + Mantenimiento), así que recibe las migraciones de los tres componentes. Lo último que se aplica es la
+licencia por componentes: la licencia anota los componentes instalados, aparece el módulo **`mantenimiento`** (prendido, porque Cremac ya tenía el depósito prendido: no pierde nada)
+y el dueño gana la pantalla *Configuración → General → Módulos*.
+
+**El orden importa:** primero esta actualización de la base, **después** publicar la aplicación. Si se publicara la app antes, la pestaña Reparaciones quedaría oculta hasta que la
+licencia tenga el módulo `mantenimiento`.
 
 **Después:**
 
-1. Publicar la aplicación de Cremac desde la plantilla (en Netlify, apuntar el sitio de Cremac al repositorio `gestion-empresarial`
+1. Comprobar la licencia: `pnpm cliente modulos --ref IDENTIFICADOR-DE-CREMAC` tiene que mostrar los seis módulos, todos activos.
+2. Publicar la aplicación de Cremac desde la plantilla (en Netlify, apuntar el sitio de Cremac al repositorio `gestion-empresarial`
    con las mismas dos variables de siempre).
-2. Revisar que todo funcione como antes.
+3. Revisar que todo funcione como antes (en especial Reparaciones).
 
 **Importante:** las funciones de Cremac que crean, resetean y eliminan usuarios también se corrigen solas con este paso, porque
 la plantilla ya las trae corregidas (eliminar usuarios ya no deja una cuenta a medias, y solo pide ser dueño).
@@ -769,7 +820,10 @@ Para no prometer de más. El detalle completo está en `docs/PENDIENTES.md`.
 - La **auditoría** no registra todavía envíos, configuración de la empresa, sectores, familias ni proveedores por repuesto.
 
 **Funciones planeadas:** equipos con sus manuales y despieces (el servidor de archivos ya está listo), órdenes de trabajo,
-mantenimiento programado, avisos.
+mantenimiento programado, avisos. El plan completo de crecimiento (requerimientos y compras, varios depósitos, Administración) está en `docs/PLAN-PRODUCTO.md`.
+
+**Del panel de administración:** está construido y probado, pero todavía **no está instalado en un servidor** ni se probó con la API real de Supabase (falta la segunda
+cuenta de pruebas). Hasta entonces, los comandos de este manual son el camino.
 
 ---
 
@@ -783,14 +837,20 @@ Todo está dentro de la carpeta `Gestion empresarial`:
 | `docs/MANUAL-PASO-A-PASO.md` | **Este manual** |
 | `docs/NUEVO-CLIENTE.md` | La versión corta y técnica de la instalación |
 | `docs/NUEVO-MODULO.md` | Cómo se agrega un módulo nuevo al sistema |
+| `docs/COMPONENTES.md` | Componentes, módulos, licencia e interruptor del dueño (referencia técnica) |
 | `docs/ARQUITECTURA.md` | Cómo está armado por dentro |
 | `docs/SEGURIDAD.md` | Qué protecciones tiene, y qué verifica la prueba |
+| `docs/PLAN-PRODUCTO.md` | Hacia dónde crece el producto (planes, hoja de ruta) |
 | `docs/PENDIENTES.md` | Lo que falta |
+| `docs/PANEL-INSTALACION.md`, `PANEL-DISENO.md`, `PANEL-SEGURIDAD.md` | El panel de administración: instalarlo, cómo está pensado y su informe de seguridad |
 | `src/` | El código de las pantallas |
-| `supabase/migrations/` | La base de datos, en orden |
+| `supabase/componentes/` | La base de datos, por componentes (base, abastecimiento, mantenimiento), en orden |
+| `supabase/migrations/` | Las 11 migraciones originales, congeladas (historial de Cremac y referencia de las pruebas) |
 | `supabase/functions/` | Las funciones para crear, resetear y eliminar usuarios |
+| `panel/` | El panel de administración de clientes (proyecto aparte) |
 | `scripts/cliente.mjs` | El instalador (`pnpm cliente`) |
-| `scripts/pruebas/integracion.mjs` | La prueba automática completa de una instalación |
+| `scripts/pruebas/integracion.mjs` | La prueba automática completa de una instalación (contra un Supabase de pruebas) |
+| `scripts/pruebas/esquema/` | Las pruebas de la base de datos desde cero, en memoria (`pnpm pruebas:esquema`) |
 | `servidor-manuales/` | El servidor de archivos (opcional, aún no conectado) |
 | `clientes/` | **Los datos privados de cada cliente** (no se suben a GitHub; hacé copia) |
 | `.env` | La conexión de tu entorno de pruebas (no se sube) |
@@ -803,7 +863,10 @@ Todo está dentro de la carpeta `Gestion empresarial`:
 |---|---|
 | **Aplicación** | Lo que el cliente abre en el navegador |
 | **Módulo** | Una parte de la aplicación que se vende por separado |
-| **Licencia** | La lista de módulos que tiene contratados un cliente |
+| **Licencia** | La lista de módulos que tiene contratados un cliente (la manejás vos) |
+| **Componente** | Un grupo de módulos con sus tablas (Base, Abastecimiento, Mantenimiento); a cada cliente se le instalan solo los que contrata |
+| **Interruptor del dueño** | Lo que el dueño puede apagar y prender dentro de su plan (*Configuración → General → Módulos*) |
+| **Panel** | La herramienta del celular que hace lo mismo que los comandos `pnpm cliente`, con firma de huella en cada operación |
 | **Proyecto** (de Supabase) | La base de datos privada de un cliente |
 | **Identificador** (o `ref`) | El código de unas 20 letras que identifica el proyecto de un cliente; está en su archivo privado |
 | **Dueño** | La persona con todos los poderes dentro de la aplicación de un cliente |
@@ -823,9 +886,9 @@ Todo está dentro de la carpeta `Gestion empresarial`:
 Copiala y tildala con cada cliente:
 
 **Antes**
-- [ ] Acordé con el cliente los **módulos** que contrata.
-- [ ] Decidí **en qué cuenta de Supabase** va (y, si es la suya, estoy invitado a su organización).
-- [ ] Confirmé el **plan de Supabase** y quién lo paga.
+- [ ] Acordé con el cliente los **módulos** que contrata (de ahí salen los componentes que se le instalan).
+- [ ] El cliente tiene su **propia cuenta de Supabase con plan Pro** y estoy invitado a su organización (o el panel, si uso el panel).
+- [ ] Dejé acordado **quién paga** Supabase.
 
 **Instalación**
 - [ ] Corrí `pnpm cliente nuevo ...` y terminó con `✔ Listo`.

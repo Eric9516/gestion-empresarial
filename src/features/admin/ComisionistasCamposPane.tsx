@@ -5,6 +5,7 @@ import { useSaveCamposCustom } from '../config/useConfiguracion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Icono } from '@/components/Icono';
 
 const TIPOS: { value: CampoCustom['tipo']; label: string }[] = [
   { value: 'text', label: 'Texto' },
@@ -52,7 +53,7 @@ export default function ComisionistasCamposPane() {
   return (
     <div className="admin-card" style={{ maxWidth: 560 }}>
       <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-        <span>🤝 Campos extra — Comisionistas</span>
+        <span><Icono n="acuerdo" /> Campos extra — Comisionistas</span>
         <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={addRow}>+ Agregar</Button>
       </div>
       <div className="admin-card-body">
@@ -64,7 +65,7 @@ export default function ComisionistasCamposPane() {
             <Select className="cc-tipo" value={campo.tipo} onChange={e => updateRow(i, { tipo: e.target.value as CampoCustom['tipo'] })}>
               {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </Select>
-            <button className="btn-remove-contact" onClick={() => removeRow(i)} title="Eliminar campo">✕</button>
+            <button className="btn-remove-contact" onClick={() => removeRow(i)} title="Eliminar campo"><Icono n="cerrar" /></button>
           </div>
         ))}
         <Button variant="primary" size="sm" style={{ width: '100%', justifyContent: 'center', marginTop: 10 }} onClick={() => void handleSave()} disabled={saving}>Guardar campos</Button>

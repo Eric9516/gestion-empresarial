@@ -4,9 +4,11 @@ import { useAuth } from '../auth/AuthContext';
 import { isOwner, tieneAccesoAdmin } from '../lib/types';
 import ProfileModal from './ProfileModal';
 import SugerenciaModal from './SugerenciaModal';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 export interface MobileNavItem {
-  icon: string;
+  icon: ReactNode;
   label: string;
   onClick: () => void;
   active?: boolean;
@@ -55,7 +57,7 @@ export default function MobileMenu({ open, onClose, navItems }: Props) {
               <div className="mobile-menu-email">{profile?.email}</div>
             </div>
           </div>
-          <button className="mobile-menu-close" onClick={onClose}>✕</button>
+          <button className="mobile-menu-close" onClick={onClose}><Icono n="cerrar" /></button>
         </div>
 
         <nav className="mobile-menu-nav">
@@ -68,26 +70,26 @@ export default function MobileMenu({ open, onClose, navItems }: Props) {
           <div style={{ height: 1, background: 'var(--border)', margin: '8px 16px' }} />
 
           <button className="mobile-nav-item" onClick={() => ir(() => setProfileOpen(true))}>
-            <span className="mobile-nav-icon">👤</span><span>Mi perfil</span>
+            <span className="mobile-nav-icon"><Icono n="usuario" /></span><span>Mi perfil</span>
           </button>
           <button className="mobile-nav-item" onClick={() => ir(() => navigate('/'))}>
-            <span className="mobile-nav-icon">🏠</span><span>Inicio</span>
+            <span className="mobile-nav-icon"><Icono n="inicio" /></span><span>Inicio</span>
           </button>
           {!isOwner(profile) && (
             <button className="mobile-nav-item" onClick={() => ir(() => setSugerenciaOpen(true))}>
-              <span className="mobile-nav-icon">💡</span><span>Sugerencia</span>
+              <span className="mobile-nav-icon"><Icono n="idea" /></span><span>Sugerencia</span>
             </button>
           )}
           {tieneAccesoAdmin(profile) && (
             <button className="mobile-nav-item" onClick={() => ir(() => navigate('/admin'))}>
-              <span className="mobile-nav-icon">⚙️</span><span>Configuración</span>
+              <span className="mobile-nav-icon"><Icono n="config" /></span><span>Configuración</span>
             </button>
           )}
         </nav>
 
         <div className="mobile-menu-footer">
           <button className="mobile-logout-btn" onClick={() => void signOut()}>
-            <span>🚪</span> Cerrar Sesión
+            <span><Icono n="salir" /></span> Cerrar Sesión
           </button>
         </div>
       </div>

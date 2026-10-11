@@ -17,6 +17,7 @@ import QrScannerModal from '../features/scanner/QrScannerModal';
 import TareasScreen from '../features/tareas/TareasScreen';
 import ReparacionesScreen from '../features/reparaciones/ReparacionesScreen';
 import AjustesScreen from '../features/ajustes/AjustesScreen';
+import { Icono } from '@/components/Icono';
 
 type Tab = 'buscar' | 'carrito' | 'retiros' | 'tareas' | 'reparaciones' | 'informe' | 'ajustes';
 
@@ -35,7 +36,7 @@ function MantenimientoContent() {
   // Reparaciones toca stock igual que retiros/edición de repuestos — se
   // reserva a admin de Mantenimiento, no satura la navegación del común.
   const esAdmin = isMantenimientoAdmin(profile);
-  const verReparaciones = esAdmin && integ.depositoConProveedores;
+  const verReparaciones = esAdmin && integ.reparaciones;
   // Ajuste de inventario: solo quien tiene el permiso (la base lo impone igual).
   const verAjustes = puedeAjustarInventario(profile);
 
@@ -45,14 +46,14 @@ function MantenimientoContent() {
   const canExit = !isDirectorioDesactivado(profile) && hayModulosDeDirectorio(modulos);
 
   const navItems = [
-    { icon: '🔍', label: 'Buscar', onClick: () => setTab('buscar'), active: tab === 'buscar' },
-    { icon: '🛒', label: `A retirar${cart.length ? ` (${cart.length})` : ''}`, onClick: () => setTab('carrito'), active: tab === 'carrito' },
-    { icon: '📋', label: 'Retiros', onClick: () => setTab('retiros'), active: tab === 'retiros' },
-    ...(verReparaciones ? [{ icon: '🔧', label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
-    ...(modulos.tareas ? [{ icon: '✅', label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
-    ...(esAdmin ? [{ icon: '📊', label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
-    ...(verAjustes ? [{ icon: '⚖️', label: 'Ajustes', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
-    ...(canExit ? [{ icon: '←', label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
+    { icon: <Icono n="buscar" />, label: 'Buscar', onClick: () => setTab('buscar'), active: tab === 'buscar' },
+    { icon: <Icono n="carrito" />, label: `A retirar${cart.length ? ` (${cart.length})` : ''}`, onClick: () => setTab('carrito'), active: tab === 'carrito' },
+    { icon: <Icono n="lista" />, label: 'Retiros', onClick: () => setTab('retiros'), active: tab === 'retiros' },
+    ...(verReparaciones ? [{ icon: <Icono n="herramienta" />, label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
+    ...(modulos.tareas ? [{ icon: <Icono n="exito" />, label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
+    ...(esAdmin ? [{ icon: <Icono n="informe" />, label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
+    ...(verAjustes ? [{ icon: <Icono n="balanza" />, label: 'Ajustes', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
+    ...(canExit ? [{ icon: <><Icono n="volver" /> </>, label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
 
   return (
@@ -67,7 +68,7 @@ function MantenimientoContent() {
         </div>
         <div className="header-right">
           {canExit && (
-            <Link to="/" className="btn-volver-directorio" style={{ display: 'flex' }}>← <span className="hide-mobile">Directorio</span></Link>
+            <Link to="/" className="btn-volver-directorio" style={{ display: 'flex' }}><Icono n="volver" /> <span className="hide-mobile">Directorio</span></Link>
           )}
           <UserMenu />
           <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
@@ -79,22 +80,23 @@ function MantenimientoContent() {
       </header>
 
       <nav className="app-nav">
-        <button className={`nav-tab${tab === 'buscar' ? ' active' : ''}`} onClick={() => setTab('buscar')}>🔍 Buscar</button>
+        <button className={`nav-tab${tab === 'buscar' ? ' active' : ''}`} onClick={() => setTab('buscar')}><Icono n="buscar" /> Buscar</button>
         <button className={`nav-tab${tab === 'carrito' ? ' active' : ''}`} onClick={() => setTab('carrito')}>
-          🛒 A retirar {cart.length > 0 && <span className="badge badge-rubro">{cart.length}</span>}
+          
+          <Icono n="carrito" /> A retirar {cart.length > 0 && <span className="badge badge-rubro">{cart.length}</span>}
         </button>
-        <button className={`nav-tab${tab === 'retiros' ? ' active' : ''}`} onClick={() => setTab('retiros')}>📋 Retiros</button>
+        <button className={`nav-tab${tab === 'retiros' ? ' active' : ''}`} onClick={() => setTab('retiros')}><Icono n="lista" /> Retiros</button>
         {modulos.tareas && (
-          <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}>✅ Tareas</button>
+          <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}><Icono n="exito" /> Tareas</button>
         )}
         {verReparaciones && (
-          <button className={`nav-tab${tab === 'reparaciones' ? ' active' : ''}`} onClick={() => setTab('reparaciones')}>🔧 Reparaciones</button>
+          <button className={`nav-tab${tab === 'reparaciones' ? ' active' : ''}`} onClick={() => setTab('reparaciones')}><Icono n="herramienta" /> Reparaciones</button>
         )}
         {esAdmin && (
-          <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}>📊 Informe</button>
+          <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}><Icono n="informe" /> Informe</button>
         )}
         {verAjustes && (
-          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}>⚖️ Ajustes</button>
+          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}><Icono n="balanza" /> Ajustes</button>
         )}
       </nav>
 

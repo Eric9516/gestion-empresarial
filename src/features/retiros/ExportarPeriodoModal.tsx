@@ -5,6 +5,7 @@ import { useExportarRetirosPeriodo } from './useRetiros';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -35,7 +36,7 @@ export default function ExportarPeriodoModal({ open, onClose }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">🗓️</span> Exportar por período</>}>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="calendario" /></span> Exportar por período</>}>
       <div className="form-grid">
         <div className="form-group"><label htmlFor="exportar-periodo-modal-1">Desde</label><Input id="exportar-periodo-modal-1" type="date" value={desde} onChange={e => setDesde(e.target.value)} /></div>
         <div className="form-group"><label htmlFor="exportar-periodo-modal-2">Hasta</label><Input id="exportar-periodo-modal-2" type="date" value={hasta} onChange={e => setHasta(e.target.value)} /></div>

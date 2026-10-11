@@ -6,6 +6,7 @@ import {
 } from './useRotuloDiseno';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   disenoActivoId: number | null;
@@ -58,7 +59,7 @@ export default function RotuloDisenosGuardados({ disenoActivoId, onGuardarComoMo
 
   return (
     <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>💾 Modelos guardados</div>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="guardar" /> Modelos guardados</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         <Input type="text" placeholder="Nombre del modelo" value={nombre} onChange={e => setNombre(e.target.value)} style={{ flex: '1 1 180px', minWidth: 0 }} />
         <Button variant="primary" size="sm" onClick={() => void handleGuardar()} disabled={guardando}>+ Guardar como modelo</Button>

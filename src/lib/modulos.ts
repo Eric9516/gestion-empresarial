@@ -5,12 +5,14 @@
 
 import datos from './modulos.json';
 
-export type ModuloId = 'proveedores' | 'comisionistas' | 'envios' | 'deposito' | 'tareas';
+export type ModuloId = 'proveedores' | 'comisionistas' | 'envios' | 'deposito' | 'mantenimiento' | 'tareas';
 export type Modulos = Record<ModuloId, boolean>;
 
 export interface ModuloInfo {
   id: ModuloId;
   nombre: string;
+  // Componente del producto al que pertenece
+  componente: 'base' | 'abastecimiento' | 'mantenimiento';
   descripcion: string;
   // Módulos sin los cuales este no puede funcionar
   requiere: ModuloId[];
@@ -48,8 +50,10 @@ export function efectivos(m: Modulos): Modulos {
 export function integraciones(m: Modulos) {
   const e = efectivos(m);
   return {
-    // Reparaciones y proveedores por repuesto: salen del Depósito y necesitan un proveedor.
+    // Proveedores por repuesto: salen del Depósito y necesitan un proveedor.
     depositoConProveedores: e.deposito && e.proveedores,
+    // Reparaciones: son de Mantenimiento, usan repuestos del Depósito y necesitan un proveedor.
+    reparaciones: e.mantenimiento && e.deposito && e.proveedores,
     // Elegir un comisionista al armar un envío.
     enviosConComisionistas: e.envios && e.comisionistas,
   };
@@ -59,4 +63,38 @@ export function integraciones(m: Modulos) {
 export function hayModulosDeDirectorio(m: Modulos): boolean {
   const e = efectivos(m);
   return e.proveedores || e.comisionistas || e.envios || e.tareas;
+}
+
+// ---- Licencia + interruptor del dueño ----
+// Un módulo funciona si (1) la licencia lo incluye y su componente está instalado, y (2) el dueño no lo apagó.
+// La base de datos aplica la misma regla en modulo_activo(); acá se usa para mostrar solo lo que se puede usar.
+export interface EstadoDeModulos {
+  // Los que el plan incluye (y cuyo componente está instalado).
+  contratados: Modulos;
+  // Los que el dueño apagó dentro de lo contratado.
+  apagados: Partial<Record<ModuloId, boolean>>;
+  // Los que de verdad se pueden usar (ya descontadas las dependencias).
+  activos: Modulos;
+}
+
+export function resolverModulos(licencia: unknown, componentes: unknown, apagadosCrudo: unknown): EstadoDeModulos {
+  const lic = normalizarModulos(licencia);
+  // Si todavía no se conoce la lista de componentes instalados (instalaciones de antes), solo manda la licencia.
+  const instalados = Array.isArray(componentes) ? (componentes as unknown[]).filter((c): c is string => typeof c === 'string') : null;
+  const contratados = Object.fromEntries(MODULOS.map(m => [m.id, lic[m.id] && (instalados == null || instalados.includes(m.componente))])) as Modulos;
+  const crudo = apagadosCrudo && typeof apagadosCrudo === 'object' && !Array.isArray(apagadosCrudo) ? (apagadosCrudo as Record<string, unknown>) : {};
+  const apagados = Object.fromEntries(MODULOS.filter(m => contratados[m.id] && crudo[m.id] === true).map(m => [m.id, true])) as EstadoDeModulos['apagados'];
+  const prendidos = Object.fromEntries(MODULOS.map(m => [m.id, contratados[m.id] && !apagados[m.id]])) as Modulos;
+  return { contratados, apagados, activos: efectivos(prendidos) };
+}
+
+// Módulos que hoy están en uso y necesitan a `id` (hay que apagarlos antes de apagar este).
+export function dependientesEnUso(id: ModuloId, activos: Modulos): ModuloInfo[] {
+  return MODULOS.filter(m => m.requiere.includes(id) && activos[m.id]);
+}
+
+// Módulos que necesita `id` y hoy no están en uso (hay que prenderlos antes de prender este).
+export function requisitosFaltantes(id: ModuloId, activos: Modulos): ModuloInfo[] {
+  const m = MODULOS.find(x => x.id === id);
+  return (m?.requiere ?? []).map(r => MODULOS.find(x => x.id === r)!).filter(r => !activos[r.id]);
 }

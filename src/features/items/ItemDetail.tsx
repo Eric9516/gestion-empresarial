@@ -17,6 +17,7 @@ import { useLineasPendientesPorItem } from '../reparaciones/useReparaciones';
 import { useModulos } from '../config/useModulos';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   item: Item | null;
@@ -107,22 +108,22 @@ function FotoCarousel({ item, admin, puedeSubir }: { item: Item; admin: boolean;
             color: esPrincipal ? '#f5b301' : 'var(--border)',
             cursor: !esPrincipal && admin ? 'pointer' : 'default',
           }}
-        >★</button>
+        ><Icono n="estrella" /></button>
         {puedeSubir && (
           <div ref={menuRef} style={{ position: 'relative' }}>
-            <button type="button" {...disparador} aria-label="Más acciones" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 18, lineHeight: 1, color: 'var(--text-muted)' }}>⋮</button>
+            <button type="button" {...disparador} aria-label="Más acciones" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 18, lineHeight: 1, color: 'var(--text-muted)' }}><Icono n="masAcciones" tam={18} /></button>
             <div className={`user-dropdown${menuOpen ? ' open' : ''}`} style={{ right: 0, left: 'auto' }} {...menu}>
-              <button role="menuitem" className="user-dropdown-item" onClick={() => { cerrarMenu(); inputCamaraRef.current?.click(); }}>📷 Sacar foto</button>
-              <button role="menuitem" className="user-dropdown-item" onClick={() => { cerrarMenu(); inputGaleriaRef.current?.click(); }}>🖼️ Elegir de galería</button>
+              <button role="menuitem" className="user-dropdown-item" onClick={() => { cerrarMenu(); inputCamaraRef.current?.click(); }}><Icono n="camara" /> Sacar foto</button>
+              <button role="menuitem" className="user-dropdown-item" onClick={() => { cerrarMenu(); inputGaleriaRef.current?.click(); }}><Icono n="imagen" /> Elegir de galería</button>
               {url && admin && (
-                <button role="menuitem" className="user-dropdown-item user-dropdown-danger" onClick={() => { cerrarMenu(); void handleDelete(); }}>🗑 Eliminar foto</button>
+                <button role="menuitem" className="user-dropdown-item user-dropdown-danger" onClick={() => { cerrarMenu(); void handleDelete(); }}><Icono n="borrar" /> Eliminar foto</button>
               )}
             </div>
           </div>
         )}
       </div>
       {pendiente && (
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--warning, #b8860b)', textAlign: 'center', marginBottom: 3 }}>⏳ Pendiente de revisión</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--warning, #b8860b)', textAlign: 'center', marginBottom: 3 }}><Icono n="espera" /> Pendiente de revisión</div>
       )}
       <div
         ref={scrollRef}
@@ -213,7 +214,8 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
                 style={{ width: '100%', justifyContent: 'center', marginTop: 6 }}
                 onClick={() => setQrModalOpen(true)}
               >
-                📥 Descargar QR
+                
+                <Icono n="importar" /> Descargar QR
               </Button>
             )}
           </div>
@@ -232,7 +234,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
                     title="Ver historial de movimientos (retiros y ajustes)"
                     {...clicConTeclado(() => setHistorialOpen(true))}
                   >
-                    {item.stock} <span style={{ fontSize: 12 }}>📋</span>
+                    {item.stock} <span style={{ fontSize: 12 }}><Icono n="lista" /></span>
                   </div>
                   {totalEnReparacion > 0 && (
                     <button
@@ -275,8 +277,8 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
         {admin && integ.depositoConProveedores && <ProveedoresDeItem itemId={item.id} onVerProveedor={setProveedorVisto} />}
         {admin && (
           <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>
-            <Button variant="ghost" size="sm" onClick={onEdit}>✏️ Editar</Button>
-            <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete()}>🗑 Eliminar</Button>
+            <Button variant="ghost" size="sm" onClick={onEdit}><Icono n="editar" /> Editar</Button>
+            <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete()}><Icono n="borrar" /> Eliminar</Button>
           </div>
         )}
       </Modal>

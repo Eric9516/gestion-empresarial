@@ -1,5 +1,6 @@
 import type { DocInfo } from '../../lib/rotuloPdf';
 import type { RotuloCampos, RotuloDesign } from '../../lib/rotuloDesign';
+import { Icono } from '@/components/Icono';
 
 interface ProveedorParaPreview {
   nombre: string;
@@ -85,7 +86,7 @@ export default function RotuloPreview({ design: rd, campos, pie, empresa, logo, 
           </div>
         )}
         {extra && (
-          <div style={{ fontSize: 12, fontWeight: 'bold', color: rd.barColor, marginBottom: 4, marginTop: 0 }}>⚠ {extra}</div>
+          <div style={{ fontSize: 12, fontWeight: 'bold', color: rd.barColor, marginBottom: 4, marginTop: 0 }}><Icono n="alerta" /> {extra}</div>
         )}
         {detalle && (
           <div style={{ marginTop: hasEnvioInfo ? 0 : 8, paddingTop: 12, borderTop: '1px solid #ddd' }}>
@@ -99,7 +100,7 @@ export default function RotuloPreview({ design: rd, campos, pie, empresa, logo, 
       </div>
       <div style={{ background: '#f7f9fc', borderTop: '1px solid #ddd', padding: '6px 14px', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#999' }}>
         <span>{pie || empresa}</span>
-        <span>📅 {fecha}</span>
+        <span><Icono n="fecha" /> {fecha}</span>
       </div>
     </div>
   );

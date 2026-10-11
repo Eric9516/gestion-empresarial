@@ -6,6 +6,7 @@ import type { Contacto, Proveedor } from '../proveedores/useProveedores';
 import type { RotuloBulto, RotuloGenerado } from './useRotulos';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   rotulo: RotuloGenerado;
@@ -43,7 +44,7 @@ export default function RotuloDescargas({ rotulo, bultos, proveedor, contactos }
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)', marginBottom: 8 }}>✅ Guardado — descargá cada bulto</div>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)', marginBottom: 8 }}><Icono n="exito" /> Guardado — descargá cada bulto</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {bultos.map(b => (
           <div key={b.numero} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: 'var(--surface2)', borderRadius: 6, padding: '8px 10px' }}>

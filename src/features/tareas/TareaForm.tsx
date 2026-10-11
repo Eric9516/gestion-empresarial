@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -55,16 +56,16 @@ export default function TareaForm({ open, onClose, tarea }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">🚦</span> {tarea ? 'Editar Tarea' : 'Nueva Tarea'}</>}>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="semaforo" /></span> {tarea ? 'Editar Tarea' : 'Nueva Tarea'}</>}>
       <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
         <div className="form-group"><label htmlFor="tarea-form-1">Título *</label><Input id="tarea-form-1" type="text" placeholder="¿Qué tenés que hacer?" value={titulo} onChange={e => setTitulo(e.target.value)} /></div>
         <div className="form-group"><label htmlFor="tarea-form-2">Descripción</label><Textarea id="tarea-form-2" placeholder="Detalles opcionales..." rows={3} value={descripcion} onChange={e => setDescripcion(e.target.value)} /></div>
         <div className="form-group">
           <label htmlFor="tarea-form-3">Prioridad{tarea ? '' : ' inicial'}</label>
           <Select id="tarea-form-3" value={semaforo} onChange={e => setSemaforo(e.target.value)}>
-            <option value="green">🟢 Normal</option>
-            <option value="yellow">🟡 Atención</option>
-            <option value="red">🔴 Crítica</option>
+            <option value="green">Normal</option>
+            <option value="yellow">Atención</option>
+            <option value="red">Crítica</option>
           </Select>
         </div>
         {!tarea && (

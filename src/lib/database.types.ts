@@ -191,15 +191,7 @@ export type Database = {
           rotulo_diseno_id?: number | null
           rotulo_pie?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "configuracion_rotulo_diseno_id_fkey"
-            columns: ["rotulo_diseno_id"]
-            isOneToOne: false
-            referencedRelation: "rotulo_disenos"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       contactos: {
         Row: {
@@ -548,18 +540,42 @@ export type Database = {
       licencia: {
         Row: {
           actualizada_at: string
+          componentes: string[]
           id: number
           modulos: Json
         }
         Insert: {
           actualizada_at?: string
+          componentes?: string[]
           id?: number
           modulos?: Json
         }
         Update: {
           actualizada_at?: string
+          componentes?: string[]
           id?: number
           modulos?: Json
+        }
+        Relationships: []
+      }
+      preferencias_modulos: {
+        Row: {
+          actualizado_at: string | null
+          actualizado_por: string | null
+          apagados: Json
+          id: number
+        }
+        Insert: {
+          actualizado_at?: string | null
+          actualizado_por?: string | null
+          apagados?: Json
+          id?: number
+        }
+        Update: {
+          actualizado_at?: string | null
+          actualizado_por?: string | null
+          apagados?: Json
+          id?: number
         }
         Relationships: []
       }
@@ -1422,6 +1438,10 @@ export type Database = {
         Returns: string
       }
       definir_dueno_inicial: { Args: { p_email: string }; Returns: undefined }
+      definir_modulo_del_dueno: {
+        Args: { p_apagado: boolean; p_modulo: string }
+        Returns: undefined
+      }
       eliminar_reparacion: {
         Args: { p_reparacion_id: string }
         Returns: undefined
@@ -1473,6 +1493,7 @@ export type Database = {
       is_mantenimiento_admin: { Args: never; Returns: boolean }
       is_owner: { Args: never; Returns: boolean }
       modulo_activo: { Args: { p_modulo: string }; Returns: boolean }
+      modulo_requisitos: { Args: never; Returns: Json }
       usuario_activo: { Args: never; Returns: boolean }
       hoy_local: { Args: never; Returns: string }
       fecha_local: { Args: { p: string }; Returns: string }

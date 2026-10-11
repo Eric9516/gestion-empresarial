@@ -12,6 +12,7 @@ import { useGuardarComoModelo, useResetRotuloDesign, useSaveRotuloDesign } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Icono } from '@/components/Icono';
 
 const MOCK_PROVEEDOR = {
   nombre: 'Nombre del Proveedor SA', rubro: 'Ejemplo de rubro', direccion: 'Calle Ejemplo 1234',
@@ -95,18 +96,18 @@ export default function RotuloDesignPane() {
 
   return (
     <div className="admin-card">
-      <div className="admin-card-header">🏷️ Editor de Diseño del Rótulo</div>
+      <div className="admin-card-header"><Icono n="etiqueta" /> Editor de Diseño del Rótulo</div>
       <div className="admin-card-body">
         <div className="admin-design-grid">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '75vh', overflowY: 'auto', paddingRight: 4 }}>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>📐 Tamaño de vista previa</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="regla" /> Tamaño de vista previa</div>
               <SizeSelector w={size.w} h={size.h} onChange={(w, h) => setSize({ w, h })} />
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>🎨 Colores</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="paleta" /> Colores</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <ColorField label="Fondo header" value={rd.headerBg} onChange={v => patch({ headerBg: v })} />
                 <ColorField label="Barra decorativa" value={rd.barColor} onChange={v => patch({ barColor: v })} />
@@ -119,7 +120,7 @@ export default function RotuloDesignPane() {
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>🖼️ Logo</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="imagen" /> Logo</div>
               <RangeField label="Tamaño" value={rd.logoSize} min={20} max={80} onChange={v => patch({ logoSize: v })} />
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label htmlFor="rotulo-design-pane-3">Posición</label>
@@ -130,7 +131,7 @@ export default function RotuloDesignPane() {
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>🏢 Nombre empresa</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="empresa" /> Nombre empresa</div>
               <div className="form-group" style={{ marginBottom: 8 }}>
                 <label htmlFor="rotulo-design-pane-4">Fuente</label>
                 <Select id="rotulo-design-pane-4" value={rd.empresaFont} onChange={e => patch({ empresaFont: e.target.value })}>
@@ -147,7 +148,7 @@ export default function RotuloDesignPane() {
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>🏭 Nombre proveedor</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="fabrica" /> Nombre proveedor</div>
               <div className="form-group" style={{ marginBottom: 8 }}>
                 <label htmlFor="rotulo-design-pane-6">Fuente</label>
                 <Select id="rotulo-design-pane-6" value={rd.provFont} onChange={e => patch({ provFont: e.target.value })}>
@@ -164,7 +165,7 @@ export default function RotuloDesignPane() {
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>🔲 Bordes y líneas</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="marco" /> Bordes y líneas</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-mid)', marginBottom: 6 }}>Marco del rótulo</div>
               <div style={{ marginBottom: 12 }}><RangeField label="" value={rd.marcoWidth} min={0} max={8} onChange={v => patch({ marcoWidth: v })} /></div>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-mid)', marginBottom: 6 }}>Barra divisoria</div>
@@ -172,7 +173,7 @@ export default function RotuloDesignPane() {
             </div>
 
             <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}>📋 Campos visibles</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--blue)', marginBottom: 10 }}><Icono n="lista" /> Campos visibles</div>
               <RotuloCamposToggles campos={campos} onChange={setCampos} />
               <div className="divider" />
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -199,7 +200,7 @@ export default function RotuloDesignPane() {
         />
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>
-          <Button variant="ghost" onClick={() => void handleReset()}>↺ Restablecer</Button>
+          <Button variant="ghost" onClick={() => void handleReset()}><Icono n="repetir" /> Restablecer</Button>
           <Button variant="success" onClick={() => void handleGuardar()}>Guardar diseño</Button>
         </div>
       </div>

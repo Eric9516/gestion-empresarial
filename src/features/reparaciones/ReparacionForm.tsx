@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface LineaNueva {
   item_id: string;
@@ -94,7 +95,7 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
       open={open}
       onClose={handleClose}
       large
-      title="🔧 Nueva reparación"
+      title={<><Icono n="herramienta" /> Nueva reparación</>}
       footer={
         <>
           <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
@@ -138,7 +139,7 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
           {resultados.length ? resultados.map(it => (
             <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
               <span style={{ fontSize: 13, minWidth: 0 }}><strong>{it.codigo}</strong> — {it.descripcion}</span>
-              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => agregarLinea(it)}>＋ Agregar</Button>
+              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => agregarLinea(it)}><Icono n="mas" /> Agregar</Button>
             </div>
           )) : <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin resultados</p>}
         </div>
@@ -155,7 +156,7 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
               <input type="checkbox" checked={l.descuentaStock} onChange={e => actualizarDescuentaStock(l.item_id, e.target.checked)} />
               Descontar del stock
             </label>
-            <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => quitarLinea(l.item_id)}>✕</Button>
+            <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => quitarLinea(l.item_id)}><Icono n="cerrar" /></Button>
           </div>
         ))}
       </div>

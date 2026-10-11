@@ -16,6 +16,7 @@ import { useEliminarRotuloGrupo, useRotuloAutoresQuery, useRotulosQuery, type Ro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Icono } from '@/components/Icono';
 
 export default function RotulosScreen() {
   const { profile } = useAuth();
@@ -88,7 +89,7 @@ export default function RotulosScreen() {
   // con un solo bulto, es el único lugar que sabe generarlo bien.
   function VerBtn({ r }: { r: RotuloGenerado }) {
     const total = r.bulto_total ?? 1;
-    return <Button variant="ghost" size="sm" onClick={() => setBultosRotuloId(r.id)}>👁 Ver{total > 1 ? ` (${total})` : ''}</Button>;
+    return <Button variant="ghost" size="sm" onClick={() => setBultosRotuloId(r.id)}><Icono n="ver" /> Ver{total > 1 ? ` (${total})` : ''}</Button>;
   }
 
   // Visible para todos (para leerlo); el modal ya decide si se puede editar o solo ver.
@@ -100,7 +101,7 @@ export default function RotulosScreen() {
         title={tiene ? r.comentario! : 'Agregar comentario'}
         style={tiene ? { color: 'var(--blue)' } : undefined}
         onClick={() => setComentarioRotulo(r)}
-      >💬</Button>
+      ><Icono n="mensaje" /></Button>
     );
   }
 
@@ -108,9 +109,9 @@ export default function RotulosScreen() {
     if (!admin) return null;
     return (
       <>
-        {r.version > 1 && <Button variant="ghost" size="icon" title="Historial de versiones" onClick={() => setVersionesGrupoId(r.grupo_id)}>🕘</Button>}
-        <Button variant="ghost" size="icon" title="Editar" onClick={() => setEditingId(r.id)}>✏️</Button>
-        <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleEliminar(r)}>🗑️</Button>
+        {r.version > 1 && <Button variant="ghost" size="icon" title="Historial de versiones" onClick={() => setVersionesGrupoId(r.grupo_id)}><Icono n="reloj" /></Button>}
+        <Button variant="ghost" size="icon" title="Editar" onClick={() => setEditingId(r.id)}><Icono n="editar" /></Button>
+        <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleEliminar(r)}><Icono n="borrar" /></Button>
       </>
     );
   }
@@ -128,7 +129,7 @@ export default function RotulosScreen() {
       render: r => (
         <div className="td-actions">
           <VerBtn r={r} />
-          <Button variant="ghost" size="icon" title="Fotos del envío" onClick={() => setFotosGrupo({ grupoId: r.grupo_id, proveedorId: r.proveedor_id, proveedorNombre: proveedoresPorId[r.proveedor_id]?.nombre || '' })}>📷</Button>
+          <Button variant="ghost" size="icon" title="Fotos del envío" onClick={() => setFotosGrupo({ grupoId: r.grupo_id, proveedorId: r.proveedor_id, proveedorNombre: proveedoresPorId[r.proveedor_id]?.nombre || '' })}><Icono n="camara" /></Button>
           <ComentarioBtn r={r} />
           <AdminBtns r={r} />
         </div>
@@ -150,20 +151,20 @@ export default function RotulosScreen() {
           <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{new Date(r.created_at).toLocaleDateString('es-AR')}</span>
         </div>
         <div className="prov-card-body">
-          <div className="prov-card-row">📄 {docLabel(r)}</div>
-          <div className="prov-card-row">📦 {(r.bulto_total ?? 1) > 1 ? `${r.bulto_total} bultos` : '1 bulto'}</div>
-          {com && <div className="prov-card-row">🤝 {com.empresa || com.nombre}</div>}
-          {autor && <div className="prov-card-row">👤 {`${autor.nombre || ''} ${autor.apellido || ''}`.trim()}</div>}
+          <div className="prov-card-row"><Icono n="documento" /> {docLabel(r)}</div>
+          <div className="prov-card-row"><Icono n="paquete" /> {(r.bulto_total ?? 1) > 1 ? `${r.bulto_total} bultos` : '1 bulto'}</div>
+          {com && <div className="prov-card-row"><Icono n="acuerdo" /> {com.empresa || com.nombre}</div>}
+          {autor && <div className="prov-card-row"><Icono n="usuario" /> {`${autor.nombre || ''} ${autor.apellido || ''}`.trim()}</div>}
         </div>
         <div className="prov-card-actions">
           <VerBtn r={r} />
-          <Button variant="ghost" size="sm" onClick={() => setFotosGrupo({ grupoId: r.grupo_id, proveedorId: r.proveedor_id, proveedorNombre: prov?.nombre || '' })}>📷 Fotos</Button>
-          <Button variant="ghost" size="sm" style={r.comentario ? { color: 'var(--blue)' } : undefined} onClick={() => setComentarioRotulo(r)}>💬 {r.comentario ? 'Comentario' : 'Comentar'}</Button>
+          <Button variant="ghost" size="sm" onClick={() => setFotosGrupo({ grupoId: r.grupo_id, proveedorId: r.proveedor_id, proveedorNombre: prov?.nombre || '' })}><Icono n="camara" /> Fotos</Button>
+          <Button variant="ghost" size="sm" style={r.comentario ? { color: 'var(--blue)' } : undefined} onClick={() => setComentarioRotulo(r)}><Icono n="mensaje" /> {r.comentario ? 'Comentario' : 'Comentar'}</Button>
           {admin && (
             <>
-              {r.version > 1 && <Button variant="ghost" size="sm" onClick={() => setVersionesGrupoId(r.grupo_id)}>🕘 Historial</Button>}
-              <Button variant="ghost" size="sm" onClick={() => setEditingId(r.id)}>✏️ Editar</Button>
-              <Button variant="dangerGhost" size="sm" onClick={() => void handleEliminar(r)}>🗑 Borrar</Button>
+              {r.version > 1 && <Button variant="ghost" size="sm" onClick={() => setVersionesGrupoId(r.grupo_id)}><Icono n="reloj" /> Historial</Button>}
+              <Button variant="ghost" size="sm" onClick={() => setEditingId(r.id)}><Icono n="editar" /> Editar</Button>
+              <Button variant="dangerGhost" size="sm" onClick={() => void handleEliminar(r)}><Icono n="borrar" /> Borrar</Button>
             </>
           )}
         </div>
@@ -174,7 +175,7 @@ export default function RotulosScreen() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">📦 Envíos</div>
+        <div className="section-title"><Icono n="paquete" /> Envíos</div>
       </div>
 
       <div className="toolbar">
@@ -223,7 +224,7 @@ export default function RotulosScreen() {
           data={filtrados}
           renderCard={renderCard}
           keyField={r => r.id}
-          emptyIcon="📦"
+          emptyIcon={<Icono n="paquete" />}
           emptyTitle="Sin envíos"
           emptyDescription="No hay envíos que coincidan con el filtro."
         />

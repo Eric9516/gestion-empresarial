@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   items: Item[];
@@ -55,7 +56,7 @@ function AgregarLinea({ yaAgregados, onAgregarItem, onAgregarManual }: {
     <div style={{ margin: '4px 0 12px' }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Input style={{ flex: '1 1 240px' }} placeholder="Agregar otro artículo: buscá por código o descripción..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
-        <Button type="button" variant="ghost" size="sm" onClick={onAgregarManual}>＋ Línea manual</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onAgregarManual}><Icono n="mas" /> Línea manual</Button>
       </div>
       {sugerencias.map(it => (
         <Button
@@ -140,12 +141,12 @@ export default function PedidoModal({ items, onClose, onDescargado }: Props) {
       open
       onClose={onClose}
       large
-      title="📄 Armar solicitud de presupuesto"
+      title={<><Icono n="documento" /> Armar solicitud de presupuesto</>}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cerrar</Button>
-          <Button variant="ghost" disabled={sinLineas} onClick={() => void handleVer()}>👁 Ver PDF</Button>
-          <Button variant="primary" disabled={sinLineas} onClick={() => void handleDescargar()}>⬇ Descargar PDF</Button>
+          <Button variant="ghost" disabled={sinLineas} onClick={() => void handleVer()}><Icono n="ver" /> Ver PDF</Button>
+          <Button variant="primary" disabled={sinLineas} onClick={() => void handleDescargar()}><Icono n="exportar" /> Descargar PDF</Button>
         </>
       }
     >
@@ -192,7 +193,7 @@ export default function PedidoModal({ items, onClose, onDescargado }: Props) {
             variant="dangerGhost" size="icon"
             title="Quitar de la solicitud"
             onClick={() => setLineas(prev => prev.filter(x => x.id !== l.id))}
-          >✕</Button>
+          ><Icono n="cerrar" /></Button>
         </div>
       ))}
     </Modal>

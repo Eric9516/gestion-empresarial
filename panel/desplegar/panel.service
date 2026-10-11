@@ -1,0 +1,67 @@
+# Servicio del panel. Va en /etc/systemd/system/panel.service
+#
+# El panel corre como un usuario SIN privilegios ("panel") y con el sistema operativo restringiéndole casi todo lo que no
+# necesita: no puede escribir en ningún lado, no ve las carpetas de otros usuarios, no puede abrir sockets raros ni
+# cambiar privilegios. Si alguien lograra ejecutar código dentro del panel, queda encerrado ahí.
+#
+# Para ver qué tan encerrado queda:   systemd-analyze security panel.service
+
+[Unit]
+Description=Panel de clientes
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=panel
+Group=panel
+# La configuración (con los secretos) vive en un archivo que solo puede leer root: ver panel.env.ejemplo
+EnvironmentFile=/etc/panel/panel.env
+WorkingDirectory=/opt/panel
+ExecStart=/usr/bin/node /opt/panel/panel.mjs
+Restart=on-failure
+RestartSec=5
+# Si falla seguido, se detiene (no entra en un ciclo infinito).
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+# ---- aislamiento ----
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateUsers=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RemoveIPC=yes
+# V8 (el motor de Node) necesita memoria ejecutable: por eso MemoryDenyWriteExecute queda en "no".
+MemoryDenyWriteExecute=no
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @mount @swap @reboot @raw-io @debug @module @obsolete
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
+ReadOnlyPaths=/opt/panel
+InaccessiblePaths=/root /home /srv /var/backups
+
+# ---- recursos (si algo se desboca, no se come el servidor) ----
+MemoryMax=400M
+TasksMax=64
+LimitNOFILE=2048
+
+[Install]
+WantedBy=multi-user.target

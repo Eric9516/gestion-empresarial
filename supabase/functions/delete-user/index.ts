@@ -2,7 +2,7 @@
 // Elimina un usuario (auth + perfil) usando la clave secreta del proyecto.
 // Solo la puede ejecutar el propietario (usuarios_perfil.es_owner), y no te podés eliminar a vos mismo.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.112.3';
 
 // Supabase inyecta estos dos valores solo en cada proyecto, sin configurar
 // nada — así esta función funciona igual en cualquier instalación, sin tener

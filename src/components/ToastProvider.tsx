@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { Icono } from '@/components/Icono';
 
 type ToastType = 'success' | 'error';
 interface ToastState { message: string; type: ToastType; show: boolean }
 
 const ToastContext = createContext<((message: string, type?: ToastType) => void) | undefined>(undefined);
 
-const ICONS: Record<ToastType, string> = { success: '✓', error: '✕' };
+const ICONS: Record<ToastType, ReactNode> = { success: <Icono n="ok" />, error: <Icono n="cerrar" /> };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toastState, setToastState] = useState<ToastState>({ message: '', type: 'success', show: false });

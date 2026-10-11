@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useModulos } from '../config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -226,12 +227,12 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
 
         {usuario && !esUnoMismo && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setResetPasswordOpen(true)}>🔑 Contraseña</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setResetPasswordOpen(true)}><Icono n="clave" /> Contraseña</Button>
             {isOwner(profile) && usuario.es_owner !== true && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => void handleAgregarDueno()}>👑 Agregar como dueño</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => void handleAgregarDueno()}><Icono n="corona" /> Agregar como dueño</Button>
             )}
             {isOwner(profile) && usuario.es_owner === true && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => void handleQuitarDueno()}>👑 Quitar como dueño</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => void handleQuitarDueno()}><Icono n="corona" /> Quitar como dueño</Button>
             )}
             {usuario.es_owner !== true && (
               <>

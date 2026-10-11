@@ -185,7 +185,7 @@ export function useGuardarRotulo() {
 }
 
 // Comentario del envío: se edita aparte del resto del formulario, desde el
-// ícono 💬 de la lista. Guardar con texto vacío lo borra (queda en null).
+// ícono de comentario de la lista. Guardar con texto vacío lo borra (queda en null).
 export function useGuardarComentarioRotulo() {
   const queryClient = useQueryClient();
   return useMutation({

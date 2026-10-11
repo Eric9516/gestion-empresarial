@@ -74,11 +74,17 @@ delete from public.usuarios_perfil where email like '%@prueba-plantilla.com';
 delete from auth.users where email like '%@prueba-plantilla.com';
 alter table public.usuarios_perfil enable trigger trg_evitar_borrar_dueno;
 alter table public.usuarios_perfil enable trigger trg_evitar_sin_owner;
-update public.licencia set modulos = '{"proveedores": true, "comisionistas": true, "envios": true, "tareas": true, "deposito": true}'::jsonb;
+update public.licencia set modulos = '{"proveedores": true, "comisionistas": true, "envios": true, "tareas": true, "deposito": true, "mantenimiento": true}'::jsonb;
+update public.preferencias_modulos set apagados = '{}'::jsonb;
 truncate public.audit_log restart identity;
 insert into public.configuracion (id) values (1) on conflict (id) do nothing;
 select 1 as ok;`;
 sql(limpieza);
+const componentesInstalados = sql('select componentes::text as c from public.licencia');
+if (!/abastecimiento/.test(componentesInstalados) || !/mantenimiento/.test(componentesInstalados)) {
+  console.error('Este proyecto de pruebas no tiene instalados los tres componentes (base, abastecimiento y mantenimiento): instalalo con --modulos todos.');
+  process.exit(1);
+}
 const configOriginal = (await admin('/rest/v1/configuracion?id=eq.1&select=empresa_nombre,color_primario,color_deposito,inicial_cerrada_at')).datos?.[0];
 
 // ---------- 1) usuarios y dueño de la instalación ----------
@@ -224,8 +230,9 @@ ok('El dueño elimina a un usuario común (perfil y cuenta)', r.estado < 300 && 
 // ---------- 8) licencia de módulos: bloqueo real en la base de datos ----------
 const licenciaActual = async () => (await admin('/rest/v1/licencia?select=modulos')).datos?.[0]?.modulos;
 const poner = async (apagados = []) => {
-  const m = { proveedores: true, comisionistas: true, envios: true, tareas: true, deposito: true };
+  const m = { proveedores: true, comisionistas: true, envios: true, tareas: true, deposito: true, mantenimiento: true };
   for (const k of apagados) m[k] = false;
+  await admin('/rest/v1/preferencias_modulos?id=eq.1', { metodo: 'PATCH', cuerpo: { apagados: {} } });
   const x = await admin('/rest/v1/licencia?id=eq.1', { metodo: 'PATCH', cuerpo: { modulos: m } });
   if (x.estado >= 300) throw new Error('No se pudo cambiar la licencia: ' + JSON.stringify(x.datos));
 };
@@ -272,8 +279,8 @@ const NECESITA = {
   proveedores: ['proveedores'], contactos: ['proveedores'], comisionistas: ['comisionistas'],
   rotulos_generados: ['envios'], rotulos_bultos: ['envios'], rotulos_fotos: ['envios'], rotulo_disenos: ['envios'],
   items: ['deposito'], familias: ['deposito'], subfamilias: ['deposito'], planilla_familias: ['deposito'], retiros: ['deposito'],
-  retiro_items: ['deposito'], sectores: ['deposito'], equipos: ['deposito'], equipo_items: ['deposito'],
-  reparaciones: ['deposito', 'proveedores'], reparacion_items: ['deposito', 'proveedores'], item_proveedores: ['deposito', 'proveedores'],
+  retiro_items: ['deposito'], sectores: ['deposito'], equipos: ['mantenimiento', 'deposito'], equipo_items: ['mantenimiento', 'deposito'],
+  reparaciones: ['mantenimiento', 'deposito', 'proveedores'], reparacion_items: ['mantenimiento', 'deposito', 'proveedores'], item_proveedores: ['deposito', 'proveedores'],
   tasks: ['tareas'],
 };
 const verTodas = async token => {
@@ -294,7 +301,7 @@ let desvios = comparar(await verTodas(dueno.token), []);
 ok(`Con todos los módulos activos, el dueño ve las ${Object.keys(NECESITA).length} tablas con datos`, desvios.length === 0, desvios.join(', '));
 ok('…y puede subir archivos a las carpetas de Depósito y de Envíos', (await subirTxt('items', dueno.token)) < 300 && (await subirTxt('rotulos', dueno.token)) < 300);
 
-for (const apagado of ['proveedores', 'comisionistas', 'envios', 'deposito', 'tareas']) {
+for (const apagado of ['proveedores', 'comisionistas', 'envios', 'deposito', 'mantenimiento', 'tareas']) {
   await poner([apagado]);
   desvios = comparar(await verTodas(dueno.token), [apagado]);
   ok(`Con "${apagado}" apagado, el dueño pierde exactamente las tablas de ese módulo y conserva las demás`, desvios.length === 0, desvios.length ? 'distintas a lo esperado: ' + desvios.join(', ') : '');
@@ -306,7 +313,7 @@ for (const apagado of ['proveedores', 'comisionistas', 'envios', 'deposito', 'ta
     r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'No debería' } });
     ok('   …crear una tarea se rechaza', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
   }
-  if (apagado === 'deposito' || apagado === 'proveedores') {
+  if (apagado === 'deposito' || apagado === 'proveedores' || apagado === 'mantenimiento') {
     r = await http('/rest/v1/rpc/crear_reparacion', { metodo: 'POST', token: dueno.token, cuerpo: { p_proveedor_id: prov.id, p_motivo: 'x', p_fecha_salida: '2026-01-01', p_envio_id: null, p_items: [] } });
     ok('   …crear una reparación se rechaza por el módulo (no por otra causa)', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
   }
@@ -329,7 +336,7 @@ const ponerCrudo = async m => {
   const x = await admin('/rest/v1/licencia?id=eq.1', { metodo: 'PATCH', cuerpo: { modulos: m } });
   if (x.estado >= 300) throw new Error('No se pudo cambiar la licencia: ' + JSON.stringify(x.datos));
 };
-await ponerCrudo({ proveedores: true, comisionistas: true, envios: true, deposito: true }); // sin "tareas"
+await ponerCrudo({ proveedores: true, comisionistas: true, envios: true, deposito: true, mantenimiento: true }); // sin "tareas"
 r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'No debería' } });
 ok('Un módulo que no figura en la licencia está apagado (aunque los demás sí estén activos)', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
 desvios = comparar(await verTodas(dueno.token), ['tareas']);
@@ -348,6 +355,69 @@ const audLic = await http('/rest/v1/audit_log?select=descripcion,usuario_nombre&
 ok('Cada cambio de la licencia quedó en el historial', audLic.datos?.length >= 6 && audLic.datos.some(x => /apagado/.test(x.descripcion)), audLic.datos?.[0]?.descripcion);
 r = await http('/rest/v1/audit_log?select=id&tabla=eq.licencia', { token: comun.token });
 ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length === 0 : r.estado >= 400);
+
+// ---------- 9b) interruptor del dueño: apaga o prende módulos de SU plan, nada más ----------
+{
+  const rpcDueno = (token, modulo, apagado) => http('/rest/v1/rpc/definir_modulo_del_dueno', { metodo: 'POST', token, cuerpo: { p_modulo: modulo, p_apagado: apagado } });
+  const apagadosAhora = async () => (await admin('/rest/v1/preferencias_modulos?select=apagados&id=eq.1')).datos?.[0]?.apagados ?? {};
+  const resetearInterruptor = () => admin('/rest/v1/preferencias_modulos?id=eq.1', { metodo: 'PATCH', cuerpo: { apagados: {} } });
+  await poner([]);
+  await resetearInterruptor();
+
+  r = await rpcDueno(comun.token, 'comisionistas', true);
+  ok('Un usuario común NO puede apagar módulos', r.estado >= 400 && /Solo el due[ñn]o/i.test(msg(r)), msg(r));
+  // (el usuario "deposito" quedó como dueño en una sección anterior: para esta prueba se crea un administrador que NO lo es)
+  const adminSimple = { email: 'adminsimple@prueba-plantilla.com', clave: clave() };
+  adminSimple.id = (await admin('/auth/v1/admin/users', { metodo: 'POST', cuerpo: { email: adminSimple.email, password: adminSimple.clave, email_confirm: true, user_metadata: { full_name: 'Admin simple' } } })).datos?.id;
+  await admin(`/rest/v1/usuarios_perfil?id=eq.${adminSimple.id}`, { metodo: 'PATCH', cuerpo: { rol: 'admin', mantenimiento_rol: 'admin' } });
+  adminSimple.token = await ingresar(adminSimple.email, adminSimple.clave);
+  r = await rpcDueno(adminSimple.token, 'comisionistas', true);
+  ok('Un administrador que no es dueño tampoco', r.estado >= 400 && /Solo el due[ñn]o/i.test(msg(r)), msg(r));
+  r = await http('/rest/v1/rpc/definir_modulo_del_dueno', { metodo: 'POST', cuerpo: { p_modulo: 'comisionistas', p_apagado: true } });
+  ok('Sin sesión no se puede', r.estado >= 400);
+  r = await http('/rest/v1/preferencias_modulos?id=eq.1', { metodo: 'PATCH', token: dueno.token, cuerpo: { apagados: { tareas: true } } });
+  ok('Nadie escribe las preferencias directo (ni el dueño)', JSON.stringify(await apagadosAhora()) === '{}', `HTTP ${r.estado}`);
+
+  r = await rpcDueno(dueno.token, 'comisionistas', true);
+  ok('El dueño apaga Comisionistas', r.estado < 300, msg(r));
+  ok('...la base lo bloquea también para el dueño', (await http('/rest/v1/comisionistas?select=*&limit=1', { token: dueno.token })).datos?.length === 0);
+  ok('...y no toca a los demás módulos', (await http('/rest/v1/proveedores?select=*&limit=1', { token: dueno.token })).datos?.length === 1);
+  r = await http('/rest/v1/preferencias_modulos?select=apagados', { token: comun.token });
+  ok('Cualquier usuario con sesión puede leer qué está apagado (la pantalla lo necesita)', r.datos?.[0]?.apagados?.comisionistas === true);
+  const histDueno = await http('/rest/v1/audit_log?select=descripcion,usuario_email&tabla=eq.preferencias_modulos&order=id.desc', { token: dueno.token });
+  ok('Queda en el historial con el nombre de quien lo hizo', histDueno.datos?.some(x => /comisionistas: apagado/.test(x.descripcion) && x.usuario_email === dueno.email), histDueno.datos?.[0]?.descripcion);
+  r = await rpcDueno(dueno.token, 'comisionistas', false);
+  ok('El dueño lo vuelve a prender y los datos siguen ahí', r.estado < 300 && (await http('/rest/v1/comisionistas?select=*&limit=1', { token: dueno.token })).datos?.length === 1, msg(r));
+
+  r = await rpcDueno(dueno.token, 'proveedores', true);
+  ok('No deja apagar Proveedores mientras Envíos sigue prendido', r.estado >= 400 && /Primero apag/i.test(msg(r)), msg(r));
+  r = await rpcDueno(dueno.token, 'deposito', true);
+  ok('No deja apagar Depósito mientras Mantenimiento sigue prendido', r.estado >= 400 && /Primero apag/i.test(msg(r)), msg(r));
+  await rpcDueno(dueno.token, 'envios', true);
+  r = await rpcDueno(dueno.token, 'proveedores', true);
+  ok('Apagando antes Envíos, ya deja apagar Proveedores', r.estado < 300, msg(r));
+  r = await rpcDueno(dueno.token, 'envios', false);
+  ok('No deja prender Envíos con Proveedores apagado', r.estado >= 400 && /Primero activ/i.test(msg(r)), msg(r));
+  await rpcDueno(dueno.token, 'proveedores', false);
+  await rpcDueno(dueno.token, 'envios', false);
+
+  // Mantenimiento como módulo propio
+  r = await rpcDueno(dueno.token, 'mantenimiento', true);
+  ok('El dueño apaga Mantenimiento', r.estado < 300, msg(r));
+  r = await http('/rest/v1/rpc/crear_reparacion', { metodo: 'POST', token: dueno.token, cuerpo: { p_proveedor_id: prov.id, p_motivo: 'x', p_fecha_salida: '2026-01-01', p_envio_id: null, p_items: [] } });
+  ok('...no se crean reparaciones', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
+  ok('...pero el Depósito sigue funcionando', (await http('/rest/v1/items?select=*&limit=1', { token: dueno.token })).datos?.length === 1);
+  await rpcDueno(dueno.token, 'mantenimiento', false);
+
+  // Lo que la licencia no incluye, el dueño no lo puede prender
+  await poner(['comisionistas']);
+  r = await rpcDueno(dueno.token, 'comisionistas', false);
+  ok('El dueño no puede prender un módulo que su plan no incluye', r.estado >= 400 && /no est[aá] incluido/i.test(msg(r)), msg(r));
+  r = await rpcDueno(dueno.token, 'inventado', true);
+  ok('...ni inventar uno', r.estado >= 400 && /no est[aá] incluido/i.test(msg(r)), msg(r));
+  await poner([]);
+  await resetearInterruptor();
+}
 
 // ---------- 10b) ajuste de inventario ----------
 { // (en su propio bloque para no chocar con los nombres de las secciones anteriores)
@@ -482,6 +552,10 @@ r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: comun.token,
 ok('…tampoco crea tareas', r.estado >= 400);
 const subidaBloqueado = await fetch(`${URL}/storage/v1/object/items/prueba-bloqueado.txt`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${comun.token}`, 'Content-Type': 'text/plain' }, body: 'x' });
 ok('…ni sube archivos', subidaBloqueado.status >= 400, `HTTP ${subidaBloqueado.status}`);
+// La carpeta de rótulos acepta a cualquier usuario con sesión: lo único que frena a un bloqueado es la regla "usuario activo" sobre los archivos.
+const subidaBloqueadoRotulos = await fetch(`${URL}/storage/v1/object/rotulos/prueba-bloqueado.txt`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${comun.token}`, 'Content-Type': 'text/plain' }, body: 'x' });
+ok('…ni sube PDF de rótulos (carpeta abierta a cualquier usuario con sesión)', subidaBloqueadoRotulos.status >= 400, `HTTP ${subidaBloqueadoRotulos.status}`);
+if (subidaBloqueadoRotulos.status < 300) await fetch(`${URL}/storage/v1/object/rotulos/prueba-bloqueado.txt`, { method: 'DELETE', headers: { apikey: SERVICIO, Authorization: `Bearer ${SERVICIO}` } });
 await admin(`/rest/v1/usuarios_perfil?id=eq.${comun.id}`, { metodo: 'PATCH', cuerpo: { activo: true } });
 r = await http('/rest/v1/proveedores?select=id&limit=1', { token: comun.token });
 ok('Al desbloquearlo, todo vuelve a funcionar sin volver a iniciar sesión', Array.isArray(r.datos) && r.datos.length > 0);

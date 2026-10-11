@@ -1,0 +1,13 @@
+# Este archivo hace que panel/ sea su propia raíz de pnpm: su árbol de dependencias, su candado
+# (pnpm-lock.yaml) y sus reglas de seguridad quedan separados de las apps de los clientes.
+
+# Supply chain: no se instala ninguna versión publicada hace menos de 3 días (un paquete
+# malicioso suele detectarse y retirarse en ese plazo). Valor en minutos.
+minimumReleaseAge: 4320
+
+# Ningún paquete ejecuta scripts de instalación, salvo los revisados a mano acá:
+#  - @embedded-postgres/windows-x64 (solo desarrollo, solo para las pruebas de concurrencia): su script únicamente
+#    recrea enlaces simbólicos listados en un archivo (revisado: en Windows la lista está vacía).
+allowBuilds:
+  esbuild: false
+  '@embedded-postgres/windows-x64': true

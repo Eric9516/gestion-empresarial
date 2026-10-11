@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Linea {
   item_id: string;
@@ -83,7 +84,7 @@ export default function NuevoAjusteModal({ open, onClose }: { open: boolean; onC
       open={open}
       onClose={handleClose}
       large
-      title="⚖️ Nuevo ajuste de inventario"
+      title={<><Icono n="balanza" /> Nuevo ajuste de inventario</>}
       footer={
         <>
           <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
@@ -109,7 +110,7 @@ export default function NuevoAjusteModal({ open, onClose }: { open: boolean; onC
               <span style={{ fontSize: 13, minWidth: 0 }}>
                 <strong>{it.codigo}</strong> — {it.descripcion} <span style={{ color: 'var(--text-muted)' }}>(stock {formatoCantidad(it.stock ?? 0)})</span>
               </span>
-              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => agregar(it)}>＋ Agregar</Button>
+              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => agregar(it)}><Icono n="mas" /> Agregar</Button>
             </div>
           )) : <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin resultados</p>}
         </div>
@@ -131,12 +132,12 @@ export default function NuevoAjusteModal({ open, onClose }: { open: boolean; onC
                 </div>
               </div>
               <div role="group" aria-label={`Tipo de ajuste de ${l.codigo}`} style={{ display: 'flex', gap: 4 }}>
-                <Button size="sm" variant={l.tipo === 'suma' ? 'success' : 'ghost'} aria-pressed={l.tipo === 'suma'} onClick={() => cambiar(l.item_id, { tipo: 'suma' })}>➕ Suma</Button>
-                <Button size="sm" variant={l.tipo === 'resta' ? 'red' : 'ghost'} aria-pressed={l.tipo === 'resta'} onClick={() => cambiar(l.item_id, { tipo: 'resta' })}>➖ Resta</Button>
+                <Button size="sm" variant={l.tipo === 'suma' ? 'success' : 'ghost'} aria-pressed={l.tipo === 'suma'} onClick={() => cambiar(l.item_id, { tipo: 'suma' })}><Icono n="mas" /> Suma</Button>
+                <Button size="sm" variant={l.tipo === 'resta' ? 'red' : 'ghost'} aria-pressed={l.tipo === 'resta'} onClick={() => cambiar(l.item_id, { tipo: 'resta' })}><Icono n="menos" /> Resta</Button>
               </div>
               <label htmlFor={`aj-cant-${l.item_id}`} style={{ fontSize: 12, color: 'var(--text-muted)' }}>Cantidad:</label>
               <Input id={`aj-cant-${l.item_id}`} type="text" inputMode="decimal" placeholder="0" style={{ width: 80 }} value={l.texto} onChange={e => cambiar(l.item_id, { texto: e.target.value })} />
-              <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => setLineas(prev => prev.filter(x => x.item_id !== l.item_id))}>✕</Button>
+              <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => setLineas(prev => prev.filter(x => x.item_id !== l.item_id))}><Icono n="cerrar" /></Button>
             </div>
           );
         })}
@@ -148,8 +149,8 @@ export default function NuevoAjusteModal({ open, onClose }: { open: boolean; onC
       </div>
       {lineas.length > 0 && (
         <p style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 8 }}>
-          {resumen.sumas > 0 && <>➕ Suma {formatoCantidad(resumen.unidadesSumadas)} unidades en {resumen.sumas} artículo{resumen.sumas === 1 ? '' : 's'}. </>}
-          {resumen.restas > 0 && <>➖ Resta {formatoCantidad(resumen.unidadesRestadas)} unidades en {resumen.restas} artículo{resumen.restas === 1 ? '' : 's'}.</>}
+          {resumen.sumas > 0 && <><Icono n="mas" /> Suma {formatoCantidad(resumen.unidadesSumadas)} unidades en {resumen.sumas} artículo{resumen.sumas === 1 ? '' : 's'}. </>}
+          {resumen.restas > 0 && <><Icono n="menos" /> Resta {formatoCantidad(resumen.unidadesRestadas)} unidades en {resumen.restas} artículo{resumen.restas === 1 ? '' : 's'}.</>}
         </p>
       )}
     </Modal>

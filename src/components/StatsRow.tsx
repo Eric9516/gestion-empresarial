@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react';
 interface Stat {
-  icon: string;
+  icon: ReactNode;
   iconColor: 'blue' | 'green' | 'red';
   value: number;
   label: string;

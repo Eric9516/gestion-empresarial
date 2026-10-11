@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono, Punto } from '@/components/Icono';
 
 export default function ComisionistasList() {
   const { profile } = useAuth();
@@ -93,13 +94,13 @@ export default function ComisionistasList() {
       header: 'Contacto',
       render: c => (
         <>
-          {c.telefono && <div style={{ fontSize: 12 }}>📞 {c.telefono}</div>}
-          {c.celular && <div style={{ fontSize: 12 }}>📱 {c.celular}</div>}
+          {c.telefono && <div style={{ fontSize: 12 }}><Icono n="telefono" /> {c.telefono}</div>}
+          {c.celular && <div style={{ fontSize: 12 }}><Icono n="celular" /> {c.celular}</div>}
           {!c.telefono && !c.celular && <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
         </>
       ),
     },
-    { header: 'Estado', render: c => <span className={`badge ${c.activo ? 'badge-active' : 'badge-inactive'}`}>{c.activo ? '● Activo' : '○ Inactivo'}</span> },
+    { header: 'Estado', render: c => <span className={`badge ${c.activo ? 'badge-active' : 'badge-inactive'}`}>{c.activo ? <><Punto /> Activo</> : <><Punto hueco /> Inactivo</>}</span> },
     {
       header: 'Modificado',
       render: c => (
@@ -113,9 +114,9 @@ export default function ComisionistasList() {
       header: 'Acciones',
       render: c => (
         <div className="td-actions">
-          <Button variant="ghost" size="icon" title="Ver" onClick={() => setViewing(c)}>👁</Button>
-          {admin && <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(c); setFormOpen(true); }}>✏️</Button>}
-          {admin && <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(c)}>🗑</Button>}
+          <Button variant="ghost" size="icon" title="Ver" onClick={() => setViewing(c)}><Icono n="ver" /></Button>
+          {admin && <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(c); setFormOpen(true); }}><Icono n="editar" /></Button>}
+          {admin && <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(c)}><Icono n="borrar" /></Button>}
         </div>
       ),
     },
@@ -129,18 +130,18 @@ export default function ComisionistasList() {
             <div className="prov-card-name">{c.nombre}</div>
             {c.zona && <span className="badge badge-rubro" style={{ marginTop: 4, display: 'inline-flex' }}>{c.zona}</span>}
           </div>
-          <span className={`badge ${c.activo ? 'badge-active' : 'badge-inactive'}`}>{c.activo ? '● Activo' : '○ Inactivo'}</span>
+          <span className={`badge ${c.activo ? 'badge-active' : 'badge-inactive'}`}>{c.activo ? <><Punto /> Activo</> : <><Punto hueco /> Inactivo</>}</span>
         </div>
         <div className="prov-card-body">
-          {c.empresa && <div className="prov-card-row">🏢 {c.empresa}</div>}
-          {(c.localidad || c.provincia) && <div className="prov-card-row">📍 {[c.localidad, c.provincia].filter(Boolean).join(', ')}</div>}
-          {c.telefono && <div className="prov-card-row">📞 {c.telefono}</div>}
-          {c.celular && <div className="prov-card-row">📱 {c.celular}</div>}
+          {c.empresa && <div className="prov-card-row"><Icono n="empresa" /> {c.empresa}</div>}
+          {(c.localidad || c.provincia) && <div className="prov-card-row"><Icono n="lugar" /> {[c.localidad, c.provincia].filter(Boolean).join(', ')}</div>}
+          {c.telefono && <div className="prov-card-row"><Icono n="telefono" /> {c.telefono}</div>}
+          {c.celular && <div className="prov-card-row"><Icono n="celular" /> {c.celular}</div>}
         </div>
         <div className="prov-card-actions">
-          <Button variant="ghost" size="sm" onClick={() => setViewing(c)}>👁 Ver</Button>
-          {admin && <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setFormOpen(true); }}>✏️ Editar</Button>}
-          {admin && <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(c)}>🗑</Button>}
+          <Button variant="ghost" size="sm" onClick={() => setViewing(c)}><Icono n="ver" /> Ver</Button>
+          {admin && <Button variant="ghost" size="sm" onClick={() => { setEditing(c); setFormOpen(true); }}><Icono n="editar" /> Editar</Button>}
+          {admin && <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(c)}><Icono n="borrar" /></Button>}
         </div>
       </div>
     );
@@ -149,13 +150,13 @@ export default function ComisionistasList() {
   return (
     <div>
       <StatsRow stats={[
-        { icon: '🤝', iconColor: 'blue', value: comisionistas?.length ?? 0, label: 'Total' },
-        { icon: '✅', iconColor: 'green', value: activos, label: 'Activos' },
-        { icon: '📍', iconColor: 'red', value: zonas.length, label: 'Zonas' },
+        { icon: <Icono n="acuerdo" />, iconColor: 'blue', value: comisionistas?.length ?? 0, label: 'Total' },
+        { icon: <Icono n="exito" />, iconColor: 'green', value: activos, label: 'Activos' },
+        { icon: <Icono n="lugar" />, iconColor: 'red', value: zonas.length, label: 'Zonas' },
       ]} />
 
       <div className="section-header">
-        <div className="section-title">🤝 Comisionistas</div>
+        <div className="section-title"><Icono n="acuerdo" /> Comisionistas</div>
         <div className="section-actions">
           <Button variant="ghost" size="sm" onClick={() => void handleExport()}>Excel</Button>
           {admin && <Button variant="primary" size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>+ Nuevo</Button>}
@@ -186,7 +187,7 @@ export default function ComisionistasList() {
           data={filtrados}
           renderCard={renderCard}
           keyField={c => c.id}
-          emptyIcon="🤝"
+          emptyIcon={<Icono n="acuerdo" />}
           emptyTitle={comisionistas?.length === 0 ? 'Sin comisionistas aún' : 'Sin resultados'}
           emptyDescription={comisionistas?.length === 0 ? 'Agregá el primer comisionista.' : 'Probá con otro filtro.'}
         />

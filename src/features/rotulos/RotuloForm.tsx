@@ -18,6 +18,8 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useModulos } from '../config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 interface Props {
   open: boolean;
@@ -123,15 +125,15 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
   const campos = getCurrentCampos(config?.rotulo_campos);
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">🏷️</span> Editor de Rótulo</>} large>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="etiqueta" /></span> Editor de Rótulo</>} large>
       <div className="rotulo-modal-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ marginBottom: 8, display: 'block' }}>📐 Tamaño</label>
+            <label style={{ marginBottom: 8, display: 'block' }}><Icono n="regla" /> Tamaño</label>
             <SizeSelector w={w} h={h} onChange={(nw, nh) => { setW(nw); setH(nh); }} />
           </div>
 
-          <Separador texto="📋 Envío" />
+          <Separador texto={<><Icono n="lista" /> Envío</>} />
           {integ.enviosConComisionistas && <div className="form-group">
             <label htmlFor="rotulo-form-1">Comisionista (opcional — solo para control interno, no se imprime)</label>
             <Select id="rotulo-form-1" value={comisionistaId} onChange={e => setComisionistaId(e.target.value)}>
@@ -153,7 +155,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
             <Input id="rotulo-form-3" type="text" placeholder="Ej: $150.000" value={valorDeclarado} onChange={e => setValorDeclarado(e.target.value)} />
           </div>
 
-          <Separador texto="📦 Bultos" />
+          <Separador texto={<><Icono n="paquete" /> Bultos</>} />
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label htmlFor="rotulo-form-4">¿Cuántos bultos tiene este envío?</label>
             <Input id="rotulo-form-4"
@@ -165,7 +167,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
           </div>
           <RotuloBultosFields detalles={bultosDetalle} onChange={setBultosDetalle} />
 
-          <Separador texto="📝 Notas" />
+          <Separador texto={<><Icono n="nota" /> Notas</>} />
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label htmlFor="rotulo-form-5">Texto adicional (opcional)</label>
             <Input id="rotulo-form-5" type="text" placeholder="Ej: URGENTE — Contactar antes de recibir" value={extra} onChange={e => setExtra(e.target.value)} />
@@ -201,7 +203,7 @@ export default function RotuloForm({ open, onClose, proveedorId, editingId }: Pr
   );
 }
 
-function Separador({ texto }: { texto: string }) {
+function Separador({ texto }: { texto: ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
       <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

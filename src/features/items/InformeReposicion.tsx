@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 const stockDe = (it: Item) => it.stock ?? 0;
 
@@ -270,7 +271,7 @@ export default function InformeReposicion() {
       data={data}
       renderCard={renderCard}
       keyField={it => it.id}
-      emptyIcon="✅"
+      emptyIcon={<Icono n="exito" />}
       emptyTitle={aReponer.length === 0 ? 'No hay nada para reponer' : 'Sin resultados'}
       emptyDescription={aReponer.length === 0 ? 'Ningún repuesto llegó a su punto de pedido.' : 'Probá con otra búsqueda o familia.'}
     />
@@ -279,7 +280,7 @@ export default function InformeReposicion() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">📊 Informe de reposición</div>
+        <div className="section-title"><Icono n="informe" /> Informe de reposición</div>
       </div>
       <p style={{ fontSize: 13, color: 'var(--text-mid)', marginBottom: 12 }}>
         Repuestos cuyo stock llegó al punto de pedido. Se compra hasta volver al stock mínimo.
@@ -331,10 +332,12 @@ export default function InformeReposicion() {
           </>
         )}
         <Button variant="primary" size="sm" disabled={seleccionados.length === 0} onClick={() => setPedidoAbierto(true)}>
-          📄 Armar solicitud de presupuesto ({seleccionados.length})
+          
+          <Icono n="documento" /> Armar solicitud de presupuesto ({seleccionados.length})
         </Button>
         <Button variant="ghost" size="sm" disabled={filas.length === 0} onClick={() => void handleExportarPdf()}>
-          ⬇ Exportar informe PDF
+          
+          <Icono n="exportar" /> Exportar informe PDF
         </Button>
       </div>
 

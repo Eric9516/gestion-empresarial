@@ -6,19 +6,20 @@ import { useMenu } from '../../lib/useMenu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 function SectorMenu({ sector, onModificar, onToggle, onDelete }: { sector: Sector; onModificar: () => void; onToggle: () => void; onDelete: () => void }) {
   const { abierto: open, cerrar, contenedorRef, disparador, menu } = useMenu();
 
   return (
     <div ref={contenedorRef} style={{ position: 'relative' }}>
-      <Button type="button" variant="ghost" size="icon" {...disparador} aria-label="Más acciones">⋮</Button>
+      <Button type="button" variant="ghost" size="icon" {...disparador} aria-label="Más acciones"><Icono n="masAcciones" /></Button>
       <div className={`user-dropdown${open ? ' open' : ''}`} style={{ right: 0, left: 'auto' }} {...menu}>
-        <button role="menuitem" className="user-dropdown-item" onClick={() => { onModificar(); cerrar(); }}>✏️ Modificar</button>
+        <button role="menuitem" className="user-dropdown-item" onClick={() => { onModificar(); cerrar(); }}><Icono n="editar" /> Modificar</button>
         <button role="menuitem" className="user-dropdown-item" onClick={() => { onToggle(); cerrar(); }}>
-          {sector.activo ? '🔒 Bloquear' : '🔓 Desbloquear'}
+          {sector.activo ? <><Icono n="candado" /> Bloquear</> : <><Icono n="candadoAbierto" /> Desbloquear</>}
         </button>
-        <button role="menuitem" className="user-dropdown-item user-dropdown-danger" onClick={() => { onDelete(); cerrar(); }}>🗑 Eliminar</button>
+        <button role="menuitem" className="user-dropdown-item user-dropdown-danger" onClick={() => { onDelete(); cerrar(); }}><Icono n="borrar" /> Eliminar</button>
       </div>
     </div>
   );
@@ -94,7 +95,7 @@ export default function SectoresPanel() {
 
   return (
     <div className="admin-card" style={{ maxWidth: 480 }}>
-      <div className="admin-card-header">🏭 Sectores</div>
+      <div className="admin-card-header"><Icono n="fabrica" /> Sectores</div>
       <div className="admin-card-body">
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
           Es obligatorio elegir un sector al confirmar un retiro. Los nombres se guardan solos al salir del campo.

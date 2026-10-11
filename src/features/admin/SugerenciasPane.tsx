@@ -4,6 +4,7 @@ import { useConfirm } from '../../components/ConfirmProvider';
 import { useLimpiarSugerencias, useSugerenciasQuery, type Sugerencia } from './useSugerencias';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 const columns: Column<Sugerencia>[] = [
   { header: 'Fecha', render: s => <span style={{ whiteSpace: 'nowrap' }}>{new Date(s.created_at).toLocaleString('es-AR')}</span> },
@@ -44,7 +45,7 @@ export default function SugerenciasPane() {
   return (
     <div className="admin-card">
       <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-        <span>💬 Sugerencias</span>
+        <span><Icono n="mensaje" /> Sugerencias</span>
         <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={() => void handleLimpiar()}>Limpiar</Button>
       </div>
       <div className="admin-card-body" style={{ padding: rows?.length ? 0 : 18 }}>
@@ -56,7 +57,7 @@ export default function SugerenciasPane() {
             data={rows ?? []}
             renderCard={renderCard}
             keyField={s => s.id}
-            emptyIcon="💬"
+            emptyIcon={<Icono n="mensaje" />}
             emptyTitle="Todavía no hay sugerencias"
             emptyDescription=""
           />

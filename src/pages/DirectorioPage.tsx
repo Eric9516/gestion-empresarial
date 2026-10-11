@@ -11,6 +11,8 @@ import ProveedoresList from '../features/proveedores/ProveedoresList';
 import ComisionistasList from '../features/comisionistas/ComisionistasList';
 import RotulosScreen from '../features/rotulos/RotulosScreen';
 import TareasScreen from '../features/tareas/TareasScreen';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 type Tab = 'proveedores' | 'comisionistas' | 'rotulos' | 'tareas';
 
@@ -37,11 +39,11 @@ function DirectorioContent() {
   }, [nombreEmpresa]);
 
   // Solo las pestañas de los módulos activos; si la elegida se desactivó, se usa la primera.
-  const pestañas: { id: Tab; icon: string; label: string }[] = [
-    ...(modulos.proveedores ? [{ id: 'proveedores' as const, icon: '🏭', label: 'Proveedores' }] : []),
-    ...(modulos.comisionistas ? [{ id: 'comisionistas' as const, icon: '🤝', label: 'Comisionistas' }] : []),
-    ...(modulos.envios ? [{ id: 'rotulos' as const, icon: '📦', label: 'Envíos' }] : []),
-    ...(modulos.tareas ? [{ id: 'tareas' as const, icon: '✅', label: 'Tareas' }] : []),
+  const pestañas: { id: Tab; icon: ReactNode; label: string }[] = [
+    ...(modulos.proveedores ? [{ id: 'proveedores' as const, icon: <Icono n="fabrica" />, label: 'Proveedores' }] : []),
+    ...(modulos.comisionistas ? [{ id: 'comisionistas' as const, icon: <Icono n="acuerdo" />, label: 'Comisionistas' }] : []),
+    ...(modulos.envios ? [{ id: 'rotulos' as const, icon: <Icono n="paquete" />, label: 'Envíos' }] : []),
+    ...(modulos.tareas ? [{ id: 'tareas' as const, icon: <Icono n="exito" />, label: 'Tareas' }] : []),
   ];
   const tab = pestañas.some(p => p.id === tabElegida) ? tabElegida : pestañas[0]?.id;
   const puedeIrAlDeposito = modulos.deposito && tieneAccesoMantenimiento(profile);
@@ -51,7 +53,7 @@ function DirectorioContent() {
 
   const navItems = [
     ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
-    ...(puedeIrAlDeposito ? [{ icon: '🔧', label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
+    ...(puedeIrAlDeposito ? [{ icon: <Icono n="herramienta" />, label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
   ];
 
   return (
@@ -66,7 +68,7 @@ function DirectorioContent() {
         </div>
         <div className="header-right">
           {puedeIrAlDeposito && (
-            <Link to="/mantenimiento" className="btn-mantenimiento" title="Depósito de mantenimiento" style={{ display: 'flex' }}>🔧 <span className="hide-mobile">Depósito</span></Link>
+            <Link to="/mantenimiento" className="btn-mantenimiento" title="Depósito de mantenimiento" style={{ display: 'flex' }}><Icono n="herramienta" /> <span className="hide-mobile">Depósito</span></Link>
           )}
           <UserMenu />
           <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">

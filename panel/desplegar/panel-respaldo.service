@@ -1,0 +1,6 @@
+[Unit]
+Description=Respaldo diario de la base del panel
+
+[Service]
+Type=oneshot
+ExecStart=/opt/panel/respaldo.sh

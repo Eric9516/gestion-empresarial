@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
+import { Icono } from '@/components/Icono';
 
 interface ModalProps {
   open: boolean;
@@ -41,7 +42,7 @@ export default function Modal({ open, onClose, title, children, footer, large }:
           >
             <div className="modal-header">
               <Dialog.Title asChild><div className="modal-title">{title}</div></Dialog.Title>
-              <Dialog.Close asChild><button type="button" className="btn-close" aria-label="Cerrar">✕</button></Dialog.Close>
+              <Dialog.Close asChild><button type="button" className="btn-close" aria-label="Cerrar"><Icono n="cerrar" /></button></Dialog.Close>
             </div>
             <div>{children}</div>
             {footer && <div className="modal-footer">{footer}</div>}

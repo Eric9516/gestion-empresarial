@@ -4,6 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { registrarErrorAccion } from '../../lib/errorLogging';
 import { analizarExcelStock, useAplicarImportacionStock, type AnalisisImportacion } from './useImportarStock';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
 
 export default function ImportarStockModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const toast = useToast();
@@ -55,7 +56,7 @@ export default function ImportarStockModal({ open, onClose }: { open: boolean; o
       open={open}
       onClose={handleClose}
       large
-      title="📥 Importar stock desde Excel"
+      title={<><Icono n="importar" /> Importar stock desde Excel</>}
       footer={
         analisis ? (
           <>
@@ -65,7 +66,7 @@ export default function ImportarStockModal({ open, onClose }: { open: boolean; o
               disabled={aplicar.isPending || (analisis.nuevos.length === 0 && analisis.modificados.length === 0)}
               onClick={handleConfirmar}
             >
-              {aplicar.isPending ? 'Guardando...' : `✅ Confirmar carga (${analisis.nuevos.length + analisis.modificados.length})`}
+              {aplicar.isPending ? 'Guardando...' : <><Icono n="exito" /> Confirmar carga ({analisis.nuevos.length + analisis.modificados.length})</>}
             </Button>
           </>
         ) : (
@@ -96,15 +97,15 @@ export default function ImportarStockModal({ open, onClose }: { open: boolean; o
 
           <div className="stats-row" style={{ marginBottom: 16 }}>
             <div className="stat-card">
-              <div className="stat-icon green">🆕</div>
+              <div className="stat-icon green"><Icono n="nuevo" /></div>
               <div><div className="stat-number">{analisis.nuevos.length}</div><div className="stat-label">Nuevos</div></div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon blue">✏️</div>
+              <div className="stat-icon blue"><Icono n="editar" /></div>
               <div><div className="stat-number">{analisis.modificados.length}</div><div className="stat-label">Modificados</div></div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">➖</div>
+              <div className="stat-icon"><Icono n="menos" /></div>
               <div><div className="stat-number">{analisis.sinCambiosCount}</div><div className="stat-label">Sin cambios</div></div>
             </div>
           </div>
@@ -112,7 +113,8 @@ export default function ImportarStockModal({ open, onClose }: { open: boolean; o
           {analisis.noProcesados.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
-                ⚠️ {analisis.noProcesados.length} fila(s) no se pudieron procesar — revisalas a mano
+                
+                <Icono n="alerta" /> {analisis.noProcesados.length} fila(s) no se pudieron procesar — revisalas a mano
               </div>
               <div style={{ maxHeight: 180, overflowY: 'auto', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
                 {analisis.noProcesados.map((f, i) => (

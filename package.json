@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint --ignore-pattern panel/dist --ignore-pattern panel/src/server/generado.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "cliente": "node scripts/cliente.mjs",
-    "pruebas:integracion": "node scripts/pruebas/integracion.mjs"
+    "pruebas:integracion": "node scripts/pruebas/integracion.mjs",
+    "pruebas:esquema": "node scripts/pruebas/esquema/esquema.mjs && node scripts/pruebas/esquema/esquema.mjs --componentes && node scripts/pruebas/esquema/equivalencia.mjs && node scripts/pruebas/esquema/actualizacion.mjs",
+    "pruebas:supabase-local": "node scripts/pruebas/supabase-local/integracion-local.mjs && node scripts/pruebas/supabase-local/instalador-local.mjs && node scripts/pruebas/supabase-local/matriz-modulos.mjs && node scripts/pruebas/supabase-local/logica.mjs && node scripts/pruebas/supabase-local/matriz-permisos.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -32,10 +34,11 @@
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0",
-    "xlsx": "^0.18.5",
+    "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@sentry/vite-plugin": "^5.4.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",

@@ -1,4 +1,5 @@
 import { Dialog } from 'radix-ui';
+import { Icono } from '@/components/Icono';
 
 // Visor para ver una foto ampliada (p.ej. fotos de repuestos). Se separa del Modal
 // genérico a propósito: ese tiene barra de título y un ancho máximo pensado para
@@ -31,7 +32,7 @@ export default function ImageLightbox({ url, onClose }: { url: string; onClose: 
               border: 'none', background: 'rgba(255,255,255,0.15)', color: 'white', fontSize: 18,
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >✕</Dialog.Close>
+          ><Icono n="cerrar" /></Dialog.Close>
         </Dialog.Overlay>
       </Dialog.Portal>
     </Dialog.Root>

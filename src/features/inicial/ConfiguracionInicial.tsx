@@ -12,10 +12,12 @@ import UsuariosPane from '../admin/UsuariosPane';
 import SectoresPanel from '../sectores/SectoresPanel';
 import { useCerrarConfiguracionInicial, useConteosIniciales } from './useConfiguracionInicial';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 interface Paso {
   id: string;
-  icono: string;
+  icono: ReactNode;
   titulo: string;
   explicacion: string;
   hecho: boolean;
@@ -38,39 +40,39 @@ export default function ConfiguracionInicial() {
 
   const pasos = useMemo<Paso[]>(() => [
     {
-      id: 'empresa', icono: '🏢', titulo: 'Empresa y marca', hecho: !!config?.logo_base64,
+      id: 'empresa', icono: <Icono n="empresa" />, titulo: 'Empresa y marca', hecho: !!config?.logo_base64,
       explicacion: 'El nombre, el logo y los datos de contacto aparecen en pantalla y en los PDF. Elegí también los colores de la marca.',
       Contenido: EmpresaPane,
     },
     ...(modulos.envios ? [{
-      id: 'rotulo', icono: '🏷️', titulo: 'Rótulos de envío', hecho: tieneContenido(config?.rotulo_design) || config?.rotulo_diseno_id != null,
+      id: 'rotulo', icono: <Icono n="etiqueta" />, titulo: 'Rótulos de envío', hecho: tieneContenido(config?.rotulo_design) || config?.rotulo_diseno_id != null,
       explicacion: 'Diseñá cómo se imprimen los rótulos de los envíos. Podés guardar varios modelos y elegir uno como predeterminado.',
       Contenido: RotuloDesignPane,
     }] : []),
     ...(modulos.comisionistas ? [{
-      id: 'comisionistas', icono: '🤝', titulo: 'Campos de comisionistas', hecho: tieneContenido(config?.comisionistas_campos_custom),
+      id: 'comisionistas', icono: <Icono n="acuerdo" />, titulo: 'Campos de comisionistas', hecho: tieneContenido(config?.comisionistas_campos_custom),
       explicacion: 'Si necesitás guardar datos propios de cada comisionista (además de los básicos), agregalos acá. Es opcional.',
       Contenido: ComisionistasCamposPane,
     }] : []),
     ...(modulos.deposito ? [
       {
-        id: 'sectores', icono: '🏭', titulo: 'Sectores', hecho: (conteos?.sectores ?? 0) > 0,
+        id: 'sectores', icono: <Icono n="fabrica" />, titulo: 'Sectores', hecho: (conteos?.sectores ?? 0) > 0,
         explicacion: 'Las áreas de la empresa. Cada retiro de repuestos se registra a nombre de un sector.',
         Contenido: SectoresPanel,
       },
       {
-        id: 'familias', icono: '🏷️', titulo: 'Familias de repuestos', hecho: (conteos?.familias ?? 0) > 0,
+        id: 'familias', icono: <Icono n="etiqueta" />, titulo: 'Familias de repuestos', hecho: (conteos?.familias ?? 0) > 0,
         explicacion: 'La clasificación de los repuestos. Se puede cargar de una vez desde una planilla de Excel.',
         Contenido: FamiliasPane,
       },
       {
-        id: 'repuestos', icono: '🔧', titulo: 'Repuestos y stock', hecho: (conteos?.repuestos ?? 0) > 0,
+        id: 'repuestos', icono: <Icono n="herramienta" />, titulo: 'Repuestos y stock', hecho: (conteos?.repuestos ?? 0) > 0,
         explicacion: 'Cargá el stock inicial desde Excel, o agregá los repuestos de a uno. Conviene hacerlo después de cargar las familias.',
         Contenido: RepuestosPane,
       },
     ] : []),
     {
-      id: 'usuarios', icono: '👥', titulo: 'Usuarios', hecho: (conteos?.usuarios ?? 0) > 1,
+      id: 'usuarios', icono: <Icono n="usuarios" />, titulo: 'Usuarios', hecho: (conteos?.usuarios ?? 0) > 1,
       explicacion: `Creá a las primeras personas y dales su rol${modulos.deposito ? ' en el Directorio y en el Depósito' : ''}. Cada una entra con su correo y la contraseña que le pongas, y puede cambiarla después.`,
       Contenido: UsuariosPane,
     },
@@ -97,7 +99,7 @@ export default function ConfiguracionInicial() {
     <div>
       <div className="admin-card" style={{ marginBottom: 14 }}>
         <div className="admin-card-header" style={{ justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-          <span>🚀 Configuración inicial</span>
+          <span><Icono n="cohete" /> Configuración inicial</span>
           <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.9 }}>{hechos} de {pasos.length} pasos listos</span>
         </div>
         <div className="admin-card-body">
@@ -107,10 +109,10 @@ export default function ConfiguracionInicial() {
           <div className="admin-subnav" style={{ marginBottom: 0 }}>
             {pasos.map((p, i) => (
               <button key={p.id} type="button" className={`admin-subtab${!enResumen && i === actual ? ' active' : ''}`} onClick={() => setActual(i)}>
-                {p.hecho ? '✓' : p.icono} {p.titulo}
+                {p.hecho ? <Icono n="ok" /> : p.icono} {p.titulo}
               </button>
             ))}
-            <button type="button" className={`admin-subtab${enResumen ? ' active' : ''}`} onClick={() => setActual(pasos.length)}>✅ Resumen</button>
+            <button type="button" className={`admin-subtab${enResumen ? ' active' : ''}`} onClick={() => setActual(pasos.length)}><Icono n="exito" /> Resumen</button>
           </div>
         </div>
       </div>
@@ -119,11 +121,11 @@ export default function ConfiguracionInicial() {
         <>
           <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-mid)' }}>
             <strong style={{ color: 'var(--text)' }}>Paso {actual + 1} de {pasos.length} · {paso.titulo}.</strong>{' '}
-            {paso.explicacion} {paso.hecho && <span style={{ color: 'var(--success)', fontWeight: 700 }}>✓ Ya hay datos cargados.</span>}
+            {paso.explicacion} {paso.hecho && <span style={{ color: 'var(--success)', fontWeight: 700 }}><Icono n="ok" /> Ya hay datos cargados.</span>}
           </div>
           <paso.Contenido />
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-            <Button variant="ghost" disabled={actual === 0} onClick={() => setActual(actual - 1)}>← Anterior</Button>
+            <Button variant="ghost" disabled={actual === 0} onClick={() => setActual(actual - 1)}><Icono n="volver" /> Anterior</Button>
             <Button variant="ghost" onClick={() => setActual(actual + 1)}>Saltar este paso</Button>
             <Button variant="primary" onClick={() => setActual(actual + 1)}>Siguiente →</Button>
           </div>
@@ -132,11 +134,11 @@ export default function ConfiguracionInicial() {
 
       {enResumen && (
         <div className="admin-card" style={{ maxWidth: 560 }}>
-          <div className="admin-card-header">✅ Resumen</div>
+          <div className="admin-card-header"><Icono n="exito" /> Resumen</div>
           <div className="admin-card-body">
             {pasos.map((p, i) => (
               <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                <span style={{ fontSize: 14 }}>{p.hecho ? '✅' : '⬜'} {p.titulo}</span>
+                <span style={{ fontSize: 14 }}>{p.hecho ? <Icono n="exito" /> : <Icono n="vacio" />} {p.titulo}</span>
                 <Button variant="ghost" size="sm" onClick={() => setActual(i)}>{p.hecho ? 'Revisar' : 'Completar'}</Button>
               </div>
             ))}

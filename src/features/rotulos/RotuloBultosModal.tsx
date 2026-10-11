@@ -11,6 +11,7 @@ import { useRotuloParaEditarQuery } from './useRotulos';
 import { Button } from '@/components/ui/button';
 import { useModulos } from '../config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -77,7 +78,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">📦</span> Detalle del envío</>}>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="paquete" /></span> Detalle del envío</>}>
       {rotulo?.eliminado && (
         <div role="alert" style={{ background: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: 8, padding: '8px 12px', fontSize: 12, marginBottom: 12 }}>
           Este envío fue eliminado (está en la Papelera).
@@ -100,7 +101,7 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
       )}
       {rotulo?.comentario && (
         <div style={{ background: 'var(--surface2)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>💬 Comentario</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}><Icono n="mensaje" /> Comentario</div>
           {rotulo.comentario}
         </div>
       )}
@@ -113,7 +114,8 @@ export default function RotuloBultosModal({ open, onClose, rotuloId }: Props) {
           disabled={generandoTodos}
           onClick={() => void verTodosJuntos()}
         >
-          🖨️ {generandoTodos ? 'Generando...' : `Ver los ${bultos.length} juntos`}
+          
+          <Icono n="imprimir" /> {generandoTodos ? 'Generando...' : `Ver los ${bultos.length} juntos`}
         </Button>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -32,6 +32,8 @@ export default defineConfig(({ mode }) => {
       sourcemap: subirMapas ? 'hidden' : false,
     },
     test: {
+      // El panel de administración (carpeta panel/) tiene sus propias pruebas y dependencias: no se mezclan con las de la app.
+      exclude: ['**/node_modules/**', '**/dist/**', 'panel/**'],
       environment: 'node', // alcanza para probar funciones sueltas; si más adelante testeamos componentes con DOM, esto pasaría a 'jsdom'.
     },
   }

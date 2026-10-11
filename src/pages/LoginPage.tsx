@@ -3,13 +3,14 @@ import { useAuth } from '../auth/AuthContext';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icono, type NombreIcono } from '@/components/Icono';
 
 // Los propios módulos de la app (no algo del rubro de un cliente en particular),
 // así la pantalla de login queda igual de genérica en cualquier instalación.
-const ICONOS = ['🏭', '🤝', '📦', '🔧'];
+const ICONOS: NombreIcono[] = ['fabrica', 'acuerdo', 'paquete', 'herramienta'];
 
 function AuthDecorations() {
-  // Espeja initAuthDeco() de main.js: 8 emojis flotando con posición/velocidad
+  // Espeja initAuthDeco() de main.js: 8 íconos flotando con posición/velocidad
   // aleatoria, generados una sola vez por montaje (useMemo, no en cada render).
   const drops = useMemo(
     () =>
@@ -27,7 +28,7 @@ function AuthDecorations() {
     <div className="auth-decorations">
       {drops.map((d, i) => (
         <div key={i} className="icon-float" style={{ left: d.left, animationDuration: d.animationDuration, animationDelay: d.animationDelay, fontSize: d.fontSize }}>
-          {d.emoji}
+          <Icono n={d.emoji} tam="1em" trazo={1.5} />
         </div>
       ))}
     </div>
@@ -70,7 +71,7 @@ export default function LoginPage() {
             : <div className="auth-logo-fallback">{nombreEmpresa[0]}</div>}
         </div>
         <div className="auth-title">{nombreEmpresa}</div>
-        <div className="auth-subtitle">🔑 Ingresá con tu cuenta</div>
+        <div className="auth-subtitle"><Icono n="clave" /> Ingresá con tu cuenta</div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="loginEmail">Correo electrónico</label>
@@ -86,7 +87,8 @@ export default function LoginPage() {
           </Button>
         </form>
         <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
-          🔒 Acceso restringido — Solo usuarios autorizados
+          
+          <Icono n="candado" /> Acceso restringido — Solo usuarios autorizados
           <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text-muted)' }}>Desarrollado por Eric Cantoni · 2025</div>
         </div>
       </div>

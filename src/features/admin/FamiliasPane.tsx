@@ -5,6 +5,7 @@ import ImportarFamiliasModal from '../familias/ImportarFamiliasModal';
 import { urlPlanillaFamilias, usePlanillaFamiliasQuery } from '../familias/useImportarFamilias';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icono } from '@/components/Icono';
 
 export default function FamiliasPane() {
   const { data: familias } = useFamiliasQuery();
@@ -80,8 +81,8 @@ export default function FamiliasPane() {
   return (
     <div className="admin-card">
       <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-        <span>🏷️ Familias y subfamilias</span>
-        <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={() => setImportarOpen(true)}>📥 Importar desde Excel</Button>
+        <span><Icono n="etiqueta" /> Familias y subfamilias</span>
+        <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={() => setImportarOpen(true)}><Icono n="importar" /> Importar desde Excel</Button>
       </div>
       <div className="admin-card-body">
         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
@@ -111,7 +112,7 @@ export default function FamiliasPane() {
                     aria-label={abierta ? 'Contraer' : 'Expandir'}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex' }}
                   >
-                    <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierta ? 'rotate(90deg)' : 'none', color: 'var(--text-muted)' }}>▶</span>
+                    <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierta ? 'rotate(90deg)' : 'none', color: 'var(--text-muted)' }}><Icono n="desplegar" /></span>
                   </button>
                   <span className="badge badge-rubro" style={{ minWidth: 32, justifyContent: 'center' }}>{f.codigo}</span>
                   <Input

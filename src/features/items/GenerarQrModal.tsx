@@ -6,6 +6,7 @@ import FormatoEtiquetaSelect from './FormatoEtiquetaSelect';
 import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery } from './useItems';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Icono } from '@/components/Icono';
 
 interface Seleccion {
   item_id: string;
@@ -77,11 +78,11 @@ export default function GenerarQrModal({ open, onClose }: { open: boolean; onClo
         open={open}
         onClose={handleClose}
         large
-        title="🏷️ Generar etiquetas QR"
+        title={<><Icono n="etiqueta" /> Generar etiquetas QR</>}
         footer={
           <>
             <Button variant="ghost" onClick={handleClose}>Cancelar</Button>
-            <Button variant="success" onClick={handleGenerar}>📥 Generar PDF</Button>
+            <Button variant="success" onClick={handleGenerar}><Icono n="importar" /> Generar PDF</Button>
           </>
         }
       >
@@ -94,7 +95,7 @@ export default function GenerarQrModal({ open, onClose }: { open: boolean; onClo
             {resultados.length ? resultados.map(it => (
               <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
                 <span style={{ fontSize: 13, minWidth: 0 }}><strong>{it.codigo}</strong> — {it.descripcion}</span>
-                <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => abrirCantidad(it)}>＋ Agregar</Button>
+                <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => abrirCantidad(it)}><Icono n="mas" /> Agregar</Button>
               </div>
             )) : <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin resultados</p>}
           </div>
@@ -110,7 +111,7 @@ export default function GenerarQrModal({ open, onClose }: { open: boolean; onClo
               <div style={{ flex: 1, minWidth: 160, fontSize: 13 }}><strong>{s.codigo}</strong> — {s.descripcion}</div>
               <label htmlFor={`copias-${s.item_id}`} style={{ fontSize: 12, color: 'var(--text-muted)' }}>Copias:</label>
               <Input id={`copias-${s.item_id}`} type="number" min={1} style={{ width: 64 }} value={s.cantidad} onChange={e => actualizarCantidad(s.item_id, e.target.value)} />
-              <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => quitar(s.item_id)}>✕</Button>
+              <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => quitar(s.item_id)}><Icono n="cerrar" /></Button>
             </div>
           ))}
         </div>

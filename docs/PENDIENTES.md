@@ -1,6 +1,16 @@
 # Pendientes para que sea un producto
 
-Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas.
+Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hacia dónde crece el producto: [PLAN-PRODUCTO.md](PLAN-PRODUCTO.md).
+
+## Lo próximo (para poder entregar a un cliente real)
+
+1. ⏳ **Prueba real con Supabase** (hoy todo se probó con un Supabase local simulado sobre una base real: integración 184, instalador 41, módulos 3.220, lógica 116, permisos 32.640, y la app y el panel en el navegador; ver [PRUEBAS.md](PRUEBAS.md). Falta un proyecto real, donde aparecen las diferencias finas con la plataforma). Con la segunda cuenta de Supabase de pruebas (plan Pro, invitando a la cuenta del panel):
+   crear un cliente solo-Tareas, ampliarlo a Abastecimiento y a Mantenimiento, y correr `pnpm pruebas:integracion` (ya actualizada para los seis módulos y el interruptor del dueño).
+2. ⏳ **Instalar el panel** en un servidor (recomendado: uno aparte) siguiendo [PANEL-INSTALACION.md](PANEL-INSTALACION.md), y pasarlo a su propio repositorio.
+3. ⏳ **Pase de Cremac** (producción) a la plantilla: primero la base de datos, después la app (ver el capítulo 10 del manual). Se ensaya antes en una copia.
+4. ✅ **Librería `xlsx` (importar y exportar Excel):** la versión de npm tenía dos fallas conocidas sin arreglo en npm; se instaló la corregida (0.20.3) desde el sitio oficial del fabricante, guardada en `vendor/` con su huella (ver `vendor/LEEME.md`) y con pruebas de lectura y escritura. `pnpm audit`: sin vulnerabilidades.
+5. ⏳ **Subir todo a GitHub** (hoy está sin commitear: componentes, instalador, panel, pantalla del dueño y documentación).
+6. ⏳ **Limpieza manual:** sacar la llave SSH `claude-droplet-20261008` del archivo `/root/.ssh/authorized_keys` del servidor, y borrar a mano el proyecto `ensayo-cremac` de Supabase (tiene una copia de datos reales).
 
 ## Para poder ofrecerlo a otra empresa
 
@@ -23,8 +33,8 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas.
 9. **`usuarios_perfil` no está atado a la cuenta de acceso:** al borrar una cuenta desde el panel de Supabase queda el
    perfil huérfano. Hoy se evita borrando por la app. Se puede resolver con una relación entre ambas tablas.
 10. **Copias de seguridad:** de la base (los planes gratis no las tienen restaurables) y del servidor de archivos.
-11. **Entorno de pruebas propio** para probar cambios antes de aplicarlos a clientes reales (ya existe para esta plantilla:
-    un proyecto de Supabase de pruebas).
+11. **Entorno de pruebas propio** para probar cambios antes de aplicarlos a clientes reales (hoy no hay uno: el de la plantilla se borró;
+    se crea con la segunda cuenta de Supabase de pruebas).
 
 ## Errores encontrados en la prueba exhaustiva (2026-10-09)
 
@@ -59,7 +69,7 @@ Cremac lo recibe con el pase a la plantilla. Se anota igual para que quede el re
 - **Probar el asistente y los módulos con un cliente real** y ajustar el orden y los textos de los pasos.
 - **Licencia sin esperar:** la app lee la licencia cada minuto; un cambio se nota en hasta un minuto.
 - **Carpetas públicas:** los archivos ya subidos se abren con su dirección exacta aunque el módulo esté apagado.
-- **Equipos y órdenes de trabajo** deberían entrar como módulos propios (ya nacen apagados; ver `NUEVO-MODULO.md`).
+- **Equipos con documentación y órdenes de trabajo:** Mantenimiento ya es un módulo propio (equipos y reparaciones); falta lo demás (manuales, despieces, órdenes de trabajo). Nacen apagados; ver `NUEVO-MODULO.md`.
 
 ## Funciones nuevas planeadas
 
@@ -72,3 +82,16 @@ Cremac lo recibe con el pase a la plantilla. Se anota igual para que quede el re
 
 - **Actualizar a todos los clientes** a la vez: hoy se hace uno por uno con `pnpm cliente actualizar`.
 - **Sentry** (reporte de errores): decidir si va un proyecto por cliente o uno compartido con etiquetas.
+
+## Panel de administración ("central de control")
+
+Construido y atacado (ver [PANEL-DISENO.md](PANEL-DISENO.md), [PANEL-SEGURIDAD.md](PANEL-SEGURIDAD.md), [PANEL-INSTALACION.md](PANEL-INSTALACION.md)). Hace hoy: lista de clientes con estado y componentes,
+crear cliente (instalando solo los componentes que contrata), actualizar, cambiar módulos e **instalar componentes**, con firma de llave de acceso por operación; varias organizaciones de Supabase
+y "datos para publicar la app". Pendiente:
+
+- ⏳ **Instalarlo en un servidor** y probarlo con la API real de Supabase con un cliente de prueba (ver "Lo próximo", puntos 1 y 2).
+- ⏳ **Funciones que se pueden sumar, de menor a mayor riesgo** (cada una con su propia revisión de seguridad): panel de salud de todos los clientes (versión, migraciones
+  pendientes, errores); restablecer la contraseña del dueño; publicar el sitio del cliente (necesita otra llave, la de Netlify); backups por cliente.
+- ⏳ **Funciones de alto riesgo** (no hechas a propósito): borrar proyectos, restaurar backups. Si se agregan: doble firma y escribir el nombre del cliente.
+- ✅ Íconos: toda la app usa un solo componente (`src/components/Icono.tsx`, íconos de la librería lucide) en lugar de emojis, y una prueba (`src/lib/iconos.test.ts`) impide que vuelvan.
+- ⏳ Resto del pulido de diseño (colores, tipografías, ordenar estilos repetidos) en las apps de clientes: pedido aparte.

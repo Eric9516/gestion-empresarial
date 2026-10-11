@@ -4,6 +4,7 @@ import { useConfirm } from '../../components/ConfirmProvider';
 import { useErrorLogsQuery, useLimpiarErrorLogs, type ErrorLogRow } from './useErrorLogs';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 const columns: Column<ErrorLogRow>[] = [
   { header: 'Fecha', render: r => <span style={{ whiteSpace: 'nowrap' }}>{new Date(r.created_at).toLocaleString('es-AR')}</span> },
@@ -48,7 +49,7 @@ export default function ErroresPane() {
   return (
     <div className="admin-card">
       <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-        <span>🐞 Log de errores</span>
+        <span><Icono n="error" /> Log de errores</span>
         <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={() => void handleLimpiar()}>Limpiar</Button>
       </div>
       <div className="admin-card-body" style={{ padding: rows?.length ? 0 : 18 }}>
@@ -60,7 +61,7 @@ export default function ErroresPane() {
             data={rows ?? []}
             renderCard={renderCard}
             keyField={r => r.id}
-            emptyIcon="🐞"
+            emptyIcon={<Icono n="error" />}
             emptyTitle="Sin errores registrados"
             emptyDescription=""
           />

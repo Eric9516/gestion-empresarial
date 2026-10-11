@@ -10,7 +10,7 @@ interface Props<T> {
   data: T[];
   renderCard: (row: T) => ReactNode;
   keyField: (row: T) => string;
-  emptyIcon: string;
+  emptyIcon: ReactNode;
   emptyTitle: string;
   emptyDescription: string;
 }

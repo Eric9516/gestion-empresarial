@@ -13,9 +13,11 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ORDEN_COMPONENTES, componentesInstalados, componentesParaModulos, expandirRegistro, faltantesPara } from './herramientas/componentes.mjs';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const MIGRACIONES = 'supabase/migrations';
+// La base de datos se instala por componentes (base, abastecimiento, mantenimiento): supabase/componentes/<componente>/*.sql
+const MIGRACIONES = 'supabase/componentes';
 const FUNCIONES = 'supabase/functions';
 // La misma lista (con sus dependencias) que usa la app: src/lib/modulos.json
 const MODULOS = JSON.parse(readFileSync(join(RAIZ, 'src/lib/modulos.json'), 'utf8')).modulos;
@@ -103,18 +105,36 @@ function crearProyecto(nombre, region, orgId) {
   return { ref: creado.ref, claveDb };
 }
 
-function archivosDeMigracion() {
-  return readdirSync(join(RAIZ, MIGRACIONES)).filter(f => f.endsWith('.sql')).sort();
+// Nombres "componente/archivo.sql" de las migraciones de los componentes pedidos, en el orden en que se aplican
+// (primero la Base, después Abastecimiento, después Mantenimiento; dentro de cada uno, por número de versión).
+function archivosDeMigracion(componentes = ORDEN_COMPONENTES) {
+  return ORDEN_COMPONENTES.filter(c => componentes.includes(c)).flatMap(c => {
+    const dir = join(RAIZ, MIGRACIONES, c);
+    return existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.sql')).sort().map(f => c + '/' + f) : [];
+  });
+}
+const versionDe = nombre => nombre.split('/').pop().split('_')[0];
+
+// Qué se aplicó ya en el proyecto. null = todavía no tiene el registro de migraciones.
+function leerRegistro(ref) {
+  const hayRegistro = consultar(ref, "select to_regclass('public.migraciones_aplicadas') is not null as hay")[0]?.hay;
+  if (!hayRegistro) return null;
+  return consultar(ref, 'select nombre from public.migraciones_aplicadas').map(r => String(r.nombre));
+}
+// Componentes instalados en el proyecto (se deducen del registro; uno de antes de los componentes cuenta como completo).
+function componentesDelProyecto(ref) {
+  const registro = leerRegistro(ref);
+  return registro ? componentesInstalados(registro) : [];
 }
 
-// Aplica solo las migraciones que faltan y deja el registro de cuáles se aplicaron.
-// marcarHasta: nombre de una migración; las que llegan hasta esa (inclusive) se registran como hechas
+// Aplica solo las migraciones que faltan de los componentes pedidos y deja el registro de cuáles se aplicaron.
+// marcarHasta: número de versión (o nombre de una migración); las que llegan hasta esa versión se registran como hechas
 // sin ejecutarlas (para instalaciones que ya tenían esa parte), y las siguientes se aplican.
-function aplicarMigraciones(ref, { marcarHasta = null } = {}) {
-  paso('Aplicando la base de datos');
-  const hayRegistro = consultar(ref, `select to_regclass('public.migraciones_aplicadas') is not null as hay`)[0]?.hay;
-  if (!hayRegistro) {
-    const tablas = Number(consultar(ref, `select count(*)::int as n from pg_tables where schemaname = 'public'`)[0]?.n ?? 0);
+function aplicarMigraciones(ref, componentes, { marcarHasta = null } = {}) {
+  paso('Aplicando la base de datos (' + componentes.join(' + ') + ')');
+  let registro = leerRegistro(ref);
+  if (registro === null) {
+    const tablas = Number(consultar(ref, "select count(*)::int as n from pg_tables where schemaname = 'public'")[0]?.n ?? 0);
     if (tablas > 0 && !marcarHasta) {
       falla('Este proyecto ya tiene tablas pero no fue instalado con este script. No toco nada. ' +
         'Si es una instalación existente, usá --marcar-hasta <migración> para registrar como hechas las que ya tiene (sin ejecutarlas).');
@@ -122,12 +142,14 @@ function aplicarMigraciones(ref, { marcarHasta = null } = {}) {
     consultar(ref, `create table if not exists public.migraciones_aplicadas (nombre text primary key, aplicada_at timestamptz not null default now());
       alter table public.migraciones_aplicadas enable row level security;
       select 1 as ok`);
+    registro = [];
   }
-  const hechas = new Set(consultar(ref, 'select nombre from public.migraciones_aplicadas').map(r => r.nombre));
+  const hechas = expandirRegistro(registro, archivosDeMigracion());
+  const version = marcarHasta ? versionDe(marcarHasta) : null;
   let aplicadas = 0;
-  for (const archivo of archivosDeMigracion()) {
+  for (const archivo of archivosDeMigracion(componentes)) {
     if (hechas.has(archivo)) continue;
-    if (marcarHasta && archivo <= marcarHasta) log(`  · registrada sin ejecutar: ${archivo}`);
+    if (version && versionDe(archivo) <= version) log(`  · registrada sin ejecutar: ${archivo}`);
     else { log(`  · ${archivo}`); ejecutarArchivo(ref, `${MIGRACIONES}/${archivo}`); }
     consultar(ref, `insert into public.migraciones_aplicadas (nombre) values ('${archivo.replace(/'/g, "''")}') on conflict do nothing; select 1 as ok`);
     aplicadas++;
@@ -242,6 +264,12 @@ async function modulos(op) {
   if (op.activar !== undefined) for (const m of listaDeModulos(op.activar, 'activar')) despues[m] = true;
   if (op.desactivar !== undefined) for (const m of listaDeModulos(op.desactivar, 'desactivar')) despues[m] = false;
   validarDependencias(despues);
+  const instalados = componentesDelProyecto(op.ref);
+  for (const m of MODULOS) {
+    if (despues[m.id] && !antes[m.id] && !instalados.includes(m.componente)) {
+      falla(`"${m.nombre}" es del componente ${m.componente}, que no está instalado en este cliente. Instalalo primero:  pnpm cliente componente --ref ${op.ref} --agregar ${m.componente} --confirmo`);
+    }
+  }
 
   log(`\nMódulos del proyecto ${op.ref}\n`);
   for (const m of MODULOS) {
@@ -261,6 +289,23 @@ async function modulos(op) {
   log('\n✔ Licencia actualizada. Queda anotado en el Historial del cliente.');
 }
 
+// Instala un componente que el cliente no tenía (por ejemplo, Mantenimiento más adelante). No toca los datos que ya hay.
+async function componente(op) {
+  if (!op.ref || op.ref === true || typeof op.agregar !== 'string') falla('Uso: pnpm cliente componente --ref <identificador> --agregar <abastecimiento|mantenimiento> [--confirmo]');
+  if (!ORDEN_COMPONENTES.includes(op.agregar) || op.agregar === 'base') falla(`Componente desconocido: ${op.agregar}. Se puede agregar: ${ORDEN_COMPONENTES.filter(c => c !== 'base').join(', ')}.`);
+  await esperarProyecto(op.ref);
+  const instalados = componentesDelProyecto(op.ref);
+  if (!instalados.length) falla('Ese proyecto no fue instalado con este sistema.');
+  if (instalados.includes(op.agregar)) falla(`El componente ${op.agregar} ya está instalado en ese cliente.`);
+  const faltan = faltantesPara(op.agregar, instalados);
+  if (faltan.length) falla(`Para instalar ${op.agregar} primero hace falta: ${faltan.join(', ')}.`);
+  const pendientes = archivosDeMigracion([op.agregar]);
+  log(`\nComponente a instalar: ${op.agregar}  (ya tiene: ${instalados.join(', ')})\nMigraciones:\n${pendientes.map(a => '  · ' + a).join('\n')}`);
+  if (!op.confirmo) { log('\nSimulación: no se cambió nada. Para instalarlo, repetí el comando agregando --confirmo'); return; }
+  aplicarMigraciones(op.ref, [...instalados, op.agregar]);
+  log(`\n✔ Componente instalado. Sus módulos quedan apagados hasta que los actives:  pnpm cliente modulos --ref ${op.ref} --activar ...`);
+}
+
 async function nuevo(op) {
   const nombre = op.nombre, email = op.email;
   if (!nombre || !email || nombre === true || email === true) falla('Faltan datos. Uso: pnpm cliente nuevo --nombre "Mi Cliente SA" --email dueno@cliente.com');
@@ -278,7 +323,10 @@ async function nuevo(op) {
   if (ref) log(`Usando el proyecto existente ${ref}`);
   else ({ ref, claveDb } = crearProyecto(id, op.region || 'sa-east-1', op.org));
   await esperarProyecto(ref);
-  aplicarMigraciones(ref);
+  // Solo se instalan los componentes de los módulos que contrata el cliente (lo no contratado no existe en su base de datos).
+  const componentes = componentesParaModulos(activos, MODULOS);
+  log(`  Componentes: ${componentes.join(', ')}`);
+  aplicarMigraciones(ref, componentes);
   const { anon, servicio } = obtenerClaves(ref);
   publicarFunciones(ref, servicio);
   const claveDueno = await crearPrimerDueno(ref, servicio, email, nombre);
@@ -325,27 +373,37 @@ async function nuevo(op) {
 async function actualizar(op) {
   if (!op.ref || op.ref === true) falla('Falta el proyecto. Uso: pnpm cliente actualizar --ref <identificador>');
   await esperarProyecto(op.ref);
-  const marcarHasta = op['marcar-aplicadas'] ? archivosDeMigracion().at(-1) : (typeof op['marcar-hasta'] === 'string' ? op['marcar-hasta'] : null);
-  if (marcarHasta && !archivosDeMigracion().includes(marcarHasta)) falla(`No existe la migración ${marcarHasta}.`);
-  aplicarMigraciones(op.ref, { marcarHasta });
+  const todas = archivosDeMigracion();
+  const marcarHasta = op['marcar-aplicadas'] ? todas.map(versionDe).sort().at(-1) : (typeof op['marcar-hasta'] === 'string' ? op['marcar-hasta'] : null);
+  if (marcarHasta && !todas.some(a => versionDe(a) === versionDe(marcarHasta))) falla(`No existe la migración ${marcarHasta}.`);
+  // Se actualizan los componentes que el proyecto ya tiene. Un proyecto que todavía no tiene registro (instalación de antes) se adopta como completo.
+  let componentes = componentesDelProyecto(op.ref);
+  if (!componentes.length) {
+    if (!marcarHasta) falla('Ese proyecto no fue instalado con este sistema. Para adoptarlo usá --marcar-hasta <migración> (o --marcar-aplicadas).');
+    componentes = ORDEN_COMPONENTES;
+  }
+  aplicarMigraciones(op.ref, componentes, { marcarHasta });
   if (!op['solo-base']) {
     const claves = obtenerClaves(op.ref);
     publicarFunciones(op.ref, claves.servicio);
     await avisarSiElRegistroEstaAbierto(op.ref, claves.anon);
   }
-  log('\n✔ Cliente actualizado.');
+  log(`\n✔ Cliente actualizado (componentes: ${componentes.join(', ')}).`);
 }
 
 const AYUDA = `Uso:
   pnpm cliente nuevo --nombre "Nombre del cliente" --email dueno@cliente.com --modulos a,b,c [--region sa-east-1] [--org <id>] [--ref <proyecto-vacío>]
   pnpm cliente actualizar --ref <identificador> [--solo-base] [--marcar-hasta <migración> | --marcar-aplicadas]
   pnpm cliente modulos --ref <identificador> [--activar a,b] [--desactivar c] [--confirmo]
+  pnpm cliente componente --ref <identificador> --agregar <componente> [--confirmo]
 
   nuevo        Crea el proyecto en Supabase (o usa uno vacío con --ref), instala la base, publica las
                funciones y crea al primer dueño. --modulos es obligatorio: los que contrata el cliente
-               (o "todos"). Módulos: ${IDS_MODULOS.join(', ')}.
+               (o "todos"). Solo se instalan los componentes de esos módulos. Módulos: ${IDS_MODULOS.join(', ')}.
   modulos      Muestra y cambia los módulos de un cliente. Sin --confirmo solo simula. Valida las dependencias
                (por ejemplo, envios necesita proveedores). Es lo único que puede cambiar la licencia: el cliente no.
+  componente   Instala en un cliente un componente que no tenía (abastecimiento o mantenimiento), sin tocar sus datos.
+               Sin --confirmo solo simula. Después se activan sus módulos con "modulos".
   actualizar   Aplica las migraciones que falten y vuelve a publicar las funciones.
                --solo-base            no toca las funciones
                --marcar-hasta M       en una instalación que ya existía: registra como hechas (sin ejecutar) las
@@ -355,10 +413,11 @@ const AYUDA = `Uso:
 try {
   const { comando, opciones } = parsearArgumentos(process.argv.slice(2));
   if (!comando || comando === '--ayuda' || opciones.ayuda) log(AYUDA);
-  else if (!existsSync(join(RAIZ, MIGRACIONES))) falla('No encuentro supabase/migrations: ejecutá el comando desde el proyecto.');
+  else if (!existsSync(join(RAIZ, MIGRACIONES))) falla('No encuentro supabase/componentes: ejecutá el comando desde el proyecto.');
   else if (comando === 'nuevo') await nuevo(opciones);
   else if (comando === 'actualizar') await actualizar(opciones);
   else if (comando === 'modulos') await modulos(opciones);
+  else if (comando === 'componente') await componente(opciones);
   else falla(`Comando desconocido: ${comando}\n\n${AYUDA}`);
 } catch (e) {
   if (e instanceof ErrorDeUso) { console.error(`\n✖ ${e.message}`); process.exitCode = 1; }

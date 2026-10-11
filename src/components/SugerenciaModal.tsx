@@ -5,6 +5,7 @@ import { useEnviarSugerencia } from '../features/admin/useSugerencias';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 export default function SugerenciaModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mensaje, setMensaje] = useState('');
@@ -31,7 +32,7 @@ export default function SugerenciaModal({ open, onClose }: { open: boolean; onCl
     <Modal
       open={open}
       onClose={handleClose}
-      title="💡 Enviar sugerencia"
+      title={<><Icono n="idea" /> Enviar sugerencia</>}
       footer={
         <>
           <Button variant="ghost" onClick={handleClose}>Cancelar</Button>

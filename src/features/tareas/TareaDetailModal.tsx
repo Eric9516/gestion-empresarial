@@ -7,12 +7,14 @@ import TareaForm from './TareaForm';
 import { useCancelarTarea, useCompletarTarea, useTareaHistorialQuery, useTareasQuery } from './useTareas';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 const TRAFFIC_LABEL: Record<string, string> = { green: 'Normal', yellow: 'Atención', red: 'Crítica' };
 const ESTADO_LABEL: Record<string, string> = { pending: 'Pendiente', completed: 'Completada', cancelled: 'Cancelada' };
-const ACCION_LABELS: Record<string, string> = {
-  created: '🆕 Creada', edited: '✏️ Editada', completed: '✅ Completada', cancelled: '❌ Cancelada',
-  carried: '🔄 Arrastrada', reprogrammed: '📅 Reprogramada', traffic_changed: '🚦 Semáforo', stagnant_detected: '⚠️ Estancada',
+const ACCION_LABELS: Record<string, ReactNode> = {
+  created: <><Icono n="nuevo" /> Creada</>, edited: <><Icono n="editar" /> Editada</>, completed: <><Icono n="exito" /> Completada</>, cancelled: <><Icono n="fallo" /> Cancelada</>,
+  carried: <><Icono n="repetir" /> Arrastrada</>, reprogrammed: <><Icono n="fecha" /> Reprogramada</>, traffic_changed: <><Icono n="semaforo" /> Semáforo</>, stagnant_detected: <><Icono n="alerta" /> Estancada</>,
 };
 
 function formatDate(dateStr: string | null) {
@@ -66,15 +68,15 @@ export default function TareaDetailModal({ open, onClose, taskId }: Props) {
       <Modal
         open={open}
         onClose={onClose}
-        title={<><span className="accent">🚦</span> {t.title}</>}
+        title={<><span className="accent"><Icono n="semaforo" /></span> {t.title}</>}
         large
         footer={t.status === 'pending' ? (
           <>
             <Button variant="ghost" onClick={onClose}>Cerrar</Button>
-            <Button variant="ghost" onClick={() => setEditarOpen(true)}>✏️ Editar</Button>
-            <Button variant="ghost" onClick={() => setReprogramarOpen(true)}>📅 Reprogramar</Button>
-            <Button variant="dangerGhost" onClick={() => void handleCancelar()}>❌ Cancelar</Button>
-            <Button variant="success" onClick={() => void handleCompletar()}>✓ Completar</Button>
+            <Button variant="ghost" onClick={() => setEditarOpen(true)}><Icono n="editar" /> Editar</Button>
+            <Button variant="ghost" onClick={() => setReprogramarOpen(true)}><Icono n="fecha" /> Reprogramar</Button>
+            <Button variant="dangerGhost" onClick={() => void handleCancelar()}><Icono n="fallo" /> Cancelar</Button>
+            <Button variant="success" onClick={() => void handleCompletar()}><Icono n="ok" /> Completar</Button>
           </>
         ) : undefined}
       >
@@ -85,7 +87,7 @@ export default function TareaDetailModal({ open, onClose, taskId }: Props) {
           <div className="detail-item"><label>Fecha asignada</label><div className="value">{formatDate(t.assigned_date)}</div></div>
           <div className="detail-item"><label>Días pendiente</label><div className="value">{t.pending_days}</div></div>
           <div className="detail-item"><label>Arrastres</label><div className="value">{t.carry_count}</div></div>
-          <div className="detail-item"><label>Estancada</label><div className="value">{t.is_stagnant ? <span className="stagnant-badge">⚠ Sí</span> : 'No'}</div></div>
+          <div className="detail-item"><label>Estancada</label><div className="value">{t.is_stagnant ? <span className="stagnant-badge"><Icono n="alerta" /> Sí</span> : 'No'}</div></div>
         </div>
         {t.description && (
           <div className="detail-section">
@@ -95,12 +97,12 @@ export default function TareaDetailModal({ open, onClose, taskId }: Props) {
         )}
         {t.is_stagnant && t.status === 'pending' && (
           <div style={{ background: '#fff3e0', border: '1.5px solid #ffe0b2', borderRadius: 'var(--radius-sm)', padding: 14, marginTop: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#e65100', marginBottom: 4 }}>⚠ Tarea estancada</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#e65100', marginBottom: 4 }}><Icono n="alerta" /> Tarea estancada</div>
             <div style={{ fontSize: 12, color: '#bf360c', lineHeight: 1.5 }}>Esta tarea lleva varios días pendiente y requiere una decisión para que no siga acumulándose.</div>
           </div>
         )}
         <div className="divider" />
-        <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 12, fontSize: 13 }}>📋 Historial</div>
+        <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 12, fontSize: 13 }}><Icono n="lista" /> Historial</div>
         {!historial?.length ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>Sin registros</p>
         ) : (

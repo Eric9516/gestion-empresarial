@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   reparacion: ReparacionConDetalle | null;
@@ -65,7 +66,7 @@ export default function EditarReparacionModal({ reparacion, onClose }: Props) {
     <Modal
       open={!!reparacion}
       onClose={onClose}
-      title="✏️ Editar reparación"
+      title={<><Icono n="editar" /> Editar reparación</>}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>

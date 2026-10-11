@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
 import { fechaHoyISO, fechaLocalDe } from '../../lib/fechaHoy';
+import { Icono, Punto } from '@/components/Icono';
 
 const VENTANA_DEVOLUCION_MS = 24 * 60 * 60 * 1000;
 
@@ -26,7 +27,7 @@ const TEXTO_ESTADO = {
 function EstadoBadge({ estado }: { estado: 'Abierto' | 'Cerrado' }) {
   return (
     <Tooltip text={TEXTO_ESTADO[estado]}>
-      <span className={`badge ${estado === 'Abierto' ? 'badge-active' : 'badge-inactive'}`}>{estado === 'Abierto' ? '🟢 Abierto' : '🔒 Cerrado'}</span>
+      <span className={`badge ${estado === 'Abierto' ? 'badge-active' : 'badge-inactive'}`}>{estado === 'Abierto' ? <><Punto color="var(--success)" /> Abierto</> : <><Icono n="candado" /> Cerrado</>}</span>
     </Tooltip>
   );
 }
@@ -182,8 +183,8 @@ export default function HistorialRetiros() {
       header: '',
       render: f => f.canEdit && (
         <div className="td-actions" style={{ flexWrap: 'nowrap' }}>
-          <Button variant="ghost" size="sm" title="Devolver" onClick={() => abrirDevolver(f)}>↩️ Devolver</Button>
-          <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(f.retiroItemId, f.retiroId)}>✕</Button>
+          <Button variant="ghost" size="sm" title="Devolver" onClick={() => abrirDevolver(f)}><Icono n="devolver" /> Devolver</Button>
+          <Button variant="dangerGhost" size="icon" title="Eliminar" onClick={() => void handleDelete(f.retiroItemId, f.retiroId)}><Icono n="cerrar" /></Button>
         </div>
       ),
     },
@@ -200,17 +201,17 @@ export default function HistorialRetiros() {
           <span className="badge badge-rubro">x{f.cantidad}</span>
         </div>
         <div className="prov-card-body">
-          <div className="prov-card-row">🕐 {f.hora}{admin ? ' — 👤 ' + f.usuarioNombre : ''}</div>
-          <div className="prov-card-row">🏭 {f.sector}</div>
-          {f.observacion && <div className="prov-card-row">📝 {f.observacion}</div>}
+          <div className="prov-card-row"><Icono n="reloj" /> {f.hora}{admin && <> — <Icono n="usuario" /> {f.usuarioNombre}</>}</div>
+          <div className="prov-card-row"><Icono n="fabrica" /> {f.sector}</div>
+          {f.observacion && <div className="prov-card-row"><Icono n="nota" /> {f.observacion}</div>}
           <div className="prov-card-row">
             <EstadoBadge estado={f.estado} />
           </div>
         </div>
         {f.canEdit && (
           <div className="prov-card-actions">
-            <Button variant="ghost" size="sm" onClick={() => abrirDevolver(f)}>↩️ Devolver</Button>
-            <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(f.retiroItemId, f.retiroId)}>🗑 Eliminar</Button>
+            <Button variant="ghost" size="sm" onClick={() => abrirDevolver(f)}><Icono n="devolver" /> Devolver</Button>
+            <Button variant="dangerGhost" size="sm" onClick={() => void handleDelete(f.retiroItemId, f.retiroId)}><Icono n="borrar" /> Eliminar</Button>
           </div>
         )}
       </div>
@@ -224,7 +225,7 @@ export default function HistorialRetiros() {
         data={filasDeRetiro(r)}
         renderCard={renderCard}
         keyField={f => f.key}
-        emptyIcon="📋"
+        emptyIcon={<Icono n="lista" />}
         emptyTitle="Sin ítems"
         emptyDescription=""
       />
@@ -256,7 +257,7 @@ export default function HistorialRetiros() {
                   <Fragment key={r.id}>
                     <tr style={{ cursor: 'pointer' }} aria-expanded={abierto} {...clicConTeclado(() => toggleRetiro(r.id), null)}>
                       <td style={{ width: 28 }}>
-                        <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}>▶</span>
+                        <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}><Icono n="desplegar" /></span>
                       </td>
                       <td>{fechaHora}</td>
                       {admin && <td>{usuarioNombre}</td>}
@@ -289,9 +290,9 @@ export default function HistorialRetiros() {
                 <div className="prov-card-header" aria-expanded={abierto} {...clicConTeclado(() => toggleRetiro(r.id))} style={{ cursor: 'pointer' }}>
                   <div>
                     <div className="prov-card-name">{fechaHora}{admin ? ` — ${usuarioNombre}` : ''}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 2 }}>🏭 {sector} · {r.retiro_items.length} ítem{r.retiro_items.length !== 1 ? 's' : ''} · {totalCantidad} u.</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 2 }}><Icono n="fabrica" /> {sector} · {r.retiro_items.length} ítem{r.retiro_items.length !== 1 ? 's' : ''} · {totalCantidad} u.</div>
                   </div>
-                  <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}>▶</span>
+                  <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}><Icono n="desplegar" /></span>
                 </div>
                 <div className="prov-card-body">
                   <EstadoBadge estado={estado} />
@@ -315,8 +316,8 @@ export default function HistorialRetiros() {
         <div className="admin-card" style={{ marginBottom: 10, padding: 0, overflow: 'hidden' }} key={day}>
           <button type="button" onClick={() => toggleDia(day)} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
             <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-              <span>📅 {fechaLabel} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({itemCount} ítem{itemCount !== 1 ? 's' : ''})</span></span>
-              <span>{isOpen ? '▲' : '▼'}</span>
+              <span><Icono n="fecha" /> {fechaLabel} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({itemCount} ítem{itemCount !== 1 ? 's' : ''})</span></span>
+              <span>{isOpen ? <Icono n="arriba" /> : <Icono n="abajo" />}</span>
             </div>
           </button>
           {isOpen && (
@@ -326,7 +327,7 @@ export default function HistorialRetiros() {
                 data={dayRetiros.flatMap(filasDeRetiro)}
                 renderCard={renderCard}
                 keyField={f => f.key}
-                emptyIcon="📋"
+                emptyIcon={<Icono n="lista" />}
                 emptyTitle="Sin ítems"
                 emptyDescription=""
               />
@@ -340,11 +341,11 @@ export default function HistorialRetiros() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">{admin ? '📋 Historial de retiros' : '📋 Mis retiros'}</div>
+        <div className="section-title">{admin ? <><Icono n="lista" /> Historial de retiros</> : <><Icono n="lista" /> Mis retiros</>}</div>
         {admin && (
           <div className="section-actions">
-            <Button variant="ghost" size="sm" onClick={() => void handleExportarPendientes()}>📥 Exportar pendientes</Button>
-            <Button variant="ghost" size="sm" onClick={() => setExportarPeriodoOpen(true)}>🗓️ Exportar por período</Button>
+            <Button variant="ghost" size="sm" onClick={() => void handleExportarPendientes()}><Icono n="importar" /> Exportar pendientes</Button>
+            <Button variant="ghost" size="sm" onClick={() => setExportarPeriodoOpen(true)}><Icono n="calendario" /> Exportar por período</Button>
           </div>
         )}
       </div>
@@ -364,8 +365,8 @@ export default function HistorialRetiros() {
           </Select>
         )}
         <Select className="filter-select" value={vista} onChange={e => setVista(e.target.value as Vista)}>
-          <option value="tabla">🗂️ Vista tabla</option>
-          <option value="dias">📅 Vista por día</option>
+          <option value="tabla">Vista tabla</option>
+          <option value="dias">Vista por día</option>
         </Select>
       </div>
 
@@ -374,7 +375,7 @@ export default function HistorialRetiros() {
 
       {!isLoading && !isError && !retiros.length && (
         <div className="empty-state">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon"><Icono n="lista" /></div>
           <h3>Todavía no hay retiros</h3>
           <p>Los que confirmes van a aparecer acá.</p>
         </div>
@@ -382,7 +383,7 @@ export default function HistorialRetiros() {
 
       {!isLoading && !isError && !!retiros.length && !retirosFiltrados.length && (
         <div className="empty-state">
-          <div className="empty-icon">🔍</div>
+          <div className="empty-icon"><Icono n="buscar" /></div>
           <h3>Sin resultados</h3>
           <p>Probá con otro código, sector u operario.</p>
         </div>
@@ -395,7 +396,7 @@ export default function HistorialRetiros() {
       <Modal
         open={!!devolviendo}
         onClose={() => setDevolviendo(null)}
-        title={`↩️ Devolver "${devolviendo?.codigo}"`}
+        title={<><Icono n="devolver" /> Devolver "{devolviendo?.codigo}"</>}
         footer={
           <>
             <Button variant="ghost" onClick={() => setDevolviendo(null)}>Cancelar</Button>

@@ -20,13 +20,16 @@ import ErroresPane from '../features/admin/ErroresPane';
 import PapeleraPane from '../features/admin/PapeleraPane';
 import FotosPendientesPane from '../features/admin/FotosPendientesPane';
 import SugerenciasPane from '../features/admin/SugerenciasPane';
+import ModulosPane from '../features/admin/ModulosPane';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 type Grupo = 'directorio' | 'mantenimiento' | 'general';
 
 interface AdminTab {
   id: string;
   group: Grupo;
-  label: string;
+  label: ReactNode;
   check: (profile: Profile | null) => boolean;
   // Si el módulo está desactivado, la pestaña no aparece (la configuración de algo que no se usa no sirve).
   modulo?: ModuloId;
@@ -38,26 +41,28 @@ interface AdminTab {
 const ADMIN_TABS: AdminTab[] = [
   // El asistente se abre solo la primera vez que entra el dueño (ver PuertaConfiguracionInicial) y
   // queda siempre acá para retomarlo.
-  { id: 'inicial', group: 'general', label: '🚀 Configuración inicial', check: isOwner, Pane: ConfiguracionInicial },
+  { id: 'inicial', group: 'general', label: <><Icono n="cohete" /> Configuración inicial</>, check: isOwner, Pane: ConfiguracionInicial },
   // Empresa sirve a toda la aplicación, por eso está en General.
-  { id: 'empresa', group: 'general', label: '🏢 Empresa', check: isDirectorioAdmin, Pane: EmpresaPane },
-  { id: 'rotulo', group: 'directorio', label: '🏷️ Rótulo', check: isDirectorioAdmin, modulo: 'envios', Pane: RotuloDesignPane },
-  { id: 'comisionistas', group: 'directorio', label: '🤝 Comisionistas', check: isDirectorioAdmin, modulo: 'comisionistas', Pane: ComisionistasCamposPane },
-  { id: 'repuestos', group: 'mantenimiento', label: '🔧 Repuestos', check: isMantenimientoAdmin, modulo: 'deposito', Pane: RepuestosPane },
-  { id: 'sectores', group: 'mantenimiento', label: '🏭 Sectores', check: isMantenimientoAdmin, modulo: 'deposito', Pane: SectoresPanel },
-  { id: 'fotos-pendientes', group: 'mantenimiento', label: '📷 Fotos pendientes', check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
-  { id: 'familias', group: 'mantenimiento', label: '🏷️ Familias', check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
-  { id: 'usuarios', group: 'general', label: '👥 Usuarios', check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
-  { id: 'historial', group: 'general', label: '📜 Historial', check: isOwner, Pane: HistorialPane },
-  { id: 'errores', group: 'general', label: '🐞 Errores', check: puedeVerErrores, Pane: ErroresPane },
-  { id: 'papelera', group: 'general', label: '🗑️ Papelera', check: isOwner, Pane: PapeleraPane },
-  { id: 'sugerencias', group: 'general', label: '💬 Sugerencias', check: puedeVerSugerencias, Pane: SugerenciasPane },
+  { id: 'empresa', group: 'general', label: <><Icono n="empresa" /> Empresa</>, check: isDirectorioAdmin, Pane: EmpresaPane },
+  { id: 'rotulo', group: 'directorio', label: <><Icono n="etiqueta" /> Rótulo</>, check: isDirectorioAdmin, modulo: 'envios', Pane: RotuloDesignPane },
+  { id: 'comisionistas', group: 'directorio', label: <><Icono n="acuerdo" /> Comisionistas</>, check: isDirectorioAdmin, modulo: 'comisionistas', Pane: ComisionistasCamposPane },
+  { id: 'repuestos', group: 'mantenimiento', label: <><Icono n="herramienta" /> Repuestos</>, check: isMantenimientoAdmin, modulo: 'deposito', Pane: RepuestosPane },
+  { id: 'sectores', group: 'mantenimiento', label: <><Icono n="fabrica" /> Sectores</>, check: isMantenimientoAdmin, modulo: 'deposito', Pane: SectoresPanel },
+  { id: 'fotos-pendientes', group: 'mantenimiento', label: <><Icono n="camara" /> Fotos pendientes</>, check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
+  { id: 'familias', group: 'mantenimiento', label: <><Icono n="etiqueta" /> Familias</>, check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
+  // Solo el dueño: apaga o prende, dentro de su plan, los módulos que usa (lo que el plan incluye lo define quien vende).
+  { id: 'modulos', group: 'general', label: <><Icono n="modulos" /> Módulos</>, check: isOwner, Pane: ModulosPane },
+  { id: 'usuarios', group: 'general', label: <><Icono n="usuarios" /> Usuarios</>, check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
+  { id: 'historial', group: 'general', label: <><Icono n="historial" /> Historial</>, check: isOwner, Pane: HistorialPane },
+  { id: 'errores', group: 'general', label: <><Icono n="error" /> Errores</>, check: puedeVerErrores, Pane: ErroresPane },
+  { id: 'papelera', group: 'general', label: <><Icono n="borrar" /> Papelera</>, check: isOwner, Pane: PapeleraPane },
+  { id: 'sugerencias', group: 'general', label: <><Icono n="mensaje" /> Sugerencias</>, check: puedeVerSugerencias, Pane: SugerenciasPane },
 ];
 
-const GRUPOS: { id: Grupo; icon: string; label: string }[] = [
-  { id: 'directorio', icon: '🗂️', label: 'Directorio' },
-  { id: 'mantenimiento', icon: '🔧', label: 'Depósito' },
-  { id: 'general', icon: '⚙️', label: 'General' },
+const GRUPOS: { id: Grupo; icon: ReactNode; label: string }[] = [
+  { id: 'directorio', icon: <Icono n="tabla" />, label: 'Directorio' },
+  { id: 'mantenimiento', icon: <Icono n="herramienta" />, label: 'Depósito' },
+  { id: 'general', icon: <Icono n="config" />, label: 'General' },
 ];
 
 function AdminContent() {
@@ -92,7 +97,7 @@ function AdminContent() {
     if (primera) setTabId(primera.id);
   }
 
-  const navItems = [{ icon: '←', label: 'Volver', onClick: () => navigate(-1) }];
+  const navItems = [{ icon: <><Icono n="volver" /> </>, label: 'Volver', onClick: () => navigate(-1) }];
 
   if (!listo) return <div className="loading-screen">Cargando...</div>;
   if (!tabActual) return null;
@@ -108,7 +113,7 @@ function AdminContent() {
           </div>
         </div>
         <div className="header-right">
-          <button onClick={() => navigate(-1)} className="btn-volver-directorio" style={{ display: 'flex' }}>← <span className="hide-mobile">Volver</span></button>
+          <button onClick={() => navigate(-1)} className="btn-volver-directorio" style={{ display: 'flex' }}><Icono n="volver" /> <span className="hide-mobile">Volver</span></button>
           <UserMenu />
           <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

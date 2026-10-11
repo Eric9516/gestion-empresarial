@@ -6,6 +6,7 @@ import { publicUrl } from '../../lib/storage';
 import { MAX_FOTOS_ROTULO, useEliminarRotuloFoto, useRotuloFotosQuery, useSubirRotuloFotos } from './useRotuloFotos';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -59,7 +60,7 @@ export default function RotuloFotosModal({ open, onClose, grupoId, proveedorId, 
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">📷</span> Fotos del envío</>}>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="camara" /></span> Fotos del envío</>}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         {fotos?.map(f => (
           <div key={f.id} style={{ position: 'relative', width: 90, height: 90 }}>
@@ -69,7 +70,7 @@ export default function RotuloFotosModal({ open, onClose, grupoId, proveedorId, 
             <button
               type="button" onClick={() => void handleDelete(f.id, f.storage_path)} title="Eliminar foto"
               style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: 'var(--danger)', color: 'white', border: 'none', cursor: 'pointer', fontSize: 12, lineHeight: 1 }}
-            >✕</button>
+            ><Icono n="cerrar" /></button>
           </div>
         ))}
         {!fotos?.length && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Todavía no hay fotos para este rótulo.</div>}
@@ -77,8 +78,8 @@ export default function RotuloFotosModal({ open, onClose, grupoId, proveedorId, 
       <div className="form-group" style={{ marginBottom: 0 }}>
         <label>Agregar fotos (hasta {MAX_FOTOS_ROTULO} en total)</label>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button type="button" variant="primary" style={{ flex: 1, justifyContent: 'center' }} disabled={lleno || subiendo} onClick={() => inputCamaraRef.current?.click()}>📷 Sacar foto</Button>
-          <Button type="button" variant="ghost" style={{ flex: 1, justifyContent: 'center' }} disabled={lleno || subiendo} onClick={() => inputGaleriaRef.current?.click()}>🖼️ Elegir de galería</Button>
+          <Button type="button" variant="primary" style={{ flex: 1, justifyContent: 'center' }} disabled={lleno || subiendo} onClick={() => inputCamaraRef.current?.click()}><Icono n="camara" /> Sacar foto</Button>
+          <Button type="button" variant="ghost" style={{ flex: 1, justifyContent: 'center' }} disabled={lleno || subiendo} onClick={() => inputGaleriaRef.current?.click()}><Icono n="imagen" /> Elegir de galería</Button>
         </div>
         <input ref={inputCamaraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={e => void handleUpload(e)} />
         <input ref={inputGaleriaRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => void handleUpload(e)} />

@@ -3,6 +3,8 @@ import Modal from '../../components/Modal';
 import { useItemsQuery } from '../items/useItems';
 import { useRetiroCart } from '../retiros/RetiroCartContext';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 const MENSAJE_INICIAL = 'Apuntá al código QR del repuesto...';
 
@@ -26,7 +28,7 @@ export default function QrScannerModal({ open, onClose, onListo }: Props) {
   const ultimoTimestampRef = useRef(0);
   const statusTimeoutRef = useRef<number | undefined>(undefined);
 
-  const [status, setStatus] = useState(MENSAJE_INICIAL);
+  const [status, setStatus] = useState<ReactNode>(MENSAJE_INICIAL);
   const [statusColor, setStatusColor] = useState<'muted' | 'success' | 'danger'>('muted');
 
   useEffect(() => {
@@ -102,11 +104,11 @@ export default function QrScannerModal({ open, onClose, onListo }: Props) {
 
     const item = items?.find(it => it.codigo === codigo);
     if (!item) {
-      setStatus(`❌ Código "${codigo}" no encontrado en el catálogo`);
+      setStatus(<><Icono n="fallo" /> Código "{codigo}" no encontrado en el catálogo</>);
       setStatusColor('danger');
     } else {
       addItem(item);
-      setStatus(`✓ ${item.codigo} agregado — seguí escaneando`);
+      setStatus(<><Icono n="ok" /> {item.codigo} agregado — seguí escaneando</>);
       setStatusColor('success');
     }
 
@@ -135,8 +137,8 @@ export default function QrScannerModal({ open, onClose, onListo }: Props) {
     <Modal
       open={open}
       onClose={handleClose}
-      title={<><span className="accent">📷</span> Escanear QR</>}
-      footer={<Button variant="success" onClick={handleListo}>✓ Listo, ver lista completa</Button>}
+      title={<><span className="accent"><Icono n="camara" /></span> Escanear QR</>}
+      footer={<Button variant="success" onClick={handleListo}><Icono n="ok" /> Listo, ver lista completa</Button>}
     >
       <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: 'var(--radius-sm)', background: '#000', display: 'block' }} />
       <div style={{ textAlign: 'center', fontSize: 13, color: colorVar, marginTop: 10, minHeight: 18 }}>{status}</div>
@@ -148,7 +150,7 @@ export default function QrScannerModal({ open, onClose, onListo }: Props) {
           <div key={c.item_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ flex: 1, fontSize: 12, minWidth: 0 }}><strong>{c.codigo}</strong> — {c.descripcion}</div>
             <span className="badge badge-rubro">x{c.cantidad}</span>
-            <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => removeItem(c.item_id)}>✕</Button>
+            <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => removeItem(c.item_id)}><Icono n="cerrar" /></Button>
           </div>
         ))}
       </div>

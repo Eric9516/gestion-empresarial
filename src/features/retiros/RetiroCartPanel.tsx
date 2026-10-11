@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 const SUGERENCIA_STOCK_INCORRECTO = 'El stock registrado es incorrecto: hay más unidades disponibles.';
 
@@ -61,7 +62,7 @@ export default function RetiroCartPanel() {
   if (!cart.length) {
     return (
       <div className="empty-state">
-        <div className="empty-icon">🛒</div>
+        <div className="empty-icon"><Icono n="carrito" /></div>
         <h3>No tenés nada para retirar todavía</h3>
         <p>Buscá un repuesto y tocá "Retirar".</p>
       </div>
@@ -70,7 +71,7 @@ export default function RetiroCartPanel() {
 
   return (
     <div className="admin-card">
-      <div className="admin-card-header">📤 Ítems a retirar</div>
+      <div className="admin-card-header"><Icono n="retirar" /> Ítems a retirar</div>
       <div className="admin-card-body">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
           {cart.map(c => {
@@ -85,11 +86,12 @@ export default function RetiroCartPanel() {
                   </div>
                   <Input type="number" min={1} style={{ width: 64 }} value={c.cantidad} onChange={e => updateCantidad(c.item_id, parseInt(e.target.value, 10) || 1)} />
                   <Input type="text" placeholder="Observación..." style={{ width: 150 }} value={c.observacion} onChange={e => updateObservacion(c.item_id, e.target.value)} />
-                  <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => removeItem(c.item_id)}>✕</Button>
+                  <Button variant="dangerGhost" size="icon" title="Quitar" onClick={() => removeItem(c.item_id)}><Icono n="cerrar" /></Button>
                 </div>
                 {excedeStock && (
                   <div style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}>
-                    ⚠️ Solo hay {stockDisponible} en stock.{' '}
+                    
+                    <Icono n="alerta" /> Solo hay {stockDisponible} en stock.{' '}
                     {!c.observacion && (
                       <button
                         type="button"
@@ -116,7 +118,7 @@ export default function RetiroCartPanel() {
           <label htmlFor="retiro-cart-panel-2">Observación general (opcional)</label>
           <Input id="retiro-cart-panel-2" type="text" placeholder="Ej: para reparación de la envasadora" value={observacionGeneral} onChange={e => setObservacionGeneral(e.target.value)} />
         </div>
-        <Button variant="success" onClick={handleRevisar}>✓ Revisar y confirmar</Button>
+        <Button variant="success" onClick={handleRevisar}><Icono n="ok" /> Revisar y confirmar</Button>
       </div>
 
       <Modal
@@ -127,7 +129,7 @@ export default function RetiroCartPanel() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setResumenAbierto(false)}>Volver</Button>
-            <Button variant="success" onClick={() => void handleConfirmar()} disabled={confirmando}>✓ Sí, confirmar retiro</Button>
+            <Button variant="success" onClick={() => void handleConfirmar()} disabled={confirmando}><Icono n="ok" /> Sí, confirmar retiro</Button>
           </>
         }
       >

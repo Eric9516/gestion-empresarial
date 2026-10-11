@@ -1,6 +1,7 @@
 import Modal from '../../components/Modal';
 import { formatoCantidad } from '../../lib/ajustes';
 import { useHistorialPorItem, type HistorialItemFila } from '../retiros/useHistorialPorItem';
+import { Icono } from '@/components/Icono';
 
 const cuando = (ts: string) => new Date(ts).toLocaleString('es-AR');
 
@@ -18,7 +19,7 @@ export default function HistorialStockModal({ item, onClose }: { item: { id: str
   const { data: historial, isLoading } = useHistorialPorItem(item?.id ?? null);
 
   return (
-    <Modal open={!!item} onClose={onClose} title={`📋 Historial de movimientos — ${item?.codigo ?? ''}`}>
+    <Modal open={!!item} onClose={onClose} title={<><Icono n="lista" /> Historial de movimientos — {item?.codigo ?? ''}</>}>
       {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
       {!isLoading && !historial?.length && (
         <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Todavía no hay movimientos de este repuesto (ni retiros ni ajustes).</p>

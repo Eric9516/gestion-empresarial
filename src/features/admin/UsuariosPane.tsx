@@ -7,6 +7,7 @@ import UsuarioForm from './UsuarioForm';
 import ResetPasswordModal from './ResetPasswordModal';
 import { Button } from '@/components/ui/button';
 import { useModulos } from '../config/useModulos';
+import { Icono } from '@/components/Icono';
 
 const MANT_LABELS: Record<string, string> = { admin: 'Admin', comun: 'Usuario' };
 const ROL_BADGE: Record<string, { cls: string; label: string }> = {
@@ -36,8 +37,8 @@ export default function UsuariosPane() {
     return (
       <>
         {modulos.deposito && (u.mantenimiento_rol ? <span className="badge badge-rubro">{MANT_LABELS[u.mantenimiento_rol]}</span> : <span className="badge badge-inactive">Desactivado</span>)}
-        {modulos.deposito && u.mantenimiento_rol && u.puede_ver_retiros &&<span className="badge badge-active" title="Puede ver los retiros de todos"> 👁 Retiros</span>}
-        {u.puede_ver_errores && <span className="badge badge-active" title="Puede ver el log de errores"> 🐞</span>}
+        {modulos.deposito && u.mantenimiento_rol && u.puede_ver_retiros &&<span className="badge badge-active" title="Puede ver los retiros de todos">  <Icono n="ver" /> Retiros</span>}
+        {u.puede_ver_errores && <span className="badge badge-active" title="Puede ver el log de errores">  <Icono n="error" /></span>}
       </>
     );
   }
@@ -51,7 +52,7 @@ export default function UsuariosPane() {
             es owner — no puede abrir "Editar", así que sin esto no tendría
             ningún otro camino. Al owner ya se lo mostramos adentro de Editar
             (ver UsuarioForm), para no duplicar el botón en su propia fila. */}
-        {puedeResetear && !owner && !esUnoMismo && <Button variant="ghost" size="sm" onClick={() => setResetPasswordUsuario(u)}>🔑 Contraseña</Button>}
+        {puedeResetear && !owner && !esUnoMismo && <Button variant="ghost" size="sm" onClick={() => setResetPasswordUsuario(u)}><Icono n="clave" /> Contraseña</Button>}
         {!owner && esUnoMismo && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Editá tu nombre desde "Mi perfil"</span>}
       </div>
     );
@@ -60,7 +61,7 @@ export default function UsuariosPane() {
   const columns: Column<Usuario>[] = [
     { header: 'Nombre', render: u => <strong>{u.nombre} {u.apellido}</strong> },
     { header: 'Email', render: u => u.email },
-    { header: 'Directorio', render: u => { const r = ROL_BADGE[u.rol ?? 'user'] ?? ROL_BADGE.user; return <><span className={`badge ${r.cls}`}>{r.label}</span>{u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema"> 👑 Dueño</span>}</>; } },
+    { header: 'Directorio', render: u => { const r = ROL_BADGE[u.rol ?? 'user'] ?? ROL_BADGE.user; return <><span className={`badge ${r.cls}`}>{r.label}</span>{u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema">  <Icono n="corona" /> Dueño</span>}</>; } },
     { header: modulos.deposito ? 'Depósito' : 'Permisos', render: badges },
     { header: 'Estado', render: u => <span className={`badge ${u.activo !== false ? 'badge-active' : 'badge-inactive'}`}>{u.activo !== false ? 'Activo' : 'Inactivo'}</span> },
     { header: '', render: acciones },
@@ -76,7 +77,7 @@ export default function UsuariosPane() {
             <div style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 2 }}>{u.email}</div>
             <div style={{ marginTop: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               <span className={`badge ${r.cls}`}>{r.label}</span>
-              {u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema">👑 Dueño</span>}
+              {u.es_owner && <span className="badge badge-rubro" title="Dueño del sistema"><Icono n="corona" /> Dueño</span>}
               <span className={`badge ${u.activo !== false ? 'badge-active' : 'badge-inactive'}`}>{u.activo !== false ? 'Activo' : 'Inactivo'}</span>
               {badges(u)}
             </div>
@@ -90,7 +91,7 @@ export default function UsuariosPane() {
   return (
     <div className="admin-card">
       <div className="admin-card-header" style={{ justifyContent: 'space-between' }}>
-        <span>👥 Usuarios</span>
+        <span><Icono n="usuarios" /> Usuarios</span>
         {owner && (
           <Button size="sm" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: 12 }} onClick={() => { setEditing(null); setFormOpen(true); }}>+ Nuevo usuario</Button>
         )}
@@ -104,7 +105,7 @@ export default function UsuariosPane() {
             data={usuarios ?? []}
             renderCard={renderCard}
             keyField={u => u.id}
-            emptyIcon="👥"
+            emptyIcon={<Icono n="usuarios" />}
             emptyTitle="Sin usuarios registrados"
             emptyDescription=""
           />

@@ -1,5 +1,6 @@
 import { clicConTeclado } from '@/lib/clicConTeclado';
 import type { Tarea } from './useTareas';
+import { Icono } from '@/components/Icono';
 
 const TRAFFIC_LABEL: Record<string, string> = { green: 'Normal', yellow: 'Atención', red: 'Crítica' };
 
@@ -20,17 +21,17 @@ export default function TareaCard({ tarea: t, grid, onOpen, onCompletar }: Props
 
   const titulo = <div className="task-card-title">{isCompleted ? <s style={{ opacity: 0.5 }}>{t.title}</s> : t.title}</div>;
   const badge = <span className={`traffic-badge ${t.traffic_level}`}>{TRAFFIC_LABEL[t.traffic_level] || t.traffic_level}</span>;
-  const stagnant = t.is_stagnant ? <span className="stagnant-badge">⚠</span> : null;
+  const stagnant = t.is_stagnant ? <span className="stagnant-badge"><Icono n="alerta" /></span> : null;
   const desc = t.description ? <div className="task-card-desc">{t.description}</div> : null;
   const meta = (
     <div className="task-card-meta">
-      <span className="task-meta-item">📅 {formatDate(t.start_date)}</span>
-      <span className="task-meta-item">⏳ {t.pending_days}d</span>
-      {t.carry_count > 0 && <span className="task-meta-item">🔄 {t.carry_count}</span>}
+      <span className="task-meta-item"><Icono n="fecha" /> {formatDate(t.start_date)}</span>
+      <span className="task-meta-item"><Icono n="espera" /> {t.pending_days}d</span>
+      {t.carry_count > 0 && <span className="task-meta-item"><Icono n="repetir" /> {t.carry_count}</span>}
     </div>
   );
   const completeBtn = !isCompleted ? (
-    <button className="task-action-btn complete" onClick={e => { e.stopPropagation(); onCompletar(t.id); }}>✓</button>
+    <button className="task-action-btn complete" onClick={e => { e.stopPropagation(); onCompletar(t.id); }}><Icono n="ok" /></button>
   ) : null;
 
   if (grid) {

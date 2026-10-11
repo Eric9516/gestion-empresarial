@@ -1,8 +1,10 @@
 import Modal from '../../components/Modal';
 import type { Proveedor } from './useProveedores';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+function Field({ label, value }: { label: string; value?: ReactNode }) {
   if (!value) return null;
   return (
     <div className="detail-item">
@@ -33,8 +35,8 @@ export default function ProveedorDetail({ proveedor, onClose, onEdit, onRotulo }
       title={proveedor.nombre}
       footer={(onRotulo || onEdit) && (
         <>
-          {onRotulo && <Button variant="ghost" onClick={onRotulo}>🏷️ Generar rótulo</Button>}
-          {onEdit && <Button variant="primary" onClick={onEdit}>✏️ Editar</Button>}
+          {onRotulo && <Button variant="ghost" onClick={onRotulo}><Icono n="etiqueta" /> Generar rótulo</Button>}
+          {onEdit && <Button variant="primary" onClick={onEdit}><Icono n="editar" /> Editar</Button>}
         </>
       )}
     >
@@ -44,7 +46,7 @@ export default function ProveedorDetail({ proveedor, onClose, onEdit, onRotulo }
         <Field label="Dirección" value={proveedor.direccion} />
         <Field label="Horario" value={proveedor.horario} />
         <Field label="Email" value={proveedor.email} />
-        <Field label="Estado" value={proveedor.activo ? '✅ Activo' : '⬜ Inactivo'} />
+        <Field label="Estado" value={proveedor.activo ? <><Icono n="exito" /> Activo</> : <><Icono n="vacio" /> Inactivo</>} />
         <Field label="Última modificación" value={proveedor.modificado_por ? `${fecha} por ${proveedor.modificado_por}` : fecha} />
       </div>
       {proveedor.notas && (
@@ -54,7 +56,7 @@ export default function ProveedorDetail({ proveedor, onClose, onEdit, onRotulo }
         </div>
       )}
       <div className="divider" />
-      <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 12 }}>👤 Contactos ({proveedor.contactos.length})</div>
+      <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 12 }}><Icono n="usuario" /> Contactos ({proveedor.contactos.length})</div>
       {proveedor.contactos.length === 0 ? (
         <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin contactos registrados</p>
       ) : (
@@ -64,9 +66,9 @@ export default function ProveedorDetail({ proveedor, onClose, onEdit, onRotulo }
               <div className="contact-card-name">{c.nombre}</div>
               {c.cargo && <div className="contact-card-cargo">{c.cargo}</div>}
               <div className="contact-card-info">
-                {c.telefono && <span>📞 {c.telefono}</span>}
-                {c.celular && <span>📱 {c.celular}</span>}
-                {c.email && <span>✉ {c.email}</span>}
+                {c.telefono && <span><Icono n="telefono" /> {c.telefono}</span>}
+                {c.celular && <span><Icono n="celular" /> {c.celular}</span>}
+                {c.email && <span><Icono n="correo" /> {c.email}</span>}
               </div>
             </div>
           ))}

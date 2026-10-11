@@ -5,6 +5,7 @@ import { isOwner, tieneAccesoAdmin } from '../lib/types';
 import { useMenu } from '../lib/useMenu';
 import ProfileModal from './ProfileModal';
 import SugerenciaModal from './SugerenciaModal';
+import { Icono } from '@/components/Icono';
 
 // Insignia de usuario con menú desplegable (Mi perfil / Inicio / Configuración /
 // Cerrar sesión) — mismo patrón que la app vieja, compartido entre las 3 pantallas
@@ -37,24 +38,24 @@ export default function UserMenu() {
 
         <div className={`user-dropdown${open ? ' open' : ''}`} {...menu}>
           <button role="menuitem" className="user-dropdown-item" onClick={() => { setProfileOpen(true); cerrar(); }}>
-            <span>👤</span> Mi perfil
+            <span><Icono n="usuario" /></span> Mi perfil
           </button>
           <button role="menuitem" className="user-dropdown-item" onClick={() => { navigate('/'); cerrar(); }}>
-            <span>🏠</span> Inicio
+            <span><Icono n="inicio" /></span> Inicio
           </button>
           {!isOwner(profile) && (
             <button role="menuitem" className="user-dropdown-item" onClick={() => { setSugerenciaOpen(true); cerrar(); }}>
-              <span>💡</span> Sugerencia
+              <span><Icono n="idea" /></span> Sugerencia
             </button>
           )}
           {tieneAccesoAdmin(profile) && (
             <button role="menuitem" className="user-dropdown-item" onClick={() => { navigate('/admin'); cerrar(); }}>
-              <span>⚙️</span> Configuración
+              <span><Icono n="config" /></span> Configuración
             </button>
           )}
           <div role="separator" style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
           <button role="menuitem" className="user-dropdown-item user-dropdown-danger" onClick={() => void signOut()}>
-            <span>🚪</span> Cerrar sesión
+            <span><Icono n="salir" /></span> Cerrar sesión
           </button>
         </div>
       </div>

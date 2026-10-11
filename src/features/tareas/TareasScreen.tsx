@@ -7,32 +7,34 @@ import TareasStats from './TareasStats';
 import { useCompletarTarea, useProcesarTareasPendientes, useTareasQuery, type Tarea } from './useTareas';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono, Punto } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
 type Filtro = 'todas' | 'green' | 'yellow' | 'red' | 'stagnant' | 'completed';
 type Vista = 'wide' | 'list' | 'grid';
 
-const FILTROS: { id: Filtro; label: string; dot?: string }[] = [
+const FILTROS: { id: Filtro; label: ReactNode; dot?: string }[] = [
   { id: 'todas', label: 'Todas' },
   { id: 'red', label: 'Rojas', dot: 'dot-red' },
   { id: 'yellow', label: 'Amarillas', dot: 'dot-yellow' },
   { id: 'green', label: 'Verdes', dot: 'dot-green' },
-  { id: 'stagnant', label: '⚠ Estancadas' },
-  { id: 'completed', label: '✓ Completadas' },
+  { id: 'stagnant', label: <><Icono n="alerta" /> Estancadas</> },
+  { id: 'completed', label: <><Icono n="ok" /> Completadas</> },
 ];
 
-const VISTAS: { id: Vista; icon: string; label: string }[] = [
-  { id: 'wide', icon: '▬', label: 'Cards anchas' },
-  { id: 'list', icon: '☰', label: 'Lista' },
-  { id: 'grid', icon: '▦', label: 'Cuadrícula' },
+const VISTAS: { id: Vista; icon: ReactNode; label: string }[] = [
+  { id: 'wide', icon: <Icono n="ancho" />, label: 'Cards anchas' },
+  { id: 'list', icon: <Icono n="vistaLista" />, label: 'Lista' },
+  { id: 'grid', icon: <Icono n="vistaGrilla" />, label: 'Cuadrícula' },
 ];
 
-const EMPTY_MSG: Record<Filtro, { icon: string; title: string; desc: string }> = {
-  todas: { icon: '🚦', title: 'Sin tareas pendientes', desc: 'Creá tu primera tarea para empezar.' },
-  completed: { icon: '✅', title: 'Sin tareas completadas', desc: 'Completá tareas para verlas acá.' },
-  stagnant: { icon: '🎯', title: 'Sin tareas estancadas', desc: '¡Bien! No tenés tareas acumuladas.' },
-  green: { icon: '🟢', title: 'Sin tareas verdes', desc: '' },
-  yellow: { icon: '🟡', title: 'Sin tareas amarillas', desc: '' },
-  red: { icon: '🔴', title: 'Sin tareas rojas', desc: '' },
+const EMPTY_MSG: Record<Filtro, { icon: ReactNode; title: string; desc: string }> = {
+  todas: { icon: <Icono n="semaforo" />, title: 'Sin tareas pendientes', desc: 'Creá tu primera tarea para empezar.' },
+  completed: { icon: <Icono n="exito" />, title: 'Sin tareas completadas', desc: 'Completá tareas para verlas acá.' },
+  stagnant: { icon: <Icono n="objetivo" />, title: 'Sin tareas estancadas', desc: '¡Bien! No tenés tareas acumuladas.' },
+  green: { icon: <><Punto color="var(--success)" /></>, title: 'Sin tareas verdes', desc: '' },
+  yellow: { icon: <><Punto color="var(--warning, #d4a017)" /></>, title: 'Sin tareas amarillas', desc: '' },
+  red: { icon: <><Punto color="var(--danger)" /></>, title: 'Sin tareas rojas', desc: '' },
 };
 
 const ORDEN_SEMAFORO: Record<string, number> = { red: 0, yellow: 2, green: 3 };

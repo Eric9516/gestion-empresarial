@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useModulos } from '../features/config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 export default function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile, updateOwnProfile } = useAuth();
@@ -45,7 +46,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
     <Modal
       open={open}
       onClose={onClose}
-      title="👤 Mi perfil"
+      title={<><Icono n="usuario" /> Mi perfil</>}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
@@ -62,7 +63,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
         {isOwner(profile) && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-mid)' }}>Rol</span>
-            <span className="badge badge-rubro">👑 Dueño del sistema</span>
+            <span className="badge badge-rubro"><Icono n="corona" /> Dueño del sistema</span>
           </div>
         )}
         {filasRol.map(([area, rol]) => (

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ZONAS_HORARIAS, ZONA_HORARIA_POR_DEFECTO } from '../../lib/zonasHorarias';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 // Selector de un color de marca. Vacío ('') significa "el color original de la app".
 function ColorMarca({ etiqueta, valor, original, onChange }: { etiqueta: string; valor: string; original: string; onChange: (v: string) => void }) {
@@ -100,7 +101,7 @@ export default function EmpresaPane() {
 
   return (
     <div className="admin-card" style={{ maxWidth: 560 }}>
-      <div className="admin-card-header">🏢 Datos de la Empresa</div>
+      <div className="admin-card-header"><Icono n="empresa" /> Datos de la Empresa</div>
       <div className="admin-card-body">
         <div className="form-group">
           <label>Logo de la empresa</label>
@@ -116,7 +117,7 @@ export default function EmpresaPane() {
             {logoBase64 ? (
               <img src={logoBase64} alt="Logo" style={{ maxHeight: 80 }} />
             ) : (
-              <p>📁 Clic para subir logo (PNG, JPG)</p>
+              <p><Icono n="carpeta" /> Clic para subir logo (PNG, JPG)</p>
             )}
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />

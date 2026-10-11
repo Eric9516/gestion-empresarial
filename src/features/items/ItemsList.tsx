@@ -11,6 +11,7 @@ import ItemDetail from './ItemDetail';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Icono } from '@/components/Icono';
 
 // Con miles de repuestos, una búsqueda amplia puede matchear cientos —
 // ResponsiveList dibuja tabla Y tarjetas para cada uno, así que sin tope se
@@ -85,7 +86,7 @@ export default function ItemsList() {
     const enCarrito = cart.some(c => c.item_id === item.id);
     return (
       <Button variant="primary" size="sm" onClick={() => handleRetirar(item)}>
-        {enCarrito ? '✓ Agregado' : '📤 Retirar'}
+        {enCarrito ? <><Icono n="ok" /> Agregado</> : <><Icono n="retirar" /> Retirar</>}
       </Button>
     );
   }
@@ -127,7 +128,7 @@ export default function ItemsList() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">🔍 Buscar repuestos</div>
+        <div className="section-title"><Icono n="buscar" /> Buscar repuestos</div>
       </div>
 
       <div className="toolbar">
@@ -144,14 +145,15 @@ export default function ItemsList() {
         </Select>
         {!sinFiltro && (
           <Button variant="ghost" size="sm" onClick={() => setMostrarStock(v => !v)}>
-            📦 {mostrarStock ? 'Ocultar stock' : 'Stock'}
+            
+            <Icono n="paquete" /> {mostrarStock ? 'Ocultar stock' : 'Stock'}
           </Button>
         )}
       </div>
 
       {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
       {isError && <p style={{ color: 'var(--danger)' }}>Error al cargar el catálogo.</p>}
-      {!isLoading && !isError && buscando && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>🔎 Buscando...</p>}
+      {!isLoading && !isError && buscando && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}><Icono n="buscar" /> Buscando...</p>}
       {!isLoading && !isError && !buscando && totalCoincidencias > filtrados.length && (
         <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
           Mostrando los {filtrados.length} más relevantes de {totalCoincidencias} — afiná la búsqueda para ver menos.
@@ -160,7 +162,7 @@ export default function ItemsList() {
 
       {!isLoading && !isError && sinFiltro && items?.length !== 0 && (
         <div className="empty-state">
-          <div className="empty-icon">🔍</div>
+          <div className="empty-icon"><Icono n="buscar" /></div>
           <h3>Buscá un repuesto</h3>
           <p>Escribí un código, número o descripción, o elegí una familia para ver resultados.</p>
         </div>
@@ -172,7 +174,7 @@ export default function ItemsList() {
           data={filtrados}
           renderCard={renderCard}
           keyField={it => it.id}
-          emptyIcon="🔧"
+          emptyIcon={<Icono n="herramienta" />}
           emptyTitle={items?.length === 0 ? 'Todavía no hay repuestos cargados' : 'Sin resultados'}
           emptyDescription={items?.length === 0 ? 'Cargá el primer repuesto del depósito.' : 'Probá con otro código, número o filtro.'}
         />

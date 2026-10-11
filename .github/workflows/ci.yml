@@ -20,4 +20,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm pruebas:esquema
+      - run: pnpm pruebas:supabase-local
       - run: pnpm build
+
+  # El panel de administración de clientes (carpeta panel/) tiene sus propias dependencias y sus propias pruebas de ataque.
+  panel:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: panel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm audit --prod
+      - run: pnpm run build

@@ -4,12 +4,14 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { usePapeleraQuery, useRestaurarDePapelera, usePurgarDePapelera, type FilaPapelera } from './usePapelera';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
+import type { ReactNode } from 'react';
 
-const ETIQUETA_TIPO: Record<FilaPapelera['tipo'], string> = {
-  proveedor: '🏭 Proveedor',
-  repuesto: '🔧 Repuesto',
-  reparacion: '🔧 Reparación',
-  envio: '📦 Envío',
+const ETIQUETA_TIPO: Record<FilaPapelera['tipo'], ReactNode> = {
+  proveedor: <><Icono n="fabrica" /> Proveedor</>,
+  repuesto: <><Icono n="herramienta" /> Repuesto</>,
+  reparacion: <><Icono n="herramienta" /> Reparación</>,
+  envio: <><Icono n="paquete" /> Envío</>,
 };
 
 export default function PapeleraPane() {
@@ -46,7 +48,7 @@ export default function PapeleraPane() {
   if (!filas?.length) {
     return (
       <div className="empty-state">
-        <div className="empty-icon">🗑️</div>
+        <div className="empty-icon"><Icono n="borrar" /></div>
         <h3>La papelera está vacía</h3>
         <p>Lo que se elimine de Proveedores, Repuestos, Reparaciones o Envíos va a aparecer acá.</p>
       </div>
@@ -66,7 +68,7 @@ export default function PapeleraPane() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="ghost" size="sm" onClick={() => void handleRestaurar(f.tipo, f.id)}>↺ Restaurar</Button>
+              <Button variant="ghost" size="sm" onClick={() => void handleRestaurar(f.tipo, f.id)}><Icono n="devolver" /> Restaurar</Button>
               <Button variant="dangerGhost" size="sm" onClick={() => void handlePurgar(f.tipo, f.id)}>Eliminar definitivamente</Button>
             </div>
           </div>

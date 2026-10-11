@@ -94,8 +94,8 @@ export default function RegistrarEntregaModal({ linea, onClose }: Props) {
             <div className="form-group">
               <label htmlFor="registrar-entrega-modal-2">Resultado</label>
               <Select id="registrar-entrega-modal-2" value={resultado} onChange={e => setResultado(e.target.value as 'reparado' | 'baja')}>
-                <option value="reparado">✅ Reparado</option>
-                <option value="baja">🗑 Sin arreglo — se da de baja</option>
+                <option value="reparado">Reparado</option>
+                <option value="baja">Sin arreglo — se da de baja</option>
               </Select>
             </div>
             <div className="form-group">

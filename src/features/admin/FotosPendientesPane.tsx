@@ -5,6 +5,7 @@ import { useConfirm } from '../../components/ConfirmProvider';
 import { useAprobarFotoPendiente, useFotosPendientesQuery, useRechazarFotoPendiente, type FilaFotoPendiente } from './useFotosPendientes';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 export default function FotosPendientesPane() {
   const { data: filas, isLoading, isError } = useFotosPendientesQuery();
@@ -39,7 +40,7 @@ export default function FotosPendientesPane() {
   if (!filas?.length) {
     return (
       <div className="empty-state">
-        <div className="empty-icon">📷</div>
+        <div className="empty-icon"><Icono n="camara" /></div>
         <h3>No hay fotos pendientes</h3>
         <p>Cuando un usuario común del depósito cargue una foto, va a aparecer acá para que la revises.</p>
       </div>
@@ -69,8 +70,8 @@ export default function FotosPendientesPane() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="ghost" size="sm" onClick={() => void handleAprobar(f)}>✅ Aprobar</Button>
-              <Button variant="dangerGhost" size="sm" onClick={() => void handleRechazar(f)}>🗑 Eliminar</Button>
+              <Button variant="ghost" size="sm" onClick={() => void handleAprobar(f)}><Icono n="exito" /> Aprobar</Button>
+              <Button variant="dangerGhost" size="sm" onClick={() => void handleRechazar(f)}><Icono n="borrar" /> Eliminar</Button>
             </div>
           </div>
         </div>

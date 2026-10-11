@@ -11,6 +11,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -154,7 +155,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
               onChange={v => { setInput(prev => ({ ...prev, familia_id: v, subfamilia_id: '', numero: itemActual ? prev.numero : '' })); setNumeroAuto(true); }}
               opciones={(familias ?? []).map(f => ({ value: f.id, label: `${f.nombre} (${f.codigo})`, buscar: [f.codigo] }))}
             />
-            <Button type="button" variant="ghost" size="sm" onClick={() => setNuevoCodigo('familia')} title="Crear nueva familia">＋</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setNuevoCodigo('familia')} title="Crear nueva familia"><Icono n="mas" /></Button>
           </div>
         </div>
         <div className="form-group">
@@ -169,7 +170,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
               onChange={v => { setInput(prev => ({ ...prev, subfamilia_id: v, numero: itemActual ? prev.numero : '' })); setNumeroAuto(true); }}
               opciones={subfamiliasDeLaFamilia.map(s => ({ value: s.id, label: `${s.nombre} (${s.codigo})`, buscar: [s.codigo] }))}
             />
-            <Button type="button" variant="ghost" size="sm" onClick={abrirNuevaSubfamilia} title="Crear nueva subfamilia">＋</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={abrirNuevaSubfamilia} title="Crear nueva subfamilia"><Icono n="mas" /></Button>
           </div>
         </div>
         <div className="form-group">

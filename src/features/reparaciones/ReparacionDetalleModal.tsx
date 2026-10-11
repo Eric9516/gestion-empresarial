@@ -6,6 +6,7 @@ import {
   type ReparacionConDetalle, type ReparacionEntrega, type ReparacionItemConDetalle,
 } from './useReparaciones';
 import { Button } from '@/components/ui/button';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   reparacion: ReparacionConDetalle | null;
@@ -54,10 +55,10 @@ export default function ReparacionDetalleModal({ reparacion, onClose, onEntrega,
       open={!!reparacion}
       onClose={onClose}
       large
-      title={<><span className="accent">🔧</span> Reparación</>}
+      title={<><span className="accent"><Icono n="herramienta" /></span> Reparación</>}
       footer={
         <>
-          {reparacion && <Button variant="ghost" onClick={() => onEditar(reparacion)}>✏️ Editar datos</Button>}
+          {reparacion && <Button variant="ghost" onClick={() => onEditar(reparacion)}><Icono n="editar" /> Editar datos</Button>}
           <Button variant="ghost" onClick={onClose}>Cerrar</Button>
         </>
       }

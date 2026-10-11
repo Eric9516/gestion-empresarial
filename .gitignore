@@ -36,3 +36,12 @@ credenciales-pruebas.local
 # Archivos temporales de la herramienta de Supabase (identifican el proyecto vinculado)
 supabase/.temp/
 supabase/.branches/
+
+# Panel: archivo que se genera al construir (migraciones y funciones empaquetadas)
+panel/src/server/generado.ts
+panel/dist/
+panel/.env
+panel/*.local
+
+# archivos temporales de las pruebas de pantalla con el Supabase local
+.env.ui-*

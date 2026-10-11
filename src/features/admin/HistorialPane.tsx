@@ -1,5 +1,6 @@
 import ResponsiveList, { type Column } from '../../components/ResponsiveList';
 import { useAuditLogQuery, type AuditLogRow } from './useAuditLog';
+import { Icono } from '@/components/Icono';
 
 const TABLA_LABELS: Record<string, string> = { proveedores: 'Proveedor', comisionistas: 'Comisionista', contactos: 'Contacto', retiro_items: 'Retiro',
   items: 'Repuesto', usuarios_perfil: 'Usuario',
@@ -43,7 +44,7 @@ export default function HistorialPane() {
 
   return (
     <div className="admin-card">
-      <div className="admin-card-header">📜 Historial de cambios</div>
+      <div className="admin-card-header"><Icono n="historial" /> Historial de cambios</div>
       <div className="admin-card-body" style={{ padding: rows?.length ? 0 : 18 }}>
         {isLoading && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Cargando...</p>}
         {isError && <p style={{ color: 'var(--danger)', fontSize: 13 }}>Error al cargar historial</p>}
@@ -53,7 +54,7 @@ export default function HistorialPane() {
             data={rows ?? []}
             renderCard={renderCard}
             keyField={keyField}
-            emptyIcon="📜"
+            emptyIcon={<Icono n="historial" />}
             emptyTitle="Sin movimientos registrados"
             emptyDescription=""
           />

@@ -1,14 +1,17 @@
 # Instalar un cliente nuevo
 
 Cada cliente tiene **su propio proyecto de Supabase** (su base de datos, sus usuarios y sus archivos) y su
-propio sitio publicado. El código es el mismo para todos; lo que cambia es la configuración.
+propio sitio publicado. El código es el mismo para todos; lo que cambia es la configuración y los componentes que contrata
+(ver [COMPONENTES.md](COMPONENTES.md)).
+
+Esto describe el instalador de la computadora (`pnpm cliente`). Lo mismo se puede hacer desde el celular con el panel de administración: ver [PANEL-INSTALACION.md](PANEL-INSTALACION.md).
 
 ## Antes de empezar (una sola vez en tu PC)
 
 1. Tener Node 24 y pnpm (`npm install -g pnpm`), y haber corrido `pnpm install` en este proyecto.
 2. Iniciar sesión en Supabase: `npx supabase login`.
-3. Saber que el plan gratis de Supabase permite **2 proyectos activos** por cuenta. Para más clientes hace
-   falta el plan pago (o una organización por cliente).
+3. Cada cliente va en **su propia organización de Supabase, con el plan Pro a su cargo**, y te invita como administrador (el plan gratis solo permite 2 proyectos
+   activos por cuenta, se pausa solo y no tiene copias de seguridad restaurables).
 
 ## Instalar
 
@@ -17,8 +20,9 @@ pnpm cliente nuevo --nombre "Nombre del Cliente SA" --email dueno@cliente.com --
 ```
 
 `--modulos` es **obligatorio**: la lista de lo que **contrata el cliente** (o `--modulos todos`). Así nunca se activa por
-descuido algo que no compró. Los módulos son: `proveedores`, `comisionistas`, `envios` (necesita `proveedores`), `deposito`
-y `tareas`. Se validan las dependencias antes de crear nada.
+descuido algo que no compró. Los módulos son: `proveedores`, `comisionistas`, `envios` (necesita `proveedores`), `deposito`,
+`mantenimiento` (necesita `deposito`) y `tareas`. Se validan las dependencias antes de crear nada, y **solo se instalan los componentes de esos módulos**:
+solo `tareas` instala únicamente la Base; `proveedores`, `comisionistas`, `envios` o `deposito` instalan Base + Abastecimiento; `mantenimiento` instala los tres.
 
 Si el cliente va a tener su propia cuenta de Supabase, se instala en su organización con `--org <identificador>`
 (se averigua con `npx supabase orgs list`, después de que él te invite a su organización).
@@ -27,7 +31,7 @@ El comando, sin pedir nada más:
 
 1. Crea el proyecto en Supabase (región São Paulo por defecto; se cambia con `--region`).
 2. Espera a que esté listo.
-3. Instala la base de datos (todas las migraciones, en orden) y deja anotado cuáles aplicó.
+3. Instala la base de datos (las migraciones de los componentes que contrata, en orden) y deja anotado cuáles aplicó.
 4. Publica las funciones del servidor (crear, resetear y eliminar usuarios).
 5. Crea al primer dueño con una contraseña inicial aleatoria y le pone el nombre de la empresa.
 6. Define la licencia de módulos del cliente.
@@ -51,16 +55,29 @@ La plataforma no permite estos pasos por comando:
    saltear, se marca como hecho solo cuando ya hay datos, y el asistente queda siempre disponible en
    *Configuración → General → Configuración inicial*.
 
-## Módulos: los define solo quien vende
+## Módulos: los define quien vende; el dueño puede apagar los suyos
 
-Los módulos son la licencia del cliente. **El cliente no puede verlos ni cambiarlos** (ni el dueño, ni por la pantalla, ni
-hablando directo con la base): solo se cambian con este comando, que usa la clave de servicio.
+Los módulos son la licencia del cliente. **Lo que incluye el plan solo lo cambia quien vende** (ni el dueño, ni por la pantalla, ni
+hablando directo con la base): se cambia con este comando (o desde el panel), que usa la clave de servicio. Dentro de su plan, el dueño puede **apagar y volver a prender**
+los módulos que no usa desde *Configuración → General → Módulos*; no puede prender nada que el plan no incluya.
 
 ```bash
 pnpm cliente modulos --ref <identificador>                                  # ver el estado
 pnpm cliente modulos --ref <identificador> --activar comisionistas          # simula el cambio
 pnpm cliente modulos --ref <identificador> --desactivar tareas --confirmo   # lo aplica
 ```
+
+**Componentes.** La base de datos del cliente se arma por componentes: Base (siempre), Abastecimiento y Mantenimiento. `nuevo` instala solo
+los componentes de los módulos que contrata (Tareas → solo Base; Proveedores, Comisionistas, Envíos o Depósito → Base + Abastecimiento;
+Mantenimiento → los tres). Lo que no se contrata no existe en su base. Para ampliar más adelante, sin tocar sus datos:
+
+```bash
+pnpm cliente componente --ref <identificador> --agregar mantenimiento              # simula
+pnpm cliente componente --ref <identificador> --agregar mantenimiento --confirmo   # lo instala
+```
+
+Los módulos del componente nuevo quedan **apagados** hasta que los actives con `pnpm cliente modulos --activar ...`, que además se niega a
+activar un módulo cuyo componente no está instalado.
 
 - Sin `--confirmo` solo **simula**: muestra el antes y el después y qué queda bloqueado.
 - Rechaza combinaciones imposibles (por ejemplo, apagar `proveedores` con `envios` activo).
@@ -69,6 +86,7 @@ pnpm cliente modulos --ref <identificador> --desactivar tareas --confirmo   # lo
 - Cada cambio queda en el Historial del cliente como "Administración del sistema".
 - **Un módulo nuevo del sistema nace apagado** en todos los clientes: solo está activo lo que la licencia dice de forma
   expresa. Ver `NUEVO-MODULO.md`.
+- Un cliente que ya existía (antes de los componentes) se actualiza igual: `pnpm cliente actualizar` le aplica solo las migraciones nuevas de los componentes que ya tiene.
 
 ## Actualizar un cliente
 
@@ -78,7 +96,7 @@ Cuando se agrega una migración nueva o se mejora una función:
 pnpm cliente actualizar --ref <identificador-del-proyecto>
 ```
 
-Aplica solo las migraciones que faltan y vuelve a publicar las funciones. Si no hay nada nuevo, no hace nada.
+Aplica solo las migraciones que faltan **de los componentes que el cliente ya tiene** y vuelve a publicar las funciones. Si no hay nada nuevo, no hace nada.
 Con `--solo-base` no toca las funciones.
 
 ## Pasar una instalación que ya existe a la plantilla
@@ -103,5 +121,5 @@ En un proyecto **de pruebas** (nunca en uno con usuarios reales):
 pnpm pruebas:integracion --cliente clientes/<nombre>.env.local --es-un-proyecto-de-pruebas
 ```
 
-Crea usuarios y datos de prueba, comprueba permisos, dueños, stock, auditoría, funciones, módulos y colores
-(más de 85 comprobaciones, incluida una matriz que apaga cada módulo y verifica qué queda bloqueado), y limpia lo que creó. Se niega a correr si encuentra usuarios que no sean de prueba.
+Pide un proyecto con los tres componentes instalados (`--modulos todos`). Crea usuarios y datos de prueba, comprueba permisos, dueños, stock, auditoría, funciones, módulos y colores
+(más de 100 comprobaciones, incluida una matriz que apaga cada módulo y verifica qué queda bloqueado, y el interruptor del dueño), y limpia lo que creó. Se niega a correr si encuentra usuarios que no sean de prueba.

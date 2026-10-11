@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 type Filtro = 'todos' | 'restas' | 'sumas' | 'anulados';
 
@@ -47,8 +48,8 @@ function Movimiento({ a }: { a: Ajuste }) {
   const t = totales(a);
   return (
     <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontWeight: 700, opacity: a.anulado ? 0.55 : 1 }}>
-      {t.sumado > 0 && <span style={{ color: 'var(--success)' }}>➕ {formatoCantidad(t.sumado)}</span>}
-      {t.restado > 0 && <span style={{ color: 'var(--danger)' }}>➖ {formatoCantidad(t.restado)}</span>}
+      {t.sumado > 0 && <span style={{ color: 'var(--success)' }}><Icono n="mas" /> {formatoCantidad(t.sumado)}</span>}
+      {t.restado > 0 && <span style={{ color: 'var(--danger)' }}><Icono n="menos" /> {formatoCantidad(t.restado)}</span>}
     </span>
   );
 }
@@ -67,7 +68,7 @@ function resumenArticulos(a: Ajuste) {
 
 function DetalleAjuste({ ajuste, onClose, onAnular, puedeAnular }: { ajuste: Ajuste | null; onClose: () => void; onAnular: (a: Ajuste) => void; puedeAnular: boolean }) {
   return (
-    <Modal open={!!ajuste} onClose={onClose} large title="⚖️ Detalle del ajuste" footer={
+    <Modal open={!!ajuste} onClose={onClose} large title={<><Icono n="balanza" /> Detalle del ajuste</>} footer={
       <>
         {ajuste && !ajuste.anulado && puedeAnular && <Button variant="dangerGhost" onClick={() => onAnular(ajuste)}>Anular este ajuste</Button>}
         <Button variant="ghost" onClick={onClose}>Cerrar</Button>
@@ -93,7 +94,7 @@ function DetalleAjuste({ ajuste, onClose, onAnular, puedeAnular }: { ajuste: Aju
                 {ajuste.ajuste_items.map(l => (
                   <tr key={l.id}>
                     <td><strong>{l.items?.codigo}</strong> — {l.items?.descripcion}</td>
-                    <td style={{ fontWeight: 700, color: l.tipo === 'suma' ? 'var(--success)' : 'var(--danger)', whiteSpace: 'nowrap' }}>{l.tipo === 'suma' ? '➕ Suma' : '➖ Resta'} {formatoCantidad(l.cantidad)}</td>
+                    <td style={{ fontWeight: 700, color: l.tipo === 'suma' ? 'var(--success)' : 'var(--danger)', whiteSpace: 'nowrap' }}>{l.tipo === 'suma' ? <><Icono n="mas" /> Suma</> : <><Icono n="menos" /> Resta</>} {formatoCantidad(l.cantidad)}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>{formatoCantidad(l.stock_antes)} → {formatoCantidad(l.stock_despues)}</td>
                   </tr>
                 ))}
@@ -246,7 +247,7 @@ export default function AjustesScreen() {
   return (
     <div>
       <div className="section-header">
-        <div className="section-title">⚖️ Ajuste de inventario</div>
+        <div className="section-title"><Icono n="balanza" /> Ajuste de inventario</div>
       </div>
 
       <p style={{ fontSize: 13, color: 'var(--text-mid)', marginBottom: 12 }}>
@@ -272,8 +273,8 @@ export default function AjustesScreen() {
       {!isLoading && !isError && filas.length > 0 && (
         <p style={{ fontSize: 13, color: 'var(--text-mid)', margin: '8px 0 12px' }}>
           En lo que ves ({resumen.vigentes} ajuste{resumen.vigentes === 1 ? '' : 's'} vigente{resumen.vigentes === 1 ? '' : 's'}):
-          {' '}<strong style={{ color: 'var(--danger)' }}>➖ {formatoCantidad(resumen.restado)} unidades restadas</strong>
-          {' · '}<strong style={{ color: 'var(--success)' }}>➕ {formatoCantidad(resumen.sumado)} sumadas</strong>. Los anulados no se cuentan.
+          {' '}<strong style={{ color: 'var(--danger)' }}><Icono n="menos" /> {formatoCantidad(resumen.restado)} unidades restadas</strong>
+          {' · '}<strong style={{ color: 'var(--success)' }}><Icono n="mas" /> {formatoCantidad(resumen.sumado)} sumadas</strong>. Los anulados no se cuentan.
         </p>
       )}
 
@@ -285,7 +286,7 @@ export default function AjustesScreen() {
           data={filas}
           renderCard={renderCard}
           keyField={a => a.id}
-          emptyIcon="⚖️"
+          emptyIcon={<Icono n="balanza" />}
           emptyTitle="No hay ajustes"
           emptyDescription={ajustes?.length ? 'Probá con otros filtros o con otra búsqueda.' : 'Todavía no se hizo ningún ajuste de inventario.'}
         />

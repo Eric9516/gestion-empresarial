@@ -1,0 +1,31 @@
+{
+  "name": "panel-gestion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Panel de administración de clientes (solo para el proveedor). Aislado de las apps de los clientes.",
+  "scripts": {
+    "generar": "node scripts/generar.mjs",
+    "build": "node scripts/generar.mjs && node scripts/build-web.mjs && node scripts/build-server.mjs",
+    "typecheck": "tsc --noEmit",
+    "pretest": "node scripts/generar.mjs",
+    "test": "vitest run",
+    "audit": "pnpm audit --prod",
+    "verificar-api": "node scripts/verificar-api.mjs",
+    "generar-secretos": "node scripts/generar-secretos.mjs"
+  },
+  "dependencies": {
+    "@simplewebauthn/server": "14.0.3",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@types/node": "24.19.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "esbuild": "0.28.2",
+    "fast-check": "4.10.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  },
+  "packageManager": "pnpm@12.10.1"
+}

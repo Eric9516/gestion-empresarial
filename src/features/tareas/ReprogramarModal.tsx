@@ -6,6 +6,7 @@ import { useReprogramarTarea } from './useTareas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mensajeDeError } from '@/lib/errores';
+import { Icono } from '@/components/Icono';
 
 interface Props {
   open: boolean;
@@ -39,7 +40,7 @@ export default function ReprogramarModal({ open, onClose, taskId, onReprogramada
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={<><span className="accent">📅</span> Reprogramar</>}>
+    <Modal open={open} onClose={onClose} title={<><span className="accent"><Icono n="fecha" /></span> Reprogramar</>}>
       <div className="form-group">
         <label htmlFor="reprogramar-modal-1">Nueva fecha asignada</label>
         <Input id="reprogramar-modal-1" type="date" value={fecha} min={fechaHoyISO()} onChange={e => setFecha(e.target.value)} />
