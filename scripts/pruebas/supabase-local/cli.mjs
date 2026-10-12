@@ -17,7 +17,7 @@ export async function ejecutarCli(servidor, { args: crudos, cwd }) {
   if (a === 'orgs' && b === 'list') return salida(JSON.stringify({ organizations: servidor.organizaciones }, null, 2) + '\n');
   if (a === 'projects' && b === 'list') {
     const lista = [...servidor.proyectos.values()].map((p) => ({ ref: p.ref, name: p.nombre, status: 'ACTIVE_HEALTHY', organization_id: servidor.organizaciones[0].id, region: 'sa-east-1' }));
-    return salida(JSON.stringify(args.includes('json') ? lista : { projects: lista }, null, 2) + '\n');
+    return salida(JSON.stringify(args.includes('json') ? lista : { projects: lista }, null, 2) + '\n'); // la CLI real con -o json devuelve la lista sola
   }
   if (a === 'projects' && b === 'create') {
     const nombre = args[2];

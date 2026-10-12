@@ -56,6 +56,7 @@ function supabase(args, { silencioso = false } = {}) {
 function json(salida) {
   const i = salida.search(/[{[]/);
   const j = Math.max(salida.lastIndexOf('}'), salida.lastIndexOf(']'));
+  if (i < 0 || j < i) throw new Error(`Supabase no devolvió datos legibles. Respondió: ${JSON.stringify(salida.trim().slice(0, 300)) || '(nada)'}`);
   return JSON.parse(salida.slice(i, j + 1));
 }
 
@@ -66,7 +67,7 @@ const slug = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').repla
 function consultar(ref, sql) {
   const temporal = `scripts/.consulta-${process.pid}.sql`;
   writeFileSync(join(RAIZ, temporal), sql);
-  try { return json(supabase(['db', 'query', '--linked', '--project-ref', ref, '-f', temporal])).rows ?? []; }
+  try { return json(supabase(['db', 'query', '--linked', '--project-ref', ref, '-f', temporal, '-o', 'json'])).rows ?? []; }
   finally { try { writeFileSync(join(RAIZ, temporal), ''); } catch { /* nada */ } }
 }
 
@@ -78,12 +79,13 @@ function ejecutarArchivo(ref, archivoRelativo) {
 async function esperarProyecto(ref) {
   paso('Esperando que el proyecto esté listo (puede tardar un par de minutos)');
   for (let i = 0; i < 60; i++) {
-    const lista = json(supabase(['projects', 'list'], { silencioso: true })).projects ?? [];
+    const r = json(supabase(['projects', 'list', '-o', 'json'], { silencioso: true }));
+    const lista = Array.isArray(r) ? r : (r.projects ?? []); // según la versión, la CLI devuelve la lista sola o dentro de "projects"
     const p = lista.find(x => x.ref === ref);
     if (p?.status === 'ACTIVE_HEALTHY') {
       // El estado puede adelantarse a la base: se prueba una consulta simple.
       for (let k = 0; k < 20; k++) {
-        try { consultar(ref, 'select 1 as ok'); return; } catch { await dormir(5000); }
+        try { consultar(ref, 'select 1 as ok'); return; } catch (e) { if (k === 0 || k === 4) log(`  · todavía no responde la base (${String(e.message).slice(0, 400)})`); await dormir(5000); }
       }
     }
     await dormir(10000);
@@ -94,12 +96,13 @@ async function esperarProyecto(ref) {
 function crearProyecto(nombre, region, orgId) {
   paso(`Creando el proyecto "${nombre}" en Supabase (${region})`);
   if (!orgId) {
-    const orgs = json(supabase(['orgs', 'list'])).organizations ?? [];
+    const rOrgs = json(supabase(['orgs', 'list', '-o', 'json']));
+    const orgs = Array.isArray(rOrgs) ? rOrgs : (rOrgs.organizations ?? []);
     if (orgs.length !== 1) falla(`Tenés ${orgs.length} organizaciones: indicá cuál con --org <id>.`);
     orgId = orgs[0].id;
   }
   const claveDb = aleatoria(24);
-  const creado = json(supabase(['projects', 'create', nombre, '--org-id', orgId, '--region', region, '--db-password', claveDb]));
+  const creado = json(supabase(['projects', 'create', nombre, '--org-id', orgId, '--region', region, '--db-password', claveDb, '-o', 'json']));
   if (!creado.ref) falla('Supabase no devolvió el identificador del proyecto.');
   log(`  Proyecto creado: ${creado.ref}`);
   return { ref: creado.ref, claveDb };
