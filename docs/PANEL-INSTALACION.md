@@ -220,8 +220,16 @@ Marcá cada una:
 * **Respaldos**: cada noche, en `/var/backups/panel` (14 días). Restaurar: `runuser -u postgres -- pg_restore --clean -d panel archivo.dump`.
 * **Actualizaciones del sistema**: `unattended-upgrades` instala las de seguridad solas; una vez por mes entrá y corré `apt update && apt upgrade`.
 
-## Si se comparte el servidor (no recomendado)
+## Si se comparte el servidor (así se hizo el 2026-10-11, en el servidor de los manuales)
 
-Si el panel va en el servidor donde hoy están los manuales de la fábrica: usá un usuario propio (`panel`, sin shell), nada de carpetas compartidas con el otro servicio,
-el servicio de `systemd` con el aislamiento del archivo, Postgres solo en `127.0.0.1` y **sacá de `/root/.ssh/authorized_keys` la llave `claude-droplet-20261008`**
-(la que se autorizó para trabajar ahí). Aun así, una falla en el servicio público de manuales podría alcanzar al panel: por eso el servidor aparte es la opción segura.
+La guía de arriba supone un servidor **solo para el panel**. Si va en un servidor que ya tiene un servicio público (por ejemplo, el de los manuales), estas son las diferencias, que se probaron en el servidor real:
+
+* **No apliques el cortafuegos "nada de entrada salvo Tailscale"** (paso 4): cerraría el 80 y el 443 y se caería el otro servicio. Dejá lo que ya está abierto y agregá solo `ufw allow in on tailscale0`. Tampoco crees el firewall externo de DigitalOcean que bloquea todo.
+* **No hagas `apt upgrade` completo ni reinstales Node** (paso 3 y 5): puede reiniciar el otro servicio o pisarle su Node. Instalá solo lo que falta (`postgresql` y Tailscale) con `NEEDRESTART_MODE=l` para que no reinicie nada, y usá el Node que ya está (editá `ExecStart` de `panel.service` con su ruta, por ejemplo `/usr/local/bin/node`).
+* **Ajustá PostgreSQL a poca memoria** (servidor de 1 GB): en `/etc/postgresql/16/main/conf.d/panel.conf`, `listen_addresses = '127.0.0.1'`, `max_connections = 20`, `shared_buffers = 32MB`, `work_mem = 2MB`, `maintenance_work_mem = 16MB`. El servicio ya tiene `MemoryMax=400M`.
+* **Generá los secretos en el propio servidor**, sin mostrarlos, y borrá después los archivos temporales con `shred -u`.
+* **El cerrojo (`desplegar/panel-cerrojo.service`) es obligatorio al compartir**: sin él, quien ejecute código como otro usuario del servidor (por ejemplo, el del servicio público) puede hablarle al panel por 127.0.0.1 **falsificando el encabezado de Tailscale** y saltarse la puerta de red (se comprobó: HTTP 200). Con el cerrojo, solo `root` (el proceso de Tailscale) puede conectarse al puerto del panel, y solo los usuarios `panel` y `postgres` a la base. Se instala con `cp panel-cerrojo.service /etc/systemd/system/ && systemctl enable --now panel-cerrojo`.
+* Pruebas que se hicieron (repetilas): escaneo de puertos desde afuera (solo 22, 80 y 443, como antes); el otro usuario no puede leer `/etc/panel`; ese usuario falsificando el encabezado ya no logra conectarse; `systemd-analyze security panel.service` da "1.1 OK"; el respaldo diario funciona; el otro servicio sigue respondiendo.
+* **Sacá de `/root/.ssh/authorized_keys` la llave que se usó para instalar** al terminar.
+
+Un riesgo que **no** desaparece: si alguien llegara a ser administrador (root) del servidor, ve todo. Con un servidor aparte ese riesgo no existe; compartirlo ahorra el costo del segundo servidor.

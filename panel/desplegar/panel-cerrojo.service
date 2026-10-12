@@ -1,0 +1,18 @@
+[Unit]
+Description=Cerrojo del panel: solo Tailscale (root) puede hablarle al panel y solo el panel a su base
+Before=panel.service
+After=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Puerto del panel (3100): solo root (el proceso de Tailscale) puede conectarse.
+ExecStart=/usr/sbin/iptables -w -I OUTPUT 1 -o lo -p tcp --dport 3100 -m owner ! --uid-owner 0 -j REJECT --reject-with tcp-reset
+# Base del panel (5432): solo el usuario "panel" y postgres pueden conectarse por red.
+ExecStart=/usr/sbin/iptables -w -I OUTPUT 1 -o lo -p tcp --dport 5432 -m owner ! --uid-owner panel -m owner ! --uid-owner postgres -j REJECT --reject-with tcp-reset
+ExecStop=/usr/sbin/iptables -w -D OUTPUT -o lo -p tcp --dport 3100 -m owner ! --uid-owner 0 -j REJECT --reject-with tcp-reset
+ExecStop=/usr/sbin/iptables -w -D OUTPUT -o lo -p tcp --dport 5432 -m owner ! --uid-owner panel -m owner ! --uid-owner postgres -j REJECT --reject-with tcp-reset
+
+[Install]
+WantedBy=multi-user.target

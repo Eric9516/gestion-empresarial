@@ -11,6 +11,9 @@ Description=Panel de clientes
 After=network-online.target postgresql.service
 Wants=network-online.target
 Requires=postgresql.service
+# Si falla seguido, se detiene (no entra en un ciclo infinito). Estas dos claves van en [Unit]: en [Service] systemd las ignora.
+StartLimitIntervalSec=120
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -22,9 +25,6 @@ WorkingDirectory=/opt/panel
 ExecStart=/usr/bin/node /opt/panel/panel.mjs
 Restart=on-failure
 RestartSec=5
-# Si falla seguido, se detiene (no entra en un ciclo infinito).
-StartLimitIntervalSec=120
-StartLimitBurst=5
 
 # ---- aislamiento ----
 NoNewPrivileges=yes

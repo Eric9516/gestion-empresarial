@@ -41,6 +41,8 @@ let lic = await licencia(A);
 ok('la licencia dice: solo Tareas activo y componente Base', lic.modulos.tareas === true && Object.entries(lic.modulos).filter(([k, v]) => v && k !== 'tareas').length === 0 && JSON.stringify(lic.componentes) === '["base"]', JSON.stringify(lic));
 ok('no hay carpetas de archivos (son de Abastecimiento y Mantenimiento)', (await q(A, 'select id from storage.buckets')).length === 0);
 ok('el registro anota solo migraciones de la Base', (await registro(A)).every((n) => n.startsWith('base/')) && (await registro(A)).length > 0);
+// Regresión (se vio contra Supabase real): una tabla nueva hereda permisos para "anon" y "authenticated"; la del registro la crea el instalador, no una migración.
+ok('el registro de migraciones no tiene permisos para anon ni authenticated', (await q(A, `select count(*)::int as n from information_schema.role_table_grants where table_schema = 'public' and table_name = 'migraciones_aplicadas' and grantee in ('anon', 'authenticated')`))[0].n === 0);
 ok('quedó el primer dueño y el nombre de la empresa', (await q(A, `select es_owner from public.usuarios_perfil where email = 'dueno@solotareas.com'`))[0]?.es_owner === true && (await q(A, 'select empresa_nombre from public.configuracion'))[0].empresa_nombre === 'Local Solo Tareas');
 ok('las tres funciones del servidor quedaron publicadas con su secreto', ['create-user', 'delete-user', 'reset-password'].every((f) => A.funciones.has(f)) && A.secretos.get('PROJECT_SECRET_KEY') === A.claveServicio);
 const envCliente = existsSync(join(RAIZ, 'clientes/local-solo-tareas.env.local')) ? readFileSync(join(RAIZ, 'clientes/local-solo-tareas.env.local'), 'utf8') : '';

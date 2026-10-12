@@ -141,6 +141,7 @@ function aplicarMigraciones(ref, componentes, { marcarHasta = null } = {}) {
     }
     consultar(ref, `create table if not exists public.migraciones_aplicadas (nombre text primary key, aplicada_at timestamptz not null default now());
       alter table public.migraciones_aplicadas enable row level security;
+      revoke all on public.migraciones_aplicadas from anon, authenticated;
       select 1 as ok`);
     registro = [];
   }

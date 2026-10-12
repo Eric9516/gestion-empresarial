@@ -12,7 +12,7 @@
     "cliente": "node scripts/cliente.mjs",
     "pruebas:integracion": "node scripts/pruebas/integracion.mjs",
     "pruebas:esquema": "node scripts/pruebas/esquema/esquema.mjs && node scripts/pruebas/esquema/esquema.mjs --componentes && node scripts/pruebas/esquema/equivalencia.mjs && node scripts/pruebas/esquema/actualizacion.mjs",
-    "pruebas:supabase-local": "node scripts/pruebas/supabase-local/integracion-local.mjs && node scripts/pruebas/supabase-local/instalador-local.mjs && node scripts/pruebas/supabase-local/matriz-modulos.mjs && node scripts/pruebas/supabase-local/logica.mjs && node scripts/pruebas/supabase-local/matriz-permisos.mjs"
+    "pruebas:supabase-local": "node scripts/pruebas/supabase-local/integracion-local.mjs && node scripts/pruebas/supabase-local/instalador-local.mjs && node scripts/pruebas/supabase-local/matriz-modulos.mjs && node scripts/pruebas/supabase-local/logica.mjs && node scripts/pruebas/supabase-local/matriz-horarios.mjs && node scripts/pruebas/supabase-local/cruce-planes.mjs && node scripts/pruebas/supabase-local/matriz-permisos.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

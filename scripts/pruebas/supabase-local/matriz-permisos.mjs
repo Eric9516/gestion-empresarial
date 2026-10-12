@@ -1,10 +1,18 @@
 // Prueba exhaustiva de permisos (contra el Supabase local): cada configuración posible de usuario contra cada tabla, función y carpeta de archivos.
 // Un mismo usuario de prueba cambia de perfil entre combinaciones (los permisos se leen del perfil, no del token).
-import { terminar, http, sv, msg, hecho, crearUsuario, entrar, hoy, randomUUID, SERVICIO } from './ayudas-local.mjs';
+import { terminar, q, http, sv, msg, hecho, crearUsuario, entrar, hoy, randomUUID, SERVICIO, SIN_MANT, limpiarRestos } from './ayudas-local.mjs';
+// Un cliente Plan 1 (sin el componente Mantenimiento) no tiene estas tablas: las comprobaciones que las tocan tienen que dar "no" (el módulo no existe).
+const TABLAS_MANT = new Set(['equipos', 'equipo_items', 'reparaciones', 'reparacion_items', 'reparacion_entregas']);
 
 const TRABAJADORES = Number(process.env.TRABAJADORES ?? 8);
 const SOLO = process.env.SOLO ? process.env.SOLO.split(',') : null; // filtrar por etiqueta
 const LIMITE = Number(process.env.LIMITE ?? 0); // para pruebas rápidas
+// CRUZAR_MODULOS=1: además de la matriz normal (plan completo), corre un subconjunto representativo de usuarios contra 16 estados de licencia
+// (Plan 1, Plan 2, cada módulo apagado por la licencia, cada módulo apagado por el dueño, solo Tareas, ninguno). Sirve para probar
+// "todos los planes × todos los tipos de usuario": una operación solo se permite si el usuario tiene el permiso Y los módulos que toca están activos.
+// SOLO_CRUZAR=1 salta la matriz normal.
+const CRUZAR = process.env.CRUZAR_MODULOS === '1';
+const SOLO_CRUZAR = process.env.SOLO_CRUZAR === '1';
 
 // ---------- datos de prueba compartidos ----------
 const rastro = []; // [tabla, id] a limpiar al final
@@ -19,9 +27,13 @@ const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const sufijo = () => Math.random().toString(36).slice(2, 8);
 
 console.log('Preparando usuarios y datos de prueba…');
+await limpiarRestos(); // restos de una corrida anterior interrumpida
 const otroId = await crearUsuario('zz.otro@ensayo.invalid', { mantenimiento_rol: 'comun' });
 const objetivoId = await crearUsuario('zz.objetivo@ensayo.invalid');
 const duenoBId = await crearUsuario('zz.duenob@ensayo.invalid', { es_owner: true, rol: 'admin' });
+// cada trabajador tiene su propio "dueño al que se le quita el cargo" (si lo compartieran, una comprobación le sacaría el cargo mientras otra lo usa)
+const duenosQuitar = [];
+for (let i = 0; i < TRABAJADORES; i++) duenosQuitar.push(await crearUsuario(`zz.duenoq${i}@ensayo.invalid`, { es_owner: true, rol: 'admin' }));
 const ids = [], toks = [], mails = [];
 for (let i = 0; i < TRABAJADORES; i++) {
   const mail = `zz.t${i}@ensayo.invalid`;
@@ -57,8 +69,8 @@ for (let w = 0; w < TRABAJADORES; w++) {
   f.rot = await crear('rotulos_generados', { proveedor_id: f.prov, grupo_id: randomUUID(), numero_documento: 'ZZ-m', creado_por: otroId });
   f.bulto = await crear('rotulos_bultos', { rotulo_id: f.rot, numero: 1 });
   f.foto = await crear('rotulos_fotos', { grupo_id: randomUUID(), proveedor_id: f.prov, storage_path: 'zz-m/' + w + '.png' });
-  f.equ = await crear('equipos', { sector: 'ZZ', nombre: 'ZZ-m equipo' });
-  await sv('POST', '/rest/v1/equipo_items', { equipo_id: f.equ, item_id: f.item });
+  if (SIN_MANT) f.equ = randomUUID();
+  else { f.equ = await crear('equipos', { sector: 'ZZ', nombre: 'ZZ-m equipo' }); await sv('POST', '/rest/v1/equipo_items', { equipo_id: f.equ, item_id: f.item }); }
   f.itemprov = await crear('item_proveedores', { item_id: f.item, proveedor_id: f.prov });
   // retiro ajeno con una línea (para historial y para probar "ver retiros de todos")
   f.retOtro = await crear('retiros', { usuario_id: otroId, sector_id: f.sec, observacion_general: 'ZZ-m' });
@@ -70,12 +82,15 @@ for (let w = 0; w < TRABAJADORES; w++) {
   f.tarea = (await sv('POST', '/rest/v1/tasks', { user_id: ids[w], title: 'ZZ-m tarea propia', status: 'pending', traffic_level: 'green', start_date: hoy(), assigned_date: hoy(), pending_days: 0, carry_count: 0, is_stagnant: false })).d[0].id;
   rastrear('tasks', f.tarea);
   // una reparación con una línea y una entrega, para leer y para eliminar/restaurar
-  const rr = await sv('POST', '/rest/v1/reparaciones', { proveedor_id: f.prov, motivo: 'ZZ-m', fecha_salida: hoy(), responsable_id: otroId });
-  f.rep = rastrear('reparaciones', rr.d[0].id);
-  const ri = await sv('POST', '/rest/v1/reparacion_items', { reparacion_id: f.rep, item_id: f.item, cantidad: 2, descuenta_stock: true });
-  f.repItem = rastrear('reparacion_items', ri.d[0].id);
-  const re = await sv('POST', '/rest/v1/reparacion_entregas', { reparacion_item_id: f.repItem, cantidad_devuelta: 1, resultado: 'reparado', fecha_entrega: hoy(), registrado_por: otroId, repone_stock: false });
-  f.repEntrega = rastrear('reparacion_entregas', re.d[0].id);
+  if (SIN_MANT) { f.rep = randomUUID(); f.repItem = randomUUID(); f.repEntrega = randomUUID(); } // un cliente sin Mantenimiento no tiene esas tablas
+  else {
+    const rr = await sv('POST', '/rest/v1/reparaciones', { proveedor_id: f.prov, motivo: 'ZZ-m', fecha_salida: hoy(), responsable_id: otroId });
+    f.rep = rastrear('reparaciones', rr.d[0].id);
+    const ri = await sv('POST', '/rest/v1/reparacion_items', { reparacion_id: f.rep, item_id: f.item, cantidad: 2, descuenta_stock: true });
+    f.repItem = rastrear('reparacion_items', ri.d[0].id);
+    const re = await sv('POST', '/rest/v1/reparacion_entregas', { reparacion_item_id: f.repItem, cantidad_devuelta: 1, resultado: 'reparado', fecha_entrega: hoy(), registrado_por: otroId, repone_stock: false });
+    f.repEntrega = rastrear('reparacion_entregas', re.d[0].id);
+  }
   F.push(f);
 }
 
@@ -129,7 +144,7 @@ const insMin = (tabla, cuerpo) => async x => { const c = cuerpo(x); const r = aw
 const upd = (tabla, idf, cuerpo) => async x => hecho(await x.u('PATCH', `/rest/v1/${tabla}?id=eq.${idf(x)}`, cuerpo(x)));
 const del = (tabla, fab) => async x => { const id = await fab(x); const r = await x.u('DELETE', `/rest/v1/${tabla}?id=eq.${id}`); if (!hecho(r)) await sv('DELETE', `/rest/v1/${tabla}?id=eq.${id}`); else quitarRastro(tabla, id); return hecho(r); };
 const quitarRastro = (tb, id) => { const i = rastro.findIndex(r => r[0] === tb && r[1] === id); if (i >= 0) rastro.splice(i, 1); };
-const mk = (tabla, cuerpo) => async x => rastrear(tabla, (await sv('POST', `/rest/v1/${tabla}`, cuerpo(x))).d[0].id);
+const mk = (tabla, cuerpo) => async x => (SIN_MANT && TABLAS_MANT.has(tabla)) ? randomUUID() : rastrear(tabla, (await sv('POST', `/rest/v1/${tabla}`, cuerpo(x))).d[0].id);
 
 t('directorio', 'crear proveedor', p => p.dir, ins('proveedores', () => ({ nombre: 'ZZ-m nuevo ' + sufijo() })));
 t('directorio', 'editar proveedor', p => p.dir, upd('proveedores', x => x.f.prov, () => ({ notas: 'ZZ' })));
@@ -211,7 +226,7 @@ t('usuarios', 'desbloquearme / bloquearme', p => p.own, async x => hecho(await x
 t('usuarios', 'cambiar el nombre de otro usuario', p => p.own, async x => hecho(await x.u('PATCH', `/rest/v1/usuarios_perfil?id=eq.${objetivoId}`, { nombre: 'ZZ objetivo' })));
 t('usuarios', 'darle un rol a otro usuario', p => p.own, async x => hecho(await x.u('PATCH', `/rest/v1/usuarios_perfil?id=eq.${objetivoId}`, { puede_ver_sugerencias: false })));
 t('usuarios', 'agregar a otro dueño', p => p.own, async x => { const r = await x.u('POST', '/rest/v1/rpc/agregar_dueno', { p_id: objetivoId }); if (r.s < 300) await sv('PATCH', `/rest/v1/usuarios_perfil?id=eq.${objetivoId}`, { es_owner: false }); return r.s < 300; });
-t('usuarios', 'quitar el cargo a otro dueño', p => p.own, async x => (await x.u('POST', '/rest/v1/rpc/quitar_dueno', { p_id: duenoBId })).s < 300 && !!(await sv('PATCH', `/rest/v1/usuarios_perfil?id=eq.${duenoBId}`, { es_owner: true })));
+t('usuarios', 'quitar el cargo a otro dueño', p => p.own, async x => (await x.u('POST', '/rest/v1/rpc/quitar_dueno', { p_id: duenosQuitar[x.w] })).s < 300 && !!(await sv('PATCH', `/rest/v1/usuarios_perfil?id=eq.${duenosQuitar[x.w]}`, { es_owner: true })));
 
 // tareas
 t('tareas', 'crear tarea', p => p.tareasOk, async x => { const r = await x.u('POST', '/rest/v1/rpc/create_task', { p_title: 'ZZ-m', p_description: '', p_traffic_level: 'green' }); if (r.s === 200 && typeof r.d === 'string') await sv('DELETE', `/rest/v1/tasks?id=eq.${r.d}`); return r.s === 200; });
@@ -241,13 +256,51 @@ t('servidor', 'eliminar usuario (entrada)', p => p.own, async x => fn('delete-us
 t('servidor', 'resetear contraseña (entrada)', p => p.reset, async x => fn('reset-password', { userId: randomUUID(), password: 'ZZtest123' })(x));
 t('servidor', 'resetear contraseña de un dueño', p => p.own, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: duenoBId, password: 'ZZtest123' } }); return r.s === 200; });
 
+// ---------- qué módulos toca cada comprobación (para el cruce con los planes) ----------
+const modsDe = (area, e) => {
+  const r = (re) => re.test(e);
+  if (area === 'lectura') {
+    if (r(/^leer (equipos|equipo_items)$/)) return ['mantenimiento', 'deposito'];
+    if (r(/^leer (item_proveedores)$/)) return ['deposito', 'proveedores'];
+    if (r(/^leer (reparaciones|reparacion_items|reparacion_entregas)$/)) return ['mantenimiento', 'deposito', 'proveedores'];
+    if (r(/^leer (familias|subfamilias|sectores|items|planilla_familias)$/) || r(/retiros/)) return ['deposito'];
+    if (r(/^leer (contactos|proveedores)$/)) return ['proveedores'];
+    if (r(/^leer comisionistas$/)) return ['comisionistas'];
+    if (r(/^leer (rotulo_disenos|rotulos_generados|rotulos_bultos|rotulos_fotos)$/)) return ['envios'];
+    if (r(/tareas/)) return ['tareas'];
+    return [];
+  }
+  if (area === 'directorio') {
+    if (r(/proveedor$|contacto/)) return ['proveedores'];
+    if (r(/comisionista/)) return ['comisionistas'];
+    if (r(/diseño|envío|bulto|foto/)) return ['envios'];
+    return [];
+  }
+  if (area === 'deposito') {
+    if (r(/vincular|desvincular/)) return ['deposito', 'proveedores'];
+    if (r(/equipo/)) return ['mantenimiento', 'deposito'];
+    return ['deposito'];
+  }
+  if (area === 'reparaciones') return ['mantenimiento', 'deposito', 'proveedores'];
+  if (area === 'retiros') return ['deposito'];
+  if (area === 'tareas') return ['tareas'];
+  if (area === 'archivos') return r(/foto de repuesto/) ? ['deposito'] : r(/manual/) ? ['mantenimiento', 'deposito'] : ['envios'];
+  return []; // soporte, usuarios, servidor
+};
+for (const prueba of T) prueba.mods = modsDe(prueba.area, prueba.etiqueta);
+let activos = Object.fromEntries(['proveedores', 'comisionistas', 'envios', 'deposito', 'mantenimiento', 'tareas'].map((m) => [m, !(SIN_MANT && m === 'mantenimiento')]));
+let estadoActual = 'plan completo';
+
 // ---------- ejecución ----------
 const fallos = [], resumen = {};
 let total = 0, hechas = 0;
-const lista = combos.slice(0, LIMITE || combos.length);
-const pend = [...lista.keys()];
+let lista = [];
+let pend = [];
 async function perfil(w, c) {
-  const r = await sv('PATCH', `/rest/v1/usuarios_perfil?id=eq.${ids[w]}`, { rol: c.rol, mantenimiento_rol: c.mant, es_owner: c.es_owner, activo: c.activo, access_status: c.activo ? 'active' : 'blocked', puede_ver_retiros: c.ver_retiros, puede_ver_errores: c.ver_errores, puede_resetear_contrasenas: c.resetear, puede_ver_sugerencias: c.ver_sug });
+  const poner = () => sv('PATCH', `/rest/v1/usuarios_perfil?id=eq.${ids[w]}`, { rol: c.rol, mantenimiento_rol: c.mant, es_owner: c.es_owner, activo: c.activo, access_status: c.activo ? 'active' : 'blocked', puede_ver_retiros: c.ver_retiros, puede_ver_errores: c.ver_errores, puede_resetear_contrasenas: c.resetear, puede_ver_sugerencias: c.ver_sug });
+  let r = await poner();
+  // Solo pasa en el simulador local (PGlite agota su pila después de muchos minutos): se vuelve a fijar el límite y se reintenta.
+  if (!hecho(r) && /stack depth/.test(msg(r))) { await q(null, "set max_stack_depth = '7MB'; select 1 as ok"); r = await poner(); }
   if (!hecho(r)) throw new Error('No pude fijar el perfil: ' + msg(r) + ' ' + desc(c));
 }
 async function trabajador(w) {
@@ -256,18 +309,19 @@ async function trabajador(w) {
     const i = pend.shift(); const c = lista[i];
     await perfil(w, c);
     const p = P(c);
-    const x = { ...x0, c, sub: {}, u: async (m, ruta, cuerpo, cab) => { let r = await http(m, ruta, { token: x0.tok, cuerpo, cab }); if (r.s === 401 && /expired|JWT/i.test(msg(r))) { x0.tok = await entrar(mails[w]); x.tok = x0.tok; r = await http(m, ruta, { token: x0.tok, cuerpo, cab }); } return r; } };
+    const x = { ...x0, c, sub: {}, u: async (m, ruta, cuerpo, cab) => { let r = await http(m, ruta, { token: x0.tok, cuerpo, cab }); if (r.s === 401 && /expired|JWT/i.test(msg(r))) { x0.tok = await entrar(mails[w]); x.tok = x0.tok; r = await http(m, ruta, { token: x0.tok, cuerpo, cab }); } x.ultimo = { s: r.s, m: msg(r).slice(0, 90) }; return r; } };
     for (const prueba of T) {
       if (SOLO && !SOLO.includes(prueba.etiqueta)) continue;
       let real; try { real = !!(await prueba.correr(x)); } catch (e) { real = 'ERROR ' + e.message.slice(0, 120); }
       if (prueba.area === 'usuarios') await perfil(w, c); // estas comprobaciones cambian el perfil: se restablece
-      // un usuario bloqueado no puede nada, salvo leer lo mínimo para que la pantalla le avise (su perfil y la configuración)
-      const esperado = !!prueba.esperado(p) && (c.activo || PERMITE_BLOQUEADO.has(prueba.etiqueta));
+      // un usuario bloqueado no puede nada, salvo leer lo mínimo para que la pantalla le avise (su perfil y la configuración);
+      // y un módulo apagado (por la licencia o por el dueño) bloquea lo suyo para TODOS, dueño incluido
+      const esperado = !!prueba.esperado(p) && (c.activo || PERMITE_BLOQUEADO.has(prueba.etiqueta)) && prueba.mods.every((m) => activos[m]);
       total++;
       const k = prueba.area + ' · ' + prueba.etiqueta;
       resumen[k] ??= { ok: 0, mal: 0 };
       if (real === esperado) resumen[k].ok++;
-      else { resumen[k].mal++; fallos.push({ k, combo: desc(c), esperado, real }); console.log(`  DIF [${k}] (${desc(c)}) esperado=${esperado} real=${real}`); }
+      else { resumen[k].mal++; fallos.push({ k, combo: desc(c), esperado, real, estado: estadoActual }); console.log(`  DIF [${k}] (${desc(c)}) [${estadoActual}] esperado=${esperado} real=${real} última respuesta=${JSON.stringify(x.ultimo ?? null)}`); }
     }
     // dejar al trabajador en estado neutro
     for (const [b, ruta] of Object.entries(x.sub)) await http('DELETE', `/storage/v1/object/${b}/${ruta}`, { token: SERVICIO, apikey: SERVICIO });
@@ -275,9 +329,44 @@ async function trabajador(w) {
     if (hechas % 20 === 0) console.log(`  ${hechas}/${lista.length} configuraciones, ${fallos.length} diferencias`);
   }
 }
-console.log(`Probando ${lista.length} configuraciones de usuario × ${T.length} comprobaciones…`);
+async function correr(configs, etiqueta) {
+  lista = configs; pend = [...lista.keys()]; hechas = 0; estadoActual = etiqueta;
+  console.log(`Probando ${lista.length} configuraciones de usuario × ${T.length} comprobaciones (${etiqueta})…`);
+  await Promise.all(Array.from({ length: TRABAJADORES }, (_, w) => trabajador(w)));
+}
 const t0 = Date.now();
-await Promise.all(Array.from({ length: TRABAJADORES }, (_, w) => trabajador(w)));
+if (!SOLO_CRUZAR) await correr(combos.slice(0, LIMITE || combos.length), 'plan completo');
+
+if (CRUZAR) {
+  const MODS6 = ['proveedores', 'comisionistas', 'envios', 'deposito', 'mantenimiento', 'tareas'];
+  const todos = Object.fromEntries(MODS6.map((m) => [m, true])), ninguno = Object.fromEntries(MODS6.map((m) => [m, false]));
+  const ESTADOS = [
+    { n: 'Plan 2 (todo)', lic: todos, sw: {} },
+    { n: 'Plan 1 (sin Mantenimiento)', lic: { ...todos, mantenimiento: false }, sw: {} },
+    ...MODS6.map((m) => ({ n: `Plan 2 sin ${m} (licencia)`, lic: { ...todos, [m]: false }, sw: {} })),
+    ...MODS6.map((m) => ({ n: `Plan 2, el dueño apagó ${m}`, lic: todos, sw: { [m]: true } })),
+    { n: 'solo Tareas', lic: { ...ninguno, tareas: true }, sw: {} },
+    { n: 'sin ningún módulo', lic: ninguno, sw: {} },
+  ];
+  // usuarios representativos: cada rol de Directorio × cada rol de Depósito (con todos los permisos sueltos o ninguno), un bloqueado y los dos tipos de dueño
+  const repr = combos.filter((c) => (c.es_owner ? true : !c.activo ? (c.rol === 'user' && c.mant === 'comun' && !c.ver_retiros && !c.ver_errores && !c.resetear && !c.ver_sug) : (c.ver_retiros === c.ver_errores && c.ver_errores === c.resetear && c.resetear === c.ver_sug)));
+  const lic0c = (await sv('GET', '/rest/v1/licencia?select=modulos&id=eq.1')).d[0].modulos;
+  const apag0c = (await q(null, 'select apagados from public.preferencias_modulos where id = 1'))[0]?.apagados ?? {};
+  try {
+    // ESTADOS=a-b corre solo esos estados (índices desde 0): el simulador local se degrada si trabaja muchos minutos seguidos, así que se parte en tandas.
+    const rango = String(process.env.ESTADOS ?? '').match(/^(\d+)-(\d+)$/);
+    for (const e of (rango ? ESTADOS.slice(Number(rango[1]), Number(rango[2]) + 1) : ESTADOS)) {
+      const r = await sv('PATCH', '/rest/v1/licencia?id=eq.1', { modulos: SIN_MANT ? { ...e.lic, mantenimiento: false } : e.lic }); if (!hecho(r)) throw new Error('licencia: ' + msg(r));
+      await q(null, `update public.preferencias_modulos set apagados = '${JSON.stringify(e.sw)}'::jsonb where id = 1; select 1 as ok`);
+      activos = Object.fromEntries(MODS6.map((m) => [m, e.lic[m] === true && e.sw[m] !== true && !(SIN_MANT && m === 'mantenimiento')]));
+      await correr(repr, e.n);
+    }
+  } finally {
+    await sv('PATCH', '/rest/v1/licencia?id=eq.1', { modulos: lic0c });
+    await q(null, `update public.preferencias_modulos set apagados = '${JSON.stringify(apag0c)}'::jsonb where id = 1; select 1 as ok`);
+    activos = Object.fromEntries(MODS6.map((m) => [m, !(SIN_MANT && m === 'mantenimiento')]));
+  }
+}
 console.log(`Listo en ${Math.round((Date.now() - t0) / 1000)} s: ${total} comprobaciones, ${fallos.length} diferencias.`);
 
 // ---------- limpieza ----------

@@ -1,0 +1,50 @@
+#!/bin/sh
+# Pone la llave de Supabase en /etc/panel/panel.env sin editar archivos a mano.
+# La llave se pide sin mostrarse en pantalla (no queda en el historial de comandos), se comprueba con Supabase (solo lectura) y se reinicia el panel.
+#
+#   ssh -t root@SERVIDOR panel-poner-llave
+set -eu
+ARCHIVO=/etc/panel/panel.env
+[ -f "$ARCHIVO" ] || { echo "No encuentro $ARCHIVO"; exit 1; }
+
+printf "Pegá la llave de Supabase (empieza con sbp_). No se va a ver mientras la pegás. Después Enter: "
+# Si hay una terminal, la llave no se muestra mientras se escribe; si viene por una tubería (sin terminal), se lee igual.
+[ -t 0 ] && stty -echo
+read -r LLAVE
+[ -t 0 ] && stty echo || true
+echo
+
+if ! printf '%s' "$LLAVE" | grep -Eq '^sbp_[A-Za-z0-9_]{20,}$'; then
+  echo "Eso no parece una llave de Supabase (tiene que empezar con sbp_ y no llevar espacios). No se cambió nada."
+  exit 1
+fi
+
+echo "Comprobando la llave con Supabase (solo lectura)..."
+CODIGO=$(curl -s -o /tmp/panel-orgs.json -w '%{http_code}' -H "Authorization: Bearer $LLAVE" https://api.supabase.com/v1/organizations || true)
+if [ "$CODIGO" != "200" ]; then
+  rm -f /tmp/panel-orgs.json
+  echo "Supabase rechazó la llave (código $CODIGO). Revisá que esté bien copiada y que no haya vencido. No se cambió nada."
+  exit 1
+fi
+echo "Llave válida. Organizaciones que ve:"
+node -e 'const l=JSON.parse(require("fs").readFileSync("/tmp/panel-orgs.json","utf8"));for(const o of l)console.log("  - "+o.name+"  (identificador: "+(o.slug||o.id)+")")'
+rm -f /tmp/panel-orgs.json
+
+umask 077
+grep -v -e '^SUPABASE_ACCESS_TOKEN=' -e 'llave de relleno' "$ARCHIVO" > "$ARCHIVO.nuevo"
+printf 'SUPABASE_ACCESS_TOKEN=%s\n' "$LLAVE" >> "$ARCHIVO.nuevo"
+chown root:root "$ARCHIVO.nuevo"
+chmod 600 "$ARCHIVO.nuevo"
+mv "$ARCHIVO.nuevo" "$ARCHIVO"
+unset LLAVE
+
+systemctl restart panel
+sleep 3
+if systemctl is-active --quiet panel; then
+  echo "Listo: el panel reinició con la llave nueva."
+  journalctl -u panel -n 1 --no-pager -o cat | cut -c1-140
+else
+  echo "El panel NO arrancó. Mensaje:"
+  journalctl -u panel -n 5 --no-pager -o cat | cut -c1-200
+  exit 1
+fi

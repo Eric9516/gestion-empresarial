@@ -398,7 +398,8 @@ async function correr(deps: Dependencias, e: EntradaPaso): Promise<SalidaPaso> {
       const t = await api.consultar(ref, `select count(*)::int as n from pg_tables where schemaname = 'public'`, { soloLectura: true });
       if (Number(t[0]?.n ?? 0) > 0) return { resultado: 'fallo', mensaje: 'Ese proyecto ya tiene tablas: no se toca nada.' };
       await api.consultar(ref, `create table if not exists ${REG} (nombre text primary key, aplicada_at timestamptz not null default now());
-        alter table ${REG} enable row level security;`);
+        alter table ${REG} enable row level security;
+        revoke all on ${REG} from anon, authenticated;`);
     }
     return { resultado: 'ok', mensaje: 'Registro listo.' };
   }

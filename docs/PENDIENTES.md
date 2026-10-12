@@ -4,9 +4,9 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
 
 ## Lo próximo (para poder entregar a un cliente real)
 
-1. ⏳ **Prueba real con Supabase** (hoy todo se probó con un Supabase local simulado sobre una base real: integración 184, instalador 41, módulos 3.220, lógica 116, permisos 32.640, y la app y el panel en el navegador; ver [PRUEBAS.md](PRUEBAS.md). Falta un proyecto real, donde aparecen las diferencias finas con la plataforma). Con la segunda cuenta de Supabase de pruebas (plan Pro, invitando a la cuenta del panel):
-   crear un cliente solo-Tareas, ampliarlo a Abastecimiento y a Mantenimiento, y correr `pnpm pruebas:integracion` (ya actualizada para los seis módulos y el interruptor del dueño).
-2. ⏳ **Instalar el panel** en un servidor (recomendado: uno aparte) siguiendo [PANEL-INSTALACION.md](PANEL-INSTALACION.md), y pasarlo a su propio repositorio.
+1. ✅/⏳ **Prueba real con Supabase.** Hecha con un cliente Plan 2 en un proyecto real de pruebas: instalación, `actualizar`, integración 185, permisos 32.640, módulos 3.220, lógica 116, planes × usuarios 63.360 y horarios 12.581, todo sin diferencias (ver [PRUEBAS.md](PRUEBAS.md), apartado 3; encontró dos defectos que ya están corregidos, ver abajo).
+   Falta: un cliente real **Plan 1** y ampliarlo a Plan 2 (`pnpm cliente componente --agregar mantenimiento`) en Supabase de verdad, la app en el navegador contra el proyecto real, y crear un cliente desde el panel con la API real.
+2. ✅/⏳ **Panel instalado (2026-10-11)** en el servidor de los manuales (compartido, con el cerrojo; ver "Si se comparte el servidor" en [PANEL-INSTALACION.md](PANEL-INSTALACION.md)), en `https://panel.tail4b69fd.ts.net` solo por Tailscale. Falta: poner la llave real de Supabase en `/etc/panel/panel.env`, registrar la huella desde el celular, la prueba de crear un cliente con la API real, y decidir si se cierra el SSH público. (Hecho: la llave SSH de instalación ya se retiró y el panel tiene su llave de Supabase; la huella está registrada.) Pasarlo a su propio repositorio sigue pendiente.
 3. ⏳ **Pase de Cremac** (producción) a la plantilla: primero la base de datos, después la app (ver el capítulo 10 del manual). Se ensaya antes en una copia.
 4. ✅ **Librería `xlsx` (importar y exportar Excel):** la versión de npm tenía dos fallas conocidas sin arreglo en npm; se instaló la corregida (0.20.3) desde el sitio oficial del fabricante, guardada en `vendor/` con su huella (ver `vendor/LEEME.md`) y con pruebas de lectura y escritura. `pnpm audit`: sin vulnerabilidades.
 5. ⏳ **Subir todo a GitHub** (hoy está sin commitear: componentes, instalador, panel, pantalla del dueño y documentación).
@@ -63,6 +63,22 @@ Cremac lo recibe con el pase a la plantilla. Se anota igual para que quede el re
 8. ✅ **`exigir_modulo` se podía ejecutar sin sesión.** Ahora ninguna función propia queda abierta, y la prueba lo vigila.
 9. ⏳ El registro público de usuarios hay que apagarlo a mano en Supabase (paso 5 del manual); el instalador ahora lo comprueba y avisa si sigue abierto.
 10. ✅ **El historial de retiros agrupaba por día en hora universal:** un retiro hecho después de las 21:00 aparecía en el día siguiente y el filtro por día lo dejaba afuera. Ahora usa el día local.
+
+## Lo que apareció al probar con un Supabase real y con los horarios (2026-10-11)
+
+Se instaló un cliente Plan 2 en un proyecto real de Supabase de pruebas y se corrieron contra él todas las baterías (ver [PRUEBAS.md](PRUEBAS.md)). Salió esto:
+
+1. ✅ **La ventana de "24 horas" de los retiros vencía a las 21:00 de Argentina.** Las reglas de edición pedían a la vez "menos de 24 horas" y "creado el mismo día calendario UTC".
+   Un retiro hecho a las 18:00 no se podía corregir ni devolver parcialmente a la mañana siguiente, aunque la pantalla decía "podés devolver hasta 24h". Corregido con la migración
+   `abastecimiento/20260101001200_retiros_ventana_de_24_horas.sql` (las dos condiciones son ahora "menos de 24 horas"). **Cremac tiene el mismo defecto**: lo recibe con el pase. Se comprobó en Supabase real antes y después.
+2. ✅ **La tabla del registro de migraciones quedaba con permisos para `anon` y `authenticated`.** Supabase da permisos por defecto a las tablas nuevas y esta la crea el instalador, no una migración.
+   No se podían leer ni escribir filas (la protección por filas bloqueaba todo), pero faltaba la capa de permisos. El instalador y el panel ahora los quitan; una prueba del instalador lo vigila.
+3. ⏳ **Decisión pendiente: agregar líneas a un retiro viejo.** La regla de alta de líneas (`retiro_items_insert`) no tiene límite de tiempo: se pueden sumar líneas a un retiro propio de hace días, aunque no se pueda editarlo ni borrarlo.
+   Se dejó igual (es lo que hace Cremac y la pantalla no lo ofrece); se anota por si se quiere alinear con las 24 horas.
+4. ⏳ **El vencimiento del acceso (`access_expires_at`) y el estado "prueba"/"expirado" solo afectan a Tareas.** Un usuario con el acceso vencido sigue pudiendo usar el Directorio y el Depósito; solo pierde las tareas.
+   Es lo que dice el código (heredado de otra aplicación); si el vencimiento tiene que cortar todo, hay que pedirlo.
+5. ℹ️ **Zonas horarias:** el PostgreSQL de Supabase tiene otros datos que Node para Marruecos (`Africa/Casablanca`). La app no ofrece esa zona. Las 11 zonas que sí ofrece coinciden en cada instante probado.
+6. ⏳ El registro público de usuarios del proyecto de pruebas sigue abierto (paso manual; el instalador avisa).
 
 ## Módulos y asistente (mejoras posibles)
 

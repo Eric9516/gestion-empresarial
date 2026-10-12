@@ -15,6 +15,7 @@ Plantilla de aplicación interna para empresas, por módulos: proveedores, comis
 - [Agregar un módulo nuevo](docs/NUEVO-MODULO.md)
 - [Seguridad y permisos](docs/SEGURIDAD.md)
 - [Pruebas: qué hay, qué cubre y qué no](docs/PRUEBAS.md)
+- [Trabajar con alguien que desarrolla solo las pantallas](docs/DESARROLLO-CON-SOCIO.md)
 - [Plan del producto (hacia dónde crece)](docs/PLAN-PRODUCTO.md)
 - [Pendientes para que sea un producto](docs/PENDIENTES.md)
 - **Panel de administración de clientes (carpeta `panel/`)**: [diseño](docs/PANEL-DISENO.md) · [informe de seguridad](docs/PANEL-SEGURIDAD.md) · [instalación paso a paso](docs/PANEL-INSTALACION.md)

@@ -1,6 +1,6 @@
 // Pruebas de la lógica de la app (no de permisos): stock, retiros, reparaciones, fotos pendientes, auditoría,
 // funciones de usuarios, reglas del dueño, restricciones de datos, apagado de módulos y acceso sin sesión.
-import { terminar, http, sv, msg, hecho, crearUsuario, entrar, hoy, randomUUID, SERVICIO } from './ayudas-local.mjs';
+import { terminar, http, sv, msg, hecho, crearUsuario, entrar, hoy, randomUUID, SERVICIO, dueno, correo, q } from './ayudas-local.mjs';
 
 const res = []; let area = '';
 const ok = (nombre, cond, detalle = '') => { res.push({ area, nombre, ok: !!cond, detalle: cond ? '' : String(detalle).slice(0, 300) }); if (!cond) console.log(`  ✗ [${area}] ${nombre} — ${String(detalle).slice(0, 200)}`); };
@@ -11,7 +11,7 @@ const R = (t, id) => { rastro.push([t, id]); return id; };
 
 // ---------- personas ----------
 const P = {};
-const persona = async (clave, extra) => { const mail = `zz.${clave}@ensayo.invalid`; const id = await crearUsuario(mail, extra); P[clave] = { id, mail, tok: await entrar(mail), u: (m, r, c, cab) => http(m, r, { token: P[clave].tok, cuerpo: c, cab }) }; };
+const persona = async (clave, extra) => { const mail = correo(`zz.${clave}@ensayo.invalid`); const id = await crearUsuario(mail, extra); P[clave] = { id, mail, tok: await entrar(mail), u: (m, r, c, cab) => http(m, r, { token: P[clave].tok, cuerpo: c, cab }) }; };
 await persona('adminDep', { rol: 'user', mantenimiento_rol: 'admin' });
 await persona('comunDep', { rol: 'user', mantenimiento_rol: 'comun' });
 await persona('adminDir', { rol: 'admin', mantenimiento_rol: null });
@@ -19,7 +19,7 @@ await persona('sin', { rol: 'user', mantenimiento_rol: null });
 await persona('desact', { rol: 'disabled', mantenimiento_rol: 'comun' });
 await persona('reseteador', { rol: 'user', mantenimiento_rol: null, puede_resetear_contrasenas: true });
 // un dueño de verdad (de la copia de Cremac)
-const dueno0 = (await sv('GET', '/rest/v1/usuarios_perfil?select=id,email,rol&es_owner=eq.true&email=not.like.zz.*&limit=1')).d[0];
+const dueno0 = (await sv('GET', `/rest/v1/usuarios_perfil?select=id,email,rol&id=eq.${dueno}`)).d[0]; // el dueño de prueba que crea ayudas-local (con la clave de prueba)
 P.dueno = { id: dueno0.id, mail: dueno0.email, tok: await entrar(dueno0.email), u: (m, r, c, cab) => http(m, r, { token: P.dueno.tok, cuerpo: c, cab }) };
 const duenoB = await crearUsuario('zz.duenob@ensayo.invalid', { es_owner: true, rol: 'admin' });
 
@@ -421,7 +421,9 @@ seccion('Usuarios bloqueados y zona horaria');
 // ---------- limpieza ----------
 const orden = ['retiro_items', 'retiros', 'reparacion_entregas', 'reparacion_items', 'reparaciones', 'items', 'subfamilias', 'familias', 'proveedores', 'comisionistas', 'sectores', 'tasks'];
 for (const tb of orden) { const m = rastro.filter(r => r[0] === tb).map(r => r[1]).filter(Boolean); for (let i = 0; i < m.length; i += 40) await sv('DELETE', `/rest/v1/${tb}?id=in.(${m.slice(i, i + 40).join(',')})`); }
-await sv('DELETE', `/rest/v1/items?descripcion=like.ZZ-l*`); await sv('DELETE', `/rest/v1/proveedores?nombre=like.ZZ-l*`);
+// lo que crean las funciones (reparaciones, retiros) no está en "rastro": se borra por lo que apunta a los repuestos de prueba
+try { await q(null, `delete from public.reparacion_entregas where reparacion_item_id in (select ri.id from public.reparacion_items ri join public.items i on i.id = ri.item_id where i.descripcion like 'ZZ-l%'); delete from public.reparacion_items where item_id in (select id from public.items where descripcion like 'ZZ-l%'); delete from public.reparaciones r where not exists (select 1 from public.reparacion_items ri where ri.reparacion_id = r.id) and r.motivo like 'ZZ-%'; delete from public.retiro_items where item_id in (select id from public.items where descripcion like 'ZZ-l%'); select 1 as ok`); } catch { /* en un cliente sin Mantenimiento esas tablas no existen */ }
+await sv('DELETE', `/rest/v1/items?descripcion=like.ZZ-l*`); await sv('DELETE', `/rest/v1/subfamilias?nombre=like.ZZ-l*`); await sv('DELETE', `/rest/v1/familias?nombre=like.ZZ-l*`); await sv('DELETE', `/rest/v1/proveedores?nombre=like.ZZ-l*`);
 await sv('DELETE', '/rest/v1/comisionistas?nombre=like.ZZ-l*');
 
 const malos = res.filter(r => !r.ok);

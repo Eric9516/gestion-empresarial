@@ -1,0 +1,14 @@
+#!/bin/sh
+# Muestra el código de alta del panel (se escribe una vez para registrar tu primera llave de acceso, desde el celular).
+# Se muestra solo en esta terminal. No lo pegues en chats.
+#
+#   ssh -t root@SERVIDOR panel-ver-codigo-alta
+set -eu
+CODIGO=$(grep '^PANEL_CODIGO_ALTA=' /etc/panel/panel.env | cut -d= -f2-)
+[ -n "$CODIGO" ] || { echo "No encuentro el código de alta."; exit 1; }
+echo
+echo "Código de alta (cópialo en el celular, en el campo \"Código de alta\"):"
+echo
+echo "  $CODIGO"
+echo
+echo "Sirve para registrar tu llave de acceso. Después de registrar la primera, el alta de llaves de respaldo dura 15 minutos."
