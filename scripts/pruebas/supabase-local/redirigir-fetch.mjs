@@ -2,7 +2,7 @@
 const puerto = process.env.SUPABASE_LOCAL_PUERTO;
 if (puerto) {
   const original = globalThis.fetch;
-  const reescribir = (url) => { const m = /^https:\/\/([a-z0-9]{20})\.supabase\.co(.*)$/.exec(url); return m ? `http://127.0.0.1:${puerto}/p/${m[1]}${m[2]}` : null; };
+  const reescribir = (url) => { const g = /^https:\/\/api\.supabase\.com(\/.*)$/.exec(url); if (g) return `http://127.0.0.1:${puerto}/__gestion${g[1]}`; const m = /^https:\/\/([a-z0-9]{20})\.supabase\.co(.*)$/.exec(url); return m ? `http://127.0.0.1:${puerto}/p/${m[1]}${m[2]}` : null; };
   globalThis.fetch = (entrada, opciones) => {
     const url = typeof entrada === 'string' ? entrada : entrada instanceof URL ? entrada.href : entrada?.url;
     const nueva = url ? reescribir(url) : null;

@@ -33,6 +33,7 @@ export function entornoParaHijos(servidor, base = process.env) {
     ...base,
     PATH: `${carpeta}${delimiter}${base.PATH ?? base.Path ?? ''}`,
     Path: `${carpeta}${delimiter}${base.PATH ?? base.Path ?? ''}`,
+    SUPABASE_ACCESS_TOKEN: 'sbp_llave_de_prueba_local_00000000',
     SUPABASE_LOCAL_CONTROL: `${servidor.url}/__control`,
     SUPABASE_LOCAL_PUERTO: String(servidor.puerto),
     NODE_OPTIONS: `${base.NODE_OPTIONS ?? ''} --import ${precarga}`.trim(),

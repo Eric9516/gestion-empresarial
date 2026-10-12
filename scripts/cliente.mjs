@@ -1,19 +1,20 @@
 #!/usr/bin/env node
-// Instala y actualiza el backend (Supabase) de un cliente. Solo usa Node y la CLI de Supabase.
+// Instala y actualiza el backend (Supabase) de un cliente. Solo usa Node: habla directo con la API de Supabase.
 //
 //   pnpm cliente nuevo --nombre "Mi Cliente SA" --email dueno@cliente.com
 //   pnpm cliente nuevo --nombre "Mi Cliente SA" --email dueno@cliente.com --ref abcdefghij   (proyecto ya creado y vacío)
 //   pnpm cliente actualizar --ref abcdefghij
 //   pnpm cliente --ayuda
 //
-// Requisitos: haber iniciado sesión una vez con `npx supabase login`.
+// Requisitos: la llave de tu cuenta de Supabase (se genera una vez en https://supabase.com/dashboard/account/tokens y se
+// guarda en clientes/cuenta-supabase.env.local, o en la variable SUPABASE_ACCESS_TOKEN). No hace falta la CLI de Supabase.
 
-import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ORDEN_COMPONENTES, componentesInstalados, componentesParaModulos, expandirRegistro, faltantesPara } from './herramientas/componentes.mjs';
+import { ErrorApi, crearApi, leerLlave } from './herramientas/supabase-api.mjs';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 // La base de datos se instala por componentes (base, abastecimiento, mantenimiento): supabase/componentes/<componente>/*.sql
@@ -43,49 +44,25 @@ function parsearArgumentos(argv) {
   return { comando, opciones };
 }
 
-// Ejecuta la CLI de Supabase desde la raíz del proyecto (así las rutas relativas no llevan espacios).
-function supabase(args, { silencioso = false } = {}) {
-  try {
-    return execFileSync('npx', ['--yes', 'supabase', ...args], { cwd: RAIZ, shell: true, encoding: 'utf8', maxBuffer: 100 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
-  } catch (e) {
-    if (!silencioso) console.error(String(e.stdout || '') + String(e.stderr || ''));
-    throw new Error(`Falló: supabase ${args.slice(0, 3).join(' ')}…`);
-  }
-}
-
-function json(salida) {
-  const i = salida.search(/[{[]/);
-  const j = Math.max(salida.lastIndexOf('}'), salida.lastIndexOf(']'));
-  if (i < 0 || j < i) throw new Error(`Supabase no devolvió datos legibles. Respondió: ${JSON.stringify(salida.trim().slice(0, 300)) || '(nada)'}`);
-  return JSON.parse(salida.slice(i, j + 1));
-}
-
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 const aleatoria = (bytes = 18) => randomBytes(bytes).toString('base64url');
 const slug = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-function consultar(ref, sql) {
-  const temporal = `scripts/.consulta-${process.pid}.sql`;
-  writeFileSync(join(RAIZ, temporal), sql);
-  try { return json(supabase(['db', 'query', '--linked', '--project-ref', ref, '-f', temporal, '-o', 'json'])).rows ?? []; }
-  finally { try { writeFileSync(join(RAIZ, temporal), ''); } catch { /* nada */ } }
-}
-
-function ejecutarArchivo(ref, archivoRelativo) {
-  supabase(['db', 'query', '--linked', '--project-ref', ref, '-f', archivoRelativo]);
-}
+// La API de administración de Supabase (se crea al arrancar, cuando ya se leyó la llave de la cuenta).
+let gestion;
+const consultar = (ref, sql) => gestion.consultar(ref, sql);
+const ejecutarArchivo = (ref, archivoRelativo) => gestion.consultar(ref, readFileSync(join(RAIZ, archivoRelativo), 'utf8'));
 
 // ---------- pasos ----------
 async function esperarProyecto(ref) {
   paso('Esperando que el proyecto esté listo (puede tardar un par de minutos)');
   for (let i = 0; i < 60; i++) {
-    const r = json(supabase(['projects', 'list', '-o', 'json'], { silencioso: true }));
-    const lista = Array.isArray(r) ? r : (r.projects ?? []); // según la versión, la CLI devuelve la lista sola o dentro de "projects"
-    const p = lista.find(x => x.ref === ref);
-    if (p?.status === 'ACTIVE_HEALTHY') {
+    const p = (await gestion.proyectos()).find(x => x.ref === ref);
+    if (!p && i === 0) falla(`Esa llave de Supabase no ve el proyecto ${ref}. Revisá que el identificador esté bien y que la llave sea de la cuenta donde está el proyecto.`);
+    if (p?.estado === 'ACTIVE_HEALTHY') {
       // El estado puede adelantarse a la base: se prueba una consulta simple.
       for (let k = 0; k < 20; k++) {
-        try { consultar(ref, 'select 1 as ok'); return; } catch (e) { if (k === 0 || k === 4) log(`  · todavía no responde la base (${String(e.message).slice(0, 400)})`); await dormir(5000); }
+        try { await consultar(ref, 'select 1 as ok'); return; } catch (e) { if (k === 0 || k === 4) log(`  · todavía no responde la base (${String(e.message).slice(0, 300)})`); await dormir(5000); }
       }
     }
     await dormir(10000);
@@ -93,16 +70,15 @@ async function esperarProyecto(ref) {
   falla('El proyecto no quedó listo a tiempo. Revisalo en el panel de Supabase y volvé a correr el comando con --ref.');
 }
 
-function crearProyecto(nombre, region, orgId) {
+async function crearProyecto(nombre, region, orgId) {
   paso(`Creando el proyecto "${nombre}" en Supabase (${region})`);
   if (!orgId) {
-    const rOrgs = json(supabase(['orgs', 'list', '-o', 'json']));
-    const orgs = Array.isArray(rOrgs) ? rOrgs : (rOrgs.organizations ?? []);
-    if (orgs.length !== 1) falla(`Tenés ${orgs.length} organizaciones: indicá cuál con --org <id>.`);
+    const orgs = await gestion.organizaciones();
+    if (orgs.length !== 1) falla(`Tenés ${orgs.length} organizaciones: indicá cuál con --org <id>. Las que ve tu llave: ${orgs.map(o => `${o.nombre} (${o.id})`).join(', ') || '(ninguna)'}.`);
     orgId = orgs[0].id;
   }
   const claveDb = aleatoria(24);
-  const creado = json(supabase(['projects', 'create', nombre, '--org-id', orgId, '--region', region, '--db-password', claveDb, '-o', 'json']));
+  const creado = await gestion.crearProyecto({ nombre, region, clave: claveDb, org: orgId });
   if (!creado.ref) falla('Supabase no devolvió el identificador del proyecto.');
   log(`  Proyecto creado: ${creado.ref}`);
   return { ref: creado.ref, claveDb };
@@ -119,30 +95,30 @@ function archivosDeMigracion(componentes = ORDEN_COMPONENTES) {
 const versionDe = nombre => nombre.split('/').pop().split('_')[0];
 
 // Qué se aplicó ya en el proyecto. null = todavía no tiene el registro de migraciones.
-function leerRegistro(ref) {
-  const hayRegistro = consultar(ref, "select to_regclass('public.migraciones_aplicadas') is not null as hay")[0]?.hay;
+async function leerRegistro(ref) {
+  const hayRegistro = (await consultar(ref, "select to_regclass('public.migraciones_aplicadas') is not null as hay"))[0]?.hay;
   if (!hayRegistro) return null;
-  return consultar(ref, 'select nombre from public.migraciones_aplicadas').map(r => String(r.nombre));
+  return (await consultar(ref, 'select nombre from public.migraciones_aplicadas')).map(r => String(r.nombre));
 }
 // Componentes instalados en el proyecto (se deducen del registro; uno de antes de los componentes cuenta como completo).
-function componentesDelProyecto(ref) {
-  const registro = leerRegistro(ref);
+async function componentesDelProyecto(ref) {
+  const registro = await leerRegistro(ref);
   return registro ? componentesInstalados(registro) : [];
 }
 
 // Aplica solo las migraciones que faltan de los componentes pedidos y deja el registro de cuáles se aplicaron.
 // marcarHasta: número de versión (o nombre de una migración); las que llegan hasta esa versión se registran como hechas
 // sin ejecutarlas (para instalaciones que ya tenían esa parte), y las siguientes se aplican.
-function aplicarMigraciones(ref, componentes, { marcarHasta = null } = {}) {
+async function aplicarMigraciones(ref, componentes, { marcarHasta = null } = {}) {
   paso('Aplicando la base de datos (' + componentes.join(' + ') + ')');
-  let registro = leerRegistro(ref);
+  let registro = await leerRegistro(ref);
   if (registro === null) {
-    const tablas = Number(consultar(ref, "select count(*)::int as n from pg_tables where schemaname = 'public'")[0]?.n ?? 0);
+    const tablas = Number((await consultar(ref, "select count(*)::int as n from pg_tables where schemaname = 'public'"))[0]?.n ?? 0);
     if (tablas > 0 && !marcarHasta) {
       falla('Este proyecto ya tiene tablas pero no fue instalado con este script. No toco nada. ' +
         'Si es una instalación existente, usá --marcar-hasta <migración> para registrar como hechas las que ya tiene (sin ejecutarlas).');
     }
-    consultar(ref, `create table if not exists public.migraciones_aplicadas (nombre text primary key, aplicada_at timestamptz not null default now());
+    await consultar(ref, `create table if not exists public.migraciones_aplicadas (nombre text primary key, aplicada_at timestamptz not null default now());
       alter table public.migraciones_aplicadas enable row level security;
       revoke all on public.migraciones_aplicadas from anon, authenticated;
       select 1 as ok`);
@@ -154,18 +130,15 @@ function aplicarMigraciones(ref, componentes, { marcarHasta = null } = {}) {
   for (const archivo of archivosDeMigracion(componentes)) {
     if (hechas.has(archivo)) continue;
     if (version && versionDe(archivo) <= version) log(`  · registrada sin ejecutar: ${archivo}`);
-    else { log(`  · ${archivo}`); ejecutarArchivo(ref, `${MIGRACIONES}/${archivo}`); }
-    consultar(ref, `insert into public.migraciones_aplicadas (nombre) values ('${archivo.replace(/'/g, "''")}') on conflict do nothing; select 1 as ok`);
+    else { log(`  · ${archivo}`); await ejecutarArchivo(ref, `${MIGRACIONES}/${archivo}`); }
+    await consultar(ref, `insert into public.migraciones_aplicadas (nombre) values ('${archivo.replace(/'/g, "''")}') on conflict do nothing; select 1 as ok`);
     aplicadas++;
   }
   log(aplicadas ? `  ${aplicadas} migración(es) aplicada(s).` : '  La base ya estaba al día.');
 }
 
-function obtenerClaves(ref) {
-  const claves = json(supabase(['projects', 'api-keys', '--project-ref', ref, '-o', 'json']));
-  const lista = Array.isArray(claves) ? claves : claves.keys ?? [];
-  const anon = lista.find(k => /anon/i.test(k.name))?.api_key;
-  const servicio = lista.find(k => /service_role/i.test(k.name))?.api_key;
+async function obtenerClaves(ref) {
+  const { anon, servicio } = await gestion.claves(ref);
   if (!anon || !servicio) falla('No pude leer las claves del proyecto.');
   return { anon, servicio };
 }
@@ -187,12 +160,12 @@ async function avisarSiElRegistroEstaAbierto(ref, anon) {
   }
 }
 
-function publicarFunciones(ref, claveServicio) {
+async function publicarFunciones(ref, claveServicio) {
   paso('Publicando las funciones del servidor');
-  supabase(['secrets', 'set', `PROJECT_SECRET_KEY=${claveServicio}`, '--project-ref', ref], { silencioso: true });
+  await gestion.fijarSecretos(ref, [{ name: 'PROJECT_SECRET_KEY', value: claveServicio }]);
   for (const nombre of readdirSync(join(RAIZ, FUNCIONES), { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)) {
     log(`  · ${nombre}`);
-    supabase(['functions', 'deploy', nombre, '--project-ref', ref, '--use-api'], { silencioso: true });
+    await gestion.desplegarFuncion(ref, nombre, readFileSync(join(RAIZ, FUNCIONES, nombre, 'index.ts'), 'utf8'));
   }
 }
 
@@ -262,13 +235,13 @@ const nombreModulo = id => MODULOS.find(m => m.id === id)?.nombre ?? id;
 // ---------- comandos ----------
 async function modulos(op) {
   if (!op.ref || op.ref === true) falla('Falta el proyecto. Uso: pnpm cliente modulos --ref <identificador> [--activar a,b] [--desactivar c] [--confirmo]');
-  const { servicio } = obtenerClaves(op.ref);
+  const { servicio } = await obtenerClaves(op.ref);
   const antes = await leerLicencia(op.ref, servicio);
   const despues = { ...antes };
   if (op.activar !== undefined) for (const m of listaDeModulos(op.activar, 'activar')) despues[m] = true;
   if (op.desactivar !== undefined) for (const m of listaDeModulos(op.desactivar, 'desactivar')) despues[m] = false;
   validarDependencias(despues);
-  const instalados = componentesDelProyecto(op.ref);
+  const instalados = await componentesDelProyecto(op.ref);
   for (const m of MODULOS) {
     if (despues[m.id] && !antes[m.id] && !instalados.includes(m.componente)) {
       falla(`"${m.nombre}" es del componente ${m.componente}, que no está instalado en este cliente. Instalalo primero:  pnpm cliente componente --ref ${op.ref} --agregar ${m.componente} --confirmo`);
@@ -298,7 +271,7 @@ async function componente(op) {
   if (!op.ref || op.ref === true || typeof op.agregar !== 'string') falla('Uso: pnpm cliente componente --ref <identificador> --agregar <abastecimiento|mantenimiento> [--confirmo]');
   if (!ORDEN_COMPONENTES.includes(op.agregar) || op.agregar === 'base') falla(`Componente desconocido: ${op.agregar}. Se puede agregar: ${ORDEN_COMPONENTES.filter(c => c !== 'base').join(', ')}.`);
   await esperarProyecto(op.ref);
-  const instalados = componentesDelProyecto(op.ref);
+  const instalados = await componentesDelProyecto(op.ref);
   if (!instalados.length) falla('Ese proyecto no fue instalado con este sistema.');
   if (instalados.includes(op.agregar)) falla(`El componente ${op.agregar} ya está instalado en ese cliente.`);
   const faltan = faltantesPara(op.agregar, instalados);
@@ -306,7 +279,7 @@ async function componente(op) {
   const pendientes = archivosDeMigracion([op.agregar]);
   log(`\nComponente a instalar: ${op.agregar}  (ya tiene: ${instalados.join(', ')})\nMigraciones:\n${pendientes.map(a => '  · ' + a).join('\n')}`);
   if (!op.confirmo) { log('\nSimulación: no se cambió nada. Para instalarlo, repetí el comando agregando --confirmo'); return; }
-  aplicarMigraciones(op.ref, [...instalados, op.agregar]);
+  await aplicarMigraciones(op.ref, [...instalados, op.agregar]);
   log(`\n✔ Componente instalado. Sus módulos quedan apagados hasta que los actives:  pnpm cliente modulos --ref ${op.ref} --activar ...`);
 }
 
@@ -325,14 +298,14 @@ async function nuevo(op) {
 
   let ref = op.ref, claveDb = null;
   if (ref) log(`Usando el proyecto existente ${ref}`);
-  else ({ ref, claveDb } = crearProyecto(id, op.region || 'sa-east-1', op.org));
+  else ({ ref, claveDb } = await crearProyecto(id, op.region || 'sa-east-1', op.org));
   await esperarProyecto(ref);
   // Solo se instalan los componentes de los módulos que contrata el cliente (lo no contratado no existe en su base de datos).
   const componentes = componentesParaModulos(activos, MODULOS);
   log(`  Componentes: ${componentes.join(', ')}`);
-  aplicarMigraciones(ref, componentes);
-  const { anon, servicio } = obtenerClaves(ref);
-  publicarFunciones(ref, servicio);
+  await aplicarMigraciones(ref, componentes);
+  const { anon, servicio } = await obtenerClaves(ref);
+  await publicarFunciones(ref, servicio);
   const claveDueno = await crearPrimerDueno(ref, servicio, email, nombre);
   paso('Definiendo los módulos del cliente');
   await escribirLicencia(ref, servicio, licencia);
@@ -374,6 +347,15 @@ async function nuevo(op) {
 `);
 }
 
+// Muestra las organizaciones de Supabase que ve la llave, con el identificador que se usa en --org.
+async function organizaciones() {
+  const orgs = await gestion.organizaciones();
+  if (!orgs.length) { log('Esa llave no ve ninguna organización. Si un cliente te invitó, aceptá primero la invitación (revisá el correo).'); return; }
+  log('\nOrganizaciones que ve tu llave de Supabase (el identificador es lo que va en --org):\n');
+  for (const o of orgs) log(`  ${o.nombre.padEnd(30)} ${o.id}`);
+  log('');
+}
+
 async function actualizar(op) {
   if (!op.ref || op.ref === true) falla('Falta el proyecto. Uso: pnpm cliente actualizar --ref <identificador>');
   await esperarProyecto(op.ref);
@@ -381,18 +363,34 @@ async function actualizar(op) {
   const marcarHasta = op['marcar-aplicadas'] ? todas.map(versionDe).sort().at(-1) : (typeof op['marcar-hasta'] === 'string' ? op['marcar-hasta'] : null);
   if (marcarHasta && !todas.some(a => versionDe(a) === versionDe(marcarHasta))) falla(`No existe la migración ${marcarHasta}.`);
   // Se actualizan los componentes que el proyecto ya tiene. Un proyecto que todavía no tiene registro (instalación de antes) se adopta como completo.
-  let componentes = componentesDelProyecto(op.ref);
+  let componentes = await componentesDelProyecto(op.ref);
   if (!componentes.length) {
     if (!marcarHasta) falla('Ese proyecto no fue instalado con este sistema. Para adoptarlo usá --marcar-hasta <migración> (o --marcar-aplicadas).');
     componentes = ORDEN_COMPONENTES;
   }
-  aplicarMigraciones(op.ref, componentes, { marcarHasta });
+  await aplicarMigraciones(op.ref, componentes, { marcarHasta });
   if (!op['solo-base']) {
-    const claves = obtenerClaves(op.ref);
-    publicarFunciones(op.ref, claves.servicio);
+    const claves = await obtenerClaves(op.ref);
+    await publicarFunciones(op.ref, claves.servicio);
     await avisarSiElRegistroEstaAbierto(op.ref, claves.anon);
   }
   log(`\n✔ Cliente actualizado (componentes: ${componentes.join(', ')}).`);
+}
+
+// La llave de la cuenta de Supabase. Si falta, se deja preparado el archivo donde pegarla y se explica cómo sacarla.
+function llaveDeLaCuenta() {
+  const llave = leerLlave(RAIZ);
+  if (llave) return llave;
+  const archivo = 'clientes/cuenta-supabase.env.local';
+  if (!existsSync(join(RAIZ, archivo))) {
+    mkdirSync(join(RAIZ, 'clientes'), { recursive: true });
+    writeFileSync(join(RAIZ, archivo), '# Llave de tu cuenta de Supabase. Archivo privado: Git lo ignora.\n# Pegala después del signo = (sin comillas ni espacios) y guardá el archivo.\nSUPABASE_ACCESS_TOKEN=\n', { mode: 0o600 });
+  }
+  falla(`Falta la llave de tu cuenta de Supabase (se saca una sola vez):
+  1. Entrá a https://supabase.com/dashboard/account/tokens y tocá "Generate new token" (poné de nombre "cliente").
+  2. Copiala: se muestra una sola vez.
+  3. Abrí el archivo ${archivo} y pegala después del signo = en la línea SUPABASE_ACCESS_TOKEN=. Guardá.
+  4. Volvé a correr el mismo comando.`);
 }
 
 const AYUDA = `Uso:
@@ -400,6 +398,7 @@ const AYUDA = `Uso:
   pnpm cliente actualizar --ref <identificador> [--solo-base] [--marcar-hasta <migración> | --marcar-aplicadas]
   pnpm cliente modulos --ref <identificador> [--activar a,b] [--desactivar c] [--confirmo]
   pnpm cliente componente --ref <identificador> --agregar <componente> [--confirmo]
+  pnpm cliente organizaciones
 
   nuevo        Crea el proyecto en Supabase (o usa uno vacío con --ref), instala la base, publica las
                funciones y crea al primer dueño. --modulos es obligatorio: los que contrata el cliente
@@ -408,6 +407,7 @@ const AYUDA = `Uso:
                (por ejemplo, envios necesita proveedores). Es lo único que puede cambiar la licencia: el cliente no.
   componente   Instala en un cliente un componente que no tenía (abastecimiento o mantenimiento), sin tocar sus datos.
                Sin --confirmo solo simula. Después se activan sus módulos con "modulos".
+  organizaciones  Lista las organizaciones de Supabase que ve tu llave, con el identificador para --org.
   actualizar   Aplica las migraciones que falten y vuelve a publicar las funciones.
                --solo-base            no toca las funciones
                --marcar-hasta M       en una instalación que ya existía: registra como hechas (sin ejecutar) las
@@ -418,12 +418,16 @@ try {
   const { comando, opciones } = parsearArgumentos(process.argv.slice(2));
   if (!comando || comando === '--ayuda' || opciones.ayuda) log(AYUDA);
   else if (!existsSync(join(RAIZ, MIGRACIONES))) falla('No encuentro supabase/componentes: ejecutá el comando desde el proyecto.');
-  else if (comando === 'nuevo') await nuevo(opciones);
-  else if (comando === 'actualizar') await actualizar(opciones);
-  else if (comando === 'modulos') await modulos(opciones);
-  else if (comando === 'componente') await componente(opciones);
-  else falla(`Comando desconocido: ${comando}\n\n${AYUDA}`);
+  else if (!['nuevo', 'actualizar', 'modulos', 'componente', 'organizaciones'].includes(comando)) falla(`Comando desconocido: ${comando}\n\n${AYUDA}`);
+  else {
+    gestion = crearApi(llaveDeLaCuenta());
+    if (comando === 'nuevo') await nuevo(opciones);
+    else if (comando === 'actualizar') await actualizar(opciones);
+    else if (comando === 'modulos') await modulos(opciones);
+    else if (comando === 'organizaciones') await organizaciones();
+    else await componente(opciones);
+  }
 } catch (e) {
-  if (e instanceof ErrorDeUso) { console.error(`\n✖ ${e.message}`); process.exitCode = 1; }
+  if (e instanceof ErrorDeUso || e instanceof ErrorApi) { console.error(`\n✖ ${e.message}`); process.exitCode = 1; }
   else { console.error('\n✖ Falló algo inesperado:', e.message ?? e); process.exitCode = 1; }
 }

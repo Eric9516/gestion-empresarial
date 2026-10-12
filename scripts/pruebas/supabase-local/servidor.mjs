@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
+import { atenderApiGestion } from './api-gestion.mjs';
 import { atenderAuth } from './auth.mjs';
 import { ejecutarCli } from './cli.mjs';
 import { ejecutarFuncion } from './funciones.mjs';
@@ -51,6 +52,16 @@ export async function iniciarServidor({ puerto = 0, silencioso = true } = {}) {
       if (url.pathname === '/__control') {
         const { args, cwd } = JSON.parse(bruto.toString('utf8'));
         return json(200, await ejecutarCli(servidor, { args, cwd }));
+      }
+
+      if (url.pathname.startsWith('/__gestion/')) {
+        const cab = req.headers;
+        let cuerpo, formulario;
+        if (bruto.length && /json/.test(cab['content-type'] ?? '')) { try { cuerpo = JSON.parse(bruto.toString('utf8')); } catch { return json(400, { message: 'JSON inválido' }); } }
+        if (bruto.length && String(cab['content-type'] ?? '').includes('multipart/form-data')) formulario = await new Response(bruto, { headers: { 'content-type': cab['content-type'] } }).formData();
+        const token = /^Bearer (.+)$/i.exec(cab.authorization ?? '')?.[1];
+        const r = await atenderApiGestion(servidor, { metodo: req.method, ruta: url.pathname.slice('/__gestion'.length), query: url.searchParams, token, cuerpo, formulario });
+        return json(r.estado, r.cuerpo);
       }
 
       const m = /^\/p\/([a-z0-9]+)\/(rest|auth|storage|functions)\/v1\/?(.*)$/.exec(url.pathname);

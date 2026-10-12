@@ -90,11 +90,19 @@ cd ~/OneDrive/Desktop/"Gestion empresarial"
 pnpm install
 ```
 
-3. **Iniciá sesión en Supabase desde la terminal.** Se abre el navegador para que autorices. Es una sola vez:
+3. **Dejá la llave de tu cuenta de Supabase.** Es una sola vez. El instalador habla directo con Supabase, sin programas extra:
+
+   1. Entrá a https://supabase.com/dashboard/account/tokens y tocá **Generate new token** (de nombre, por ejemplo, `cliente`). Copiala: se muestra una sola vez.
+   2. Corré este comando. La primera vez te avisa que falta la llave y deja preparado el archivo `clientes/cuenta-supabase.env.local` (privado: Git lo ignora):
 
 ```bash
-npx supabase login
+pnpm cliente organizaciones
 ```
+
+   3. Abrí ese archivo, pegá la llave después del `=` de la línea `SUPABASE_ACCESS_TOKEN=` (sin comillas ni espacios) y guardá.
+   4. Volvé a correr el mismo comando: tiene que mostrar las organizaciones que ve tu cuenta.
+
+   Si la llave vence o la revocás, repetí los pasos 1 y 3 con una nueva.
 
 4. **Comprobá que todo está bien.** Este comando muestra la ayuda de los comandos del instalador; si ves el texto, está listo:
 
@@ -126,7 +134,7 @@ pnpm cliente
 3. Averiguás el identificador de su organización. En la terminal, en la carpeta del proyecto:
 
 ```bash
-npx supabase orgs list
+pnpm cliente organizaciones
 ```
 
    Aparecen todas las organizaciones a las que tenés acceso, cada una con su identificador. Anotá el del cliente.
@@ -365,7 +373,7 @@ cd ~/OneDrive/Desktop/"Gestion empresarial"
 ```
 
 ```bash
-npx supabase orgs list
+pnpm cliente organizaciones
 ```
 
 Aparecen **todas** las organizaciones a las que tenés acceso: la tuya y la del cliente. Reconocés la suya por el nombre. Copiá su identificador (una palabra de unas 20 letras). Si **no aparece**, ver "Si algo falla" más abajo.
@@ -419,7 +427,7 @@ Conviene hablarlo **antes** de instalar, y dejarlo por escrito:
 
 | Qué pasa | Qué hacer |
 |---|---|
-| `orgs list` no muestra la organización del cliente | Casi seguro falta **aceptar la invitación** (revisá el correo, también en no deseados), o entraste a Supabase desde la terminal con otro correo. Repetí `npx supabase login` con el correo al que llegó la invitación |
+| `pnpm cliente organizaciones` no muestra la organización del cliente | Casi seguro falta **aceptar la invitación** (revisá el correo, también en no deseados), o la llave que usás es de **otra cuenta** de Supabase. Generá la llave desde la cuenta con la que aceptaste la invitación (https://supabase.com/dashboard/account/tokens) y pegala en `clientes/cuenta-supabase.env.local` |
 | El comando dice que no tenés permiso para crear el proyecto | Tu rol en su organización es demasiado bajo. Pedile que te suba a **Administrator** (o Owner) |
 | El proyecto se creó en **tu** cuenta y no en la suya | Faltó `--org`, o el identificador estaba mal. Borrá ese proyecto desde el panel de Supabase y repetí el comando con `--org` |
 | Supabase pide una tarjeta | Es porque la organización del cliente necesita un plan pago para ese proyecto. La carga él |

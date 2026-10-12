@@ -3,7 +3,7 @@
 //
 //   node scripts/pruebas/supabase-local/instalador-local.mjs        (o:  pnpm pruebas:instalador)
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { comparar, sacarFoto } from '../esquema/catalogo.mjs';
 import { archivosDeComponentes, entornoParaHijos, RAIZ } from './preparar.mjs';
@@ -15,9 +15,10 @@ let fallas = 0;
 const ok = (nombre, cond, detalle = '') => { if (!cond) fallas++; console.log(`${cond ? 'OK   ' : 'FALLA'} ${nombre}${!cond && detalle ? '  → ' + String(detalle).slice(0, 300) : ''}`); };
 const archivosCreados = [];
 
-function cliente(...args) {
+const cliente = (...args) => cliente2(env, ...args);
+function cliente2(entorno, ...args) {
   return new Promise((resolve) => {
-    const hijo = spawn(process.execPath, [join(RAIZ, 'scripts', 'cliente.mjs'), ...args], { cwd: RAIZ, env });
+    const hijo = spawn(process.execPath, [join(RAIZ, 'scripts', 'cliente.mjs'), ...args], { cwd: RAIZ, env: entorno });
     let salida = '';
     hijo.stdout.on('data', (d) => { salida += d; }); hijo.stderr.on('data', (d) => { salida += d; });
     hijo.on('exit', (codigo) => resolve({ codigo, salida }));
@@ -122,6 +123,30 @@ const licC = await licencia(cremac);
 ok('su licencia tiene Mantenimiento prendido (heredó el depósito) y los tres componentes', licC.modulos.mantenimiento === true && licC.componentes.length === 3, JSON.stringify(licC));
 r = await cliente('actualizar', '--ref', cremac.ref);
 ok('actualizarla otra vez no hace nada', r.codigo === 0 && /ya estaba al día/.test(r.salida));
+
+// ---- 7b) la llave de la cuenta de Supabase (el instalador habla directo con la API, sin la CLI) ----
+const sinLlave = { ...env }; delete sinLlave.SUPABASE_ACCESS_TOKEN;
+const archivoLlave = join(RAIZ, 'clientes', 'cuenta-supabase.env.local');
+if (existsSync(archivoLlave)) {
+  console.log('OMITIDA la prueba de la llave faltante: ya existe clientes/cuenta-supabase.env.local (no se toca)');
+} else {
+  r = await cliente2(sinLlave, 'modulos', '--ref', A.ref);
+  ok('sin llave: se corta con instrucciones claras (dónde sacarla y dónde pegarla)', r.codigo !== 0 && /Falta la llave de tu cuenta de Supabase/.test(r.salida) && /dashboard\/account\/tokens/.test(r.salida) && /cuenta-supabase\.env\.local/.test(r.salida), r.salida.slice(-300));
+  ok('...y deja preparado el archivo para pegarla (vacío)', existsSync(archivoLlave) && /^SUPABASE_ACCESS_TOKEN=$/m.test(readFileSync(archivoLlave, 'utf8')));
+  r = await cliente2(sinLlave, 'modulos', '--ref', A.ref);
+  ok('con el archivo vacío sigue pidiendo la llave', r.codigo !== 0 && /Falta la llave/.test(r.salida));
+  writeFileSync(archivoLlave, '# prueba\nSUPABASE_ACCESS_TOKEN=sbp_llave_de_prueba_local_00000000\n');
+  r = await cliente2(sinLlave, 'modulos', '--ref', A.ref);
+  ok('con la llave en el archivo funciona', r.codigo === 0 && /Proveedores/.test(r.salida), r.salida.slice(-200));
+  rmSync(archivoLlave, { force: true });
+}
+r = await cliente2({ ...env, SUPABASE_ACCESS_TOKEN: 'sbp_llave_vencida_000000' }, 'modulos', '--ref', A.ref);
+ok('una llave vencida o revocada se explica (y dónde sacar otra)', r.codigo !== 0 && /no sirve/.test(r.salida) && /account\/tokens/.test(r.salida), r.salida.slice(-300));
+ok('...y la llave no aparece en lo que se muestra', !r.salida.includes('sbp_llave_vencida_000000'));
+r = await cliente2({ ...env, SUPABASE_ACCESS_TOKEN: 'cualquier-cosa' }, 'modulos', '--ref', A.ref);
+ok('una llave con formato raro también se explica', r.codigo !== 0 && /account\/tokens/.test(r.salida), r.salida.slice(-300));
+r = await cliente('actualizar', '--ref', 'zzzzzzzzzzzzzzzzzzzz');
+ok('un proyecto que la llave no ve se explica sin esperar', r.codigo !== 0 && /no ve el proyecto/.test(r.salida), r.salida.slice(-300));
 
 // ---- 8) ver el estado ----
 r = await cliente('modulos', '--ref', A.ref);

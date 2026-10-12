@@ -8,7 +8,7 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
    Falta: un cliente real **Plan 1** y ampliarlo a Plan 2 (`pnpm cliente componente --agregar mantenimiento`) en Supabase de verdad, la app en el navegador contra el proyecto real, y crear un cliente desde el panel con la API real.
 2. ✅/⏳ **Panel instalado (2026-10-11)** en el servidor de los manuales (compartido, con el cerrojo; ver "Si se comparte el servidor" en [PANEL-INSTALACION.md](PANEL-INSTALACION.md)), en `https://panel.tail4b69fd.ts.net` solo por Tailscale. Falta: poner la llave real de Supabase en `/etc/panel/panel.env`, registrar la huella desde el celular, la prueba de crear un cliente con la API real, y decidir si se cierra el SSH público. (Hecho: la llave SSH de instalación ya se retiró y el panel tiene su llave de Supabase; la huella está registrada.) Pasarlo a su propio repositorio sigue pendiente.
 3. ✅/⏳ **Pase de Cremac** (producción) a la plantilla (2026-10-11): ensayado con sus datos reales en el Supabase local (`node scripts/pruebas/supabase-local/ensayo-pase.mjs <carpeta-del-respaldo>`), respaldo guardado, base real actualizada (26 migraciones, 3 funciones, 0 filas perdidas) y el sitio de Netlify apuntado al repositorio `gestion-empresarial`. Falta: probar con los 3 usuarios reales, revocar el token de lectura que se usó, y darle al panel acceso a la organización de Cremac (hoy el panel solo ve la cuenta `memoriaquiero`; Cremac está en `cantonieric1995`).
-   ⏳ **`pnpm cliente` no anda en la computadora del dueño:** la CLI de Supabase (v2.120) en una consola de Windows abre su propia interfaz y no devuelve datos legibles (en un entorno sin consola sí). Hay que reescribir `scripts/cliente.mjs` para que hable directo con la API de Supabase (como el panel, `panel/src/server/supabaseApi.ts`) y no dependa de la CLI. Mientras tanto el panel del servidor no tiene el problema.
+   ✅ **`pnpm cliente` ya no usa la CLI de Supabase (2026-10-12):** la CLI (v2.120) se colgaba en una consola de Windows. Ahora el instalador habla directo con la API de Supabase (`scripts/herramientas/supabase-api.mjs`), con la llave de la cuenta en `clientes/cuenta-supabase.env.local` o en `SUPABASE_ACCESS_TOKEN`. Probado con el simulador (`pnpm pruebas:instalador`, incluye llave faltante, vencida y proyecto que la llave no ve) y contra el Supabase real de Cremac en solo lectura. Falta: probarlo creando un cliente nuevo de verdad (necesita un lugar libre en Supabase) y que el dueño lo corra en su PC.
 4. ✅ **Librería `xlsx` (importar y exportar Excel):** la versión de npm tenía dos fallas conocidas sin arreglo en npm; se instaló la corregida (0.20.3) desde el sitio oficial del fabricante, guardada en `vendor/` con su huella (ver `vendor/LEEME.md`) y con pruebas de lectura y escritura. `pnpm audit`: sin vulnerabilidades.
 5. ✅ **Subido a GitHub** (2026-10-11/12). Ojo: el sitio de Cremac en Netlify se publica desde este repositorio, así que cada subida a `main` actualiza Cremac.
 6. ⏳ **Limpieza manual:** sacar la llave SSH `claude-droplet-20261008` del archivo `/root/.ssh/authorized_keys` del servidor, y, recién cuando el socio termine de usarlo (su copia de pantallas apunta a esa base: NO borrarlo antes), borrar a mano el proyecto `ensayo-cremac` de Supabase (tiene una copia de datos reales).
@@ -25,6 +25,16 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
 4. **Comisionistas y rótulos de envío** responden a cómo trabaja la primera empresa. Para otras puede no tener sentido
    (por eso son módulos que se apagan con `pnpm cliente modulos`).
 5. **Lo legal y comercial:** contrato, precios, soporte, protección de datos personales, y quién es dueño del código.
+6. **Posible mejora (solo si un cliente lo exige): armado del código por cliente.** Hoy hay un solo armado con todas las pantallas
+   para todos los clientes: el código de un módulo no contratado viaja al navegador (es un cascarón: la pantalla redirige y la
+   base de datos no entrega ni acepta ningún dato). Para que ni ese código llegue, se podría armar cada sitio con una variable
+   (`VITE_COMPONENTES=base,abastecimiento`) que deje afuera lo no contratado. Costo: prender un módulo después obligaría a volver
+   a publicar el sitio de ese cliente (hoy es instantáneo desde el panel) y habría más combinaciones para probar. La clave pública
+   de Supabase no se puede sacar del navegador sin un servidor intermedio; la seguridad real la dan las reglas de la base
+   (probadas contra la base real de Cremac el 2026-10-12: sin sesión no se puede escribir, ni listar archivos, ni crear cuentas).
+7. **Ajuste chico de seguridad:** la tabla `configuracion` es legible sin iniciar sesión (a propósito: el ingreso muestra nombre,
+   logo y colores). Si algún día se cargan dirección, teléfono o email de la empresa ahí, también serían visibles. Conviene dejar
+   visible a un anónimo solo nombre, logo y colores.
 
 ## Seguridad y orden
 

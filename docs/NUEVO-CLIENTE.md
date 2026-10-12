@@ -9,7 +9,7 @@ Esto describe el instalador de la computadora (`pnpm cliente`). Lo mismo se pued
 ## Antes de empezar (una sola vez en tu PC)
 
 1. Tener Node 24 y pnpm (`npm install -g pnpm`), y haber corrido `pnpm install` en este proyecto.
-2. Iniciar sesión en Supabase: `npx supabase login`.
+2. Dejar la llave de tu cuenta de Supabase (una sola vez): generarla en https://supabase.com/dashboard/account/tokens y pegarla en `clientes/cuenta-supabase.env.local` (`pnpm cliente organizaciones` deja el archivo preparado y explica cómo).
 3. Cada cliente va en **su propia organización de Supabase, con el plan Pro a su cargo**, y te invita como administrador (el plan gratis solo permite 2 proyectos
    activos por cuenta, se pausa solo y no tiene copias de seguridad restaurables).
 
@@ -25,7 +25,7 @@ descuido algo que no compró. Los módulos son: `proveedores`, `comisionistas`, 
 solo `tareas` instala únicamente la Base; `proveedores`, `comisionistas`, `envios` o `deposito` instalan Base + Abastecimiento; `mantenimiento` instala los tres.
 
 Si el cliente va a tener su propia cuenta de Supabase, se instala en su organización con `--org <identificador>`
-(se averigua con `npx supabase orgs list`, después de que él te invite a su organización).
+(se averigua con `pnpm cliente organizaciones`, después de que él te invite a su organización).
 
 El comando, sin pedir nada más:
 
