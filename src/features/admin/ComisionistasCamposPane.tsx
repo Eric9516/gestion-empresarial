@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useToast } from '../../components/ToastProvider';
 import { useCamposCustomQuery, type CampoCustom } from '../config/useCamposCustom';
 import { useSaveCamposCustom } from '../config/useConfiguracion';
@@ -22,7 +23,7 @@ export default function ComisionistasCamposPane() {
   const [campos, setCampos] = useState<CampoCustom[]>([]);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (camposCustom) setCampos(camposCustom); }, [camposCustom]);
+  useAlCambiar([camposCustom], () => { if (camposCustom) setCampos(camposCustom); });
 
   function addRow() {
     setCampos(prev => [...prev, { id: `custom_${Date.now()}`, label: '', tipo: 'text' }]);

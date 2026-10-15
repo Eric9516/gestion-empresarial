@@ -1,5 +1,6 @@
 import { clicConTeclado } from '@/lib/clicConTeclado';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useToast } from '../../components/ToastProvider';
 import BotonSubir from '../../components/BotonSubir';
 import ResponsiveList, { type Column } from '../../components/ResponsiveList';
@@ -60,7 +61,7 @@ export default function ItemsList() {
   // El botón "Stock" es puntual a la tanda de resultados actual: si cambia la
   // búsqueda o los filtros (incluido borrarlos), la columna se oculta y hay
   // que volver a pedirla explícitamente.
-  useEffect(() => { setMostrarStock(false); }, [search, familiaId, subfamiliaId]);
+  useAlCambiar([search, familiaId, subfamiliaId], () => { setMostrarStock(false); });
 
   // Ids de lo que ya está en el carrito, para saber de un vistazo si una fila dice "Retirar" o "Agregado".
   const idsEnCarrito = useMemo(() => new Set(cart.map(c => c.item_id)), [cart]);

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useToast } from '../../components/ToastProvider';
 import { useConfiguracionQuery, useSaveConfiguracion } from '../config/useConfiguracion';
 import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
@@ -50,7 +51,7 @@ export default function EmpresaPane() {
   const [zonaHoraria, setZonaHoraria] = useState(ZONA_HORARIA_POR_DEFECTO);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  useAlCambiar([config], () => {
     if (!config) return;
     setColorPrimario(esColorValido(config.color_primario) ? config.color_primario : '');
     setColorDeposito(esColorValido(config.color_deposito) ? config.color_deposito : '');
@@ -60,7 +61,7 @@ export default function EmpresaPane() {
     setTelefono(config.empresa_telefono ?? '');
     setEmail(config.empresa_email ?? '');
     setLogoBase64(config.logo_base64 ?? '');
-  }, [config]);
+  });
 
   function abrirSelectorDeLogo() {
     fileInputRef.current?.click();

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useAddFamilia, useAddSubfamilia, useFamiliasQuery, useSubfamiliasQuery } from '../familias/useFamilias';
@@ -41,7 +42,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
   const [numeroAuto, setNumeroAuto] = useState(true);
   const itemActual = completando ?? item;
 
-  useEffect(() => {
+  useAlCambiar([open, itemActual], () => {
     if (!open) { setCompletando(null); return; }
     setNumeroAuto(true);
     setInput(itemActual
@@ -51,7 +52,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
         stock_minimo: itemActual.stock_minimo, punto_pedido: itemActual.punto_pedido, detalles: itemActual.detalles ?? '',
       }
       : emptyInput);
-  }, [open, itemActual]);
+  });
 
   const familia = useMemo(() => familias?.find(f => f.id === input.familia_id) ?? null, [familias, input.familia_id]);
   const subfamiliasDeLaFamilia = useMemo(
@@ -64,10 +65,10 @@ export default function ItemForm({ open, onClose, item }: Props) {
   const { data: numeracion } = useRepuestosDeSubfamilia(itemActual ? '' : input.familia_id, itemActual ? '' : input.subfamilia_id);
   const siguiente = numeracion?.analisis.siguiente ?? null;
 
-  useEffect(() => {
+  useAlCambiar([itemActual, numeroAuto, siguiente], () => {
     if (itemActual || !numeroAuto || !siguiente) return;
     setInput(prev => (prev.numero === siguiente ? prev : { ...prev, numero: siguiente }));
-  }, [itemActual, numeroAuto, siguiente]);
+  });
 
   const codigoPreview = familia && subfamilia && input.numero
     ? `M${familia.codigo}${subfamilia.codigo}${input.numero.padStart(5, '0')}`

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAlCambiar } from '../lib/useAlCambiar';
 import Modal from './Modal';
 import { useToast } from './ToastProvider';
 import { useAuth } from '../auth/AuthContext';
@@ -17,12 +18,12 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
   const [apellido, setApellido] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  useAlCambiar([open, profile], () => {
     if (open) {
       setNombre(profile?.nombre ?? '');
       setApellido(profile?.apellido ?? '');
     }
-  }, [open, profile]);
+  });
 
   async function handleSave() {
     if (!nombre.trim()) { toast('El nombre es obligatorio', 'error'); return; }

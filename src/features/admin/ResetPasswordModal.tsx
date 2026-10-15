@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useResetPasswordUsuario } from './useUsuarios';
@@ -19,7 +20,7 @@ export default function ResetPasswordModal({ open, onClose, usuario }: Props) {
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (open) setPassword(''); }, [open]);
+  useAlCambiar([open], () => { if (open) setPassword(''); });
 
   async function handleGuardar() {
     if (!usuario) return;

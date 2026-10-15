@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useAuth } from '../../auth/AuthContext';
 import type { Item } from '../items/useItems';
 
@@ -32,14 +33,14 @@ export function RetiroCartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [cart, setCart] = useState<RetiroCartLine[]>([]);
 
-  useEffect(() => {
+  useAlCambiar([user?.id], () => {
     try {
       const raw = localStorage.getItem(cartKey(user?.id));
       setCart(raw ? (JSON.parse(raw) as RetiroCartLine[]) : []);
     } catch {
       setCart([]);
     }
-  }, [user?.id]);
+  });
 
   useEffect(() => {
     try { localStorage.setItem(cartKey(user?.id), JSON.stringify(cart)); } catch { /* noop */ }

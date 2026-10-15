@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAlCambiar } from '../../lib/useAlCambiar';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
@@ -44,7 +45,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
 
   const esUnoMismo = usuario?.id === profile?.id;
 
-  useEffect(() => {
+  useAlCambiar([open, usuario], () => {
     if (!open) return;
     setPassword('');
     setInput(usuario
@@ -58,7 +59,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
         puede_ajustar_inventario: usuario.puede_ajustar_inventario === true,
       }
       : emptyInput);
-  }, [open, usuario]);
+  });
 
   // Al subir a Administrador del Depósito se tilda "ver los retiros de todos"
   // (se puede destildar); al desactivar o bajar a Usuario, se destilda.
