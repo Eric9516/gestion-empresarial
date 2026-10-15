@@ -186,6 +186,22 @@ export default function ItemForm({ open, onClose, item }: Props) {
               )}
             </p>
           )}
+          {!itemActual && !!numeracion && numeracion.analisis.totalHuecos > 0 && familia && subfamilia && (
+            <p style={{ fontSize: 12, color: '#7a5408', background: '#fbf1de', borderRadius: 'var(--radius-sm)', padding: '6px 8px', margin: '6px 0 0', lineHeight: 1.9 }}>
+              {numeracion.analisis.totalHuecos === 1 ? 'Hay 1 número libre en el medio: ' : `Hay ${numeracion.analisis.totalHuecos} números libres en el medio: `}
+              {numeracion.analisis.huecos.map(h => (
+                <button
+                  key={h}
+                  type="button"
+                  title={`Usar el número ${h}`}
+                  onClick={() => { setNumeroAuto(false); setInput(prev => ({ ...prev, numero: h })); }}
+                  style={{ margin: '0 4px 0 0', padding: '0 7px', borderRadius: 999, border: '1px solid #c9a14a', background: input.numero === h ? '#c9a14a' : 'transparent', color: input.numero === h ? '#fff' : 'inherit', font: 'inherit', fontWeight: 700, cursor: 'pointer' }}
+                >M{familia.codigo}{subfamilia.codigo}{h}</button>
+              ))}
+              {numeracion.analisis.totalHuecos > numeracion.analisis.huecos.length && <>y {numeracion.analisis.totalHuecos - numeracion.analisis.huecos.length} más. </>}
+              Tocá uno para usarlo en vez de seguir con el último.
+            </p>
+          )}
         </div>
         <div className="form-group">
           <label htmlFor="item-form-4">Código</label>
