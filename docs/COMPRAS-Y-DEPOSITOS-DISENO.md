@@ -92,6 +92,13 @@ REQUERIMIENTO  ────────────►   ORDEN(ES) DE COMPRA  �
 - Detalle del repuesto: historial de **compras** (en qué órdenes y remitos aparece, proveedor y precio) y precio con fecha del último cambio.
 - Quedan los nombres separados: **requerimiento** es el pedido a Compras o a otro depósito; **retiro** es la salida de material.
 
+### El PDF de la orden de compra
+
+Se genera con los datos de la empresa (logo, CUIT, domicilio, tomados de la configuración) y los del proveedor, el requerimiento citado en su propio campo, las líneas con código,
+descripción, cantidad, precio y total, y subtotal, **IVA** (una alícuota por orden, 21% por defecto, editable) y total, observaciones y condiciones (texto configurable). Lleva **solo lo que
+el proveedor necesita**: quién pidió, el área y el destino son datos internos y no se imprimen. Los renglones vacíos no se imprimen, y si hay más líneas que las de una hoja sigue en la
+siguiente con el encabezado repetido.
+
 ## 6. Qué se deja afuera por ahora
 
 Impuestos (IVA, impuestos internos, percepciones, retenciones), centros de costo y obras, comparador y cotizaciones dentro del sistema, factura del proveedor,
