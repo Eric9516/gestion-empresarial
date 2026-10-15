@@ -3,9 +3,9 @@ import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { registrarErrorAccion } from '../../lib/errorLogging';
 import { useProveedoresQuery } from '../proveedores/useProveedores';
-import { enviosDelProveedor, etiquetaDeEnvio } from '../rotulos/etiquetaEnvio';
+import { enviosDelProveedor, enviosLibres, etiquetaDeEnvio } from '../rotulos/etiquetaEnvio';
 import { useDetallesDeEnviosQuery, useRotulosQuery } from '../rotulos/useRotulos';
-import { useEditarReparacion, type ReparacionConDetalle } from './useReparaciones';
+import { useEditarReparacion, useEnviosAsignadosQuery, type ReparacionConDetalle } from './useReparaciones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -30,9 +30,11 @@ export default function EditarReparacionModal({ reparacion, onClose }: Props) {
   const [ocNumero, setOcNumero] = useState('');
   const [ocFecha, setOcFecha] = useState('');
 
-  // Solo los envíos del proveedor elegido (más el que la reparación ya tenía, si es de otro), con lo que lleva cada uno.
+  // Solo los envíos del proveedor elegido (más el que la reparación ya tenía, si es de otro) que no tengan ya otra reparación, con lo que lleva cada uno.
+  const { data: asignados } = useEnviosAsignadosQuery();
   const enviosDelProv = useMemo(() => enviosDelProveedor(envios, proveedorId, reparacion?.envio_id), [envios, proveedorId, reparacion?.envio_id]);
-  const { data: detallesDeEnvios } = useDetallesDeEnviosQuery(enviosDelProv.map(e => e.id));
+  const enviosLibresDelProv = useMemo(() => enviosLibres(enviosDelProv, asignados, reparacion?.id), [enviosDelProv, asignados, reparacion?.id]);
+  const { data: detallesDeEnvios } = useDetallesDeEnviosQuery(enviosLibresDelProv.map(e => e.id));
 
   useEffect(() => {
     if (reparacion) {
@@ -100,8 +102,8 @@ export default function EditarReparacionModal({ reparacion, onClose }: Props) {
         <div className="form-group">
           <label htmlFor="editar-reparacion-modal-4">Envío / nota de despacho (opcional)</label>
           <Select id="editar-reparacion-modal-4" value={envioId} disabled={!proveedorId} onChange={e => setEnvioId(e.target.value)}>
-            <option value="">{!proveedorId ? '— Elegí primero un proveedor —' : enviosDelProv.length ? '— No tiene remito de salida —' : '— Este proveedor no tiene envíos cargados —'}</option>
-            {enviosDelProv.map(e => <option key={e.id} value={e.id}>{etiquetaDeEnvio(e, detallesDeEnvios?.get(e.id))}</option>)}
+            <option value="">{!proveedorId ? '— Elegí primero un proveedor —' : enviosLibresDelProv.length ? '— No tiene remito de salida —' : enviosDelProv.length ? '— Todas sus notas ya están asignadas a otra reparación —' : '— Este proveedor no tiene envíos cargados —'}</option>
+            {enviosLibresDelProv.map(e => <option key={e.id} value={e.id}>{etiquetaDeEnvio(e, detallesDeEnvios?.get(e.id))}</option>)}
           </Select>
         </div>
         <div className="form-group">

@@ -5,9 +5,9 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { fechaHoyISO } from '../../lib/fechaHoy';
 import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery } from '../items/useItems';
 import { useProveedoresQuery } from '../proveedores/useProveedores';
-import { enviosDelProveedor, etiquetaDeEnvio } from '../rotulos/etiquetaEnvio';
+import { enviosDelProveedor, enviosLibres, etiquetaDeEnvio } from '../rotulos/etiquetaEnvio';
 import { useDetallesDeEnviosQuery, useRotulosQuery } from '../rotulos/useRotulos';
-import { useCrearReparacion } from './useReparaciones';
+import { useCrearReparacion, useEnviosAsignadosQuery } from './useReparaciones';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -36,9 +36,11 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
   const [busqueda, setBusqueda] = useState('');
   const [lineas, setLineas] = useState<LineaNueva[]>([]);
 
-  // Solo los envíos del proveedor elegido, con lo que lleva cada uno para reconocerlos.
+  // Solo los envíos del proveedor elegido que no tengan ya otra reparación, con lo que lleva cada uno para reconocerlos.
+  const { data: asignados } = useEnviosAsignadosQuery();
   const enviosDelProv = useMemo(() => enviosDelProveedor(envios, proveedorId), [envios, proveedorId]);
-  const { data: detallesDeEnvios } = useDetallesDeEnviosQuery(enviosDelProv.map(e => e.id));
+  const enviosLibresDelProv = useMemo(() => enviosLibres(enviosDelProv, asignados), [enviosDelProv, asignados]);
+  const { data: detallesDeEnvios } = useDetallesDeEnviosQuery(enviosLibresDelProv.map(e => e.id));
 
   const resultados = useMemo(() => {
     if (!busqueda.trim() || !items) return [];
@@ -129,8 +131,8 @@ export default function ReparacionForm({ open, onClose }: { open: boolean; onClo
         <div className="form-group">
           <label htmlFor="reparacion-form-4">Envío / nota de despacho (opcional)</label>
           <Select id="reparacion-form-4" value={envioId} disabled={!proveedorId} onChange={e => setEnvioId(e.target.value)}>
-            <option value="">{!proveedorId ? '— Elegí primero un proveedor —' : enviosDelProv.length ? '— No tiene remito de salida —' : '— Este proveedor no tiene envíos cargados —'}</option>
-            {enviosDelProv.map(e => <option key={e.id} value={e.id}>{etiquetaDeEnvio(e, detallesDeEnvios?.get(e.id))}</option>)}
+            <option value="">{!proveedorId ? '— Elegí primero un proveedor —' : enviosLibresDelProv.length ? '— No tiene remito de salida —' : enviosDelProv.length ? '— Todas sus notas ya están asignadas a otra reparación —' : '— Este proveedor no tiene envíos cargados —'}</option>
+            {enviosLibresDelProv.map(e => <option key={e.id} value={e.id}>{etiquetaDeEnvio(e, detallesDeEnvios?.get(e.id))}</option>)}
           </Select>
         </div>
       </div>

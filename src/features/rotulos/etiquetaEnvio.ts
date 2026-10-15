@@ -24,6 +24,16 @@ export function etiquetaDeEnvio(envio: EnvioParaEtiqueta, detallesDeBultos: stri
   return [tipo ? `${tipo} ${numero}` : numero, fecha, descripcionDeEnvio(envio, detallesDeBultos)].filter(Boolean).join(' — ');
 }
 
+// Saca los envíos (notas de despacho) que ya tiene asignados otra reparación. `asignados` dice, por cada envío (todas sus versiones comparten el
+// mismo grupo), qué reparación lo tiene. La reparación que se está editando conserva el suyo.
+export function enviosLibres<T extends { grupo_id: string }>(envios: T[], asignados: Map<string, string> | undefined, reparacionActualId?: string): T[] {
+  if (!asignados) return envios;
+  return envios.filter(e => {
+    const reparacion = asignados.get(e.grupo_id);
+    return !reparacion || reparacion === reparacionActualId;
+  });
+}
+
 // Solo los envíos del proveedor elegido. Si la reparación ya tenía un envío de otro proveedor, se conserva en la lista
 // para que no quede la casilla en blanco sin que nadie lo haya decidido.
 export function enviosDelProveedor<T extends { id: string; proveedor_id: string }>(envios: T[] | undefined, proveedorId: string, envioActualId?: string | null): T[] {
