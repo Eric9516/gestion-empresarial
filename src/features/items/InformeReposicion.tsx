@@ -66,23 +66,27 @@ function ChipSinStock() {
   );
 }
 
-const ESTILO_ESTADO: Record<EstadoReposicion, { corto: string; color: string }> = {
-  presupuesto: { corto: 'Presupuesto', color: '#d99a1e' },
-  compras: { corto: 'Compras', color: 'var(--blue)' },
+const ESTILO_ESTADO: Record<EstadoReposicion, { color: string }> = {
+  presupuesto: { color: '#d99a1e' },
+  compras: { color: 'var(--blue)' },
 };
 
-// Una sola línea, sin relleno ni saltos: marcar un repuesto no cambia el alto
-// de su fila. El nombre completo va en el tooltip.
-// Sin estado no muestra nada (el caso normal: todavía no se pidió).
-function EstadoReposicionChip({ it }: { it: Item }) {
+// El estado de cada repuesto se cambia ahí mismo, con una lista en su fila (no hace falta tildarlo y subir a la barra de arriba). El borde de color
+// dice de un vistazo en qué está: sin color = todavía no se pidió. Está afuera de la pantalla para que no se rehaga entero con cada cambio.
+function EstadoSelect({ it, guardando, onCambiar }: { it: Item; guardando: boolean; onCambiar: (id: string, estado: EstadoReposicion | null) => void }) {
   const estado = estadoDe(it);
-  if (!estado) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
-  const { corto, color } = ESTILO_ESTADO[estado];
   return (
-    <span title={ETIQUETA_ESTADO[estado]} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', fontSize: 12, color: 'var(--text-mid)' }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      {corto}
-    </span>
+    <Select
+      aria-label={`Estado de ${it.codigo}`}
+      value={estado ?? ''}
+      disabled={guardando}
+      onChange={e => onCambiar(it.id, (e.target.value || null) as EstadoReposicion | null)}
+      style={{ minWidth: 150, padding: '4px 8px', fontSize: 12, borderLeft: `4px solid ${estado ? ESTILO_ESTADO[estado].color : 'var(--border)'}` }}
+    >
+      <option value="">Sin marcar</option>
+      <option value="presupuesto">{ETIQUETA_ESTADO.presupuesto}</option>
+      <option value="compras">{ETIQUETA_ESTADO.compras}</option>
+    </Select>
   );
 }
 
@@ -101,6 +105,8 @@ export default function InformeReposicion() {
   const [familiaId, setFamiliaId] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('');
   const marcar = useMarcarEstadoReposicion();
+  // Repuestos cuyo estado se está guardando en este momento (cada fila se bloquea sola mientras tanto; las demás siguen disponibles).
+  const [guardandoIds, setGuardandoIds] = useState<Set<string>>(() => new Set());
   const [porFamilia, setPorFamilia] = useState(false);
   const [porSubfamilia, setPorSubfamilia] = useState(false);
   const [seleccion, setSeleccion] = useState<Set<string>>(() => new Set());
@@ -150,6 +156,12 @@ export default function InformeReposicion() {
       await registrarErrorAccion('Error al marcar el estado de reposición', err);
       toast('No se pudo actualizar el estado.', 'error');
     }
+  }
+
+  async function cambiarEstadoDeUno(id: string, estado: EstadoReposicion | null) {
+    setGuardandoIds(prev => new Set(prev).add(id));
+    await marcarEstado([id], estado);
+    setGuardandoIds(prev => { const s = new Set(prev); s.delete(id); return s; });
   }
 
   async function marcarSeleccionados(estado: EstadoReposicion | null) {
@@ -240,7 +252,7 @@ export default function InformeReposicion() {
     { header: 'Pto. pedido', render: it => <span>{it.punto_pedido}</span> },
     { header: 'Stock mín.', render: it => <span>{it.stock_minimo}</span> },
     { header: 'A comprar', render: it => <strong>{cantidadAComprar(it)}</strong> },
-    { header: 'Estado', render: it => <EstadoReposicionChip it={it} /> },
+    { header: 'Estado', render: it => <EstadoSelect it={it} guardando={guardandoIds.has(it.id)} onCambiar={(id, e) => void cambiarEstadoDeUno(id, e)} /> },
   ];
 
   function renderCard(it: Item) {
@@ -259,7 +271,7 @@ export default function InformeReposicion() {
         <div className="prov-card-body">
           <div className="prov-card-row">Stock: <strong>{stockDe(it)}</strong> · Pto. pedido: {it.punto_pedido} · Mínimo: {it.stock_minimo}</div>
           <div className="prov-card-row">A comprar: <strong>{cantidadAComprar(it)}</strong></div>
-          {estadoDe(it) && <div className="prov-card-row"><EstadoReposicionChip it={it} /></div>}
+          <div className="prov-card-row"><EstadoSelect it={it} guardando={guardandoIds.has(it.id)} onCambiar={(id, e) => void cambiarEstadoDeUno(id, e)} /></div>
         </div>
       </div>
     );
