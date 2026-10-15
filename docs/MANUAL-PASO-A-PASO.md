@@ -447,8 +447,8 @@ componentes de los módulos que contrata, y lo que no contrata **no existe** en 
 | `proveedores` | Directorio de proveedores, con sus contactos y rubros | Abastecimiento | — |
 | `comisionistas` | Directorio de comisionistas, con campos personalizables | Abastecimiento | — |
 | `envios` | Rótulos de envío en PDF, con el diseño de la empresa | Abastecimiento | `proveedores` |
-| `deposito` | Repuestos, stock, retiros, ajustes de inventario, familias, sectores, informe de reposición | Abastecimiento | — |
-| `mantenimiento` | Equipos y reparaciones | Mantenimiento | `deposito` |
+| `deposito` | Repuestos, stock, retiros, ajustes de inventario, familias, sectores, informe de reposición y reparaciones (lo que se manda a reparar afuera) | Abastecimiento | — |
+| `mantenimiento` | Equipos (más adelante: manuales y órdenes de trabajo) | Mantenimiento | `deposito` |
 | `tareas` | Tareas con semáforo para cada persona | Base | — |
 
 **Qué se instala según lo que contrata:** solo `tareas` → solo la **Base**; cualquiera de `proveedores`, `comisionistas`, `envios` o `deposito` → **Base + Abastecimiento**;
@@ -458,7 +458,7 @@ componentes de los módulos que contrata, y lo que no contrata **no existe** en 
 
 - **Envíos necesita Proveedores:** cada envío es de un proveedor. El comando **no te deja** activar uno sin el otro.
 - **Mantenimiento necesita Depósito** (usa sus repuestos).
-- **Reparaciones** (de Mantenimiento) necesitan además `proveedores`, y los **proveedores por repuesto** (del Depósito) también. Si el cliente no tiene
+- **Reparaciones** (del Depósito) necesitan además `proveedores`, y los **proveedores por repuesto** (también del Depósito) también. Si el cliente no tiene
   Proveedores, esas dos funciones **no aparecen**, y el resto funciona normal.
 - **Elegir un comisionista al armar un envío** necesita `envios` y `comisionistas`.
 - Los demás funcionan solos.
@@ -795,8 +795,8 @@ Cremac se trata como instalación **completa** (Base + Abastecimiento + Mantenim
 licencia por componentes: la licencia anota los componentes instalados, aparece el módulo **`mantenimiento`** (prendido, porque Cremac ya tenía el depósito prendido: no pierde nada)
 y el dueño gana la pantalla *Configuración → General → Módulos*.
 
-**El orden importa:** primero esta actualización de la base, **después** publicar la aplicación. Si se publicara la app antes, la pestaña Reparaciones quedaría oculta hasta que la
-licencia tenga el módulo `mantenimiento`.
+**El orden importa:** primero esta actualización de la base, **después** publicar la aplicación. Las reparaciones pasaron a ser del Depósito (ya no dependen del módulo Mantenimiento) y esa
+corrección está en la base de datos.
 
 **Después:**
 

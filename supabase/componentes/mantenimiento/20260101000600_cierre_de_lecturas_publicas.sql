@@ -2,6 +2,6 @@
 -- Se aplica después de la parte de los componentes anteriores (base → abastecimiento → mantenimiento).
 
 -- Sin sesión no hace falta ningún permiso de tabla, salvo leer la configuración.
-revoke all on table public."equipo_items", public."equipos", public."reparacion_entregas", public."reparacion_items", public."reparaciones" from anon;
+revoke all on table public."equipo_items", public."equipos" from anon;
 
 revoke all on all sequences in schema public from anon;

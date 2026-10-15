@@ -8,7 +8,7 @@ const TABLAS = {
   comisionistas: ['comisionistas'], contactos: ['proveedores'], proveedores: ['proveedores'],
   equipo_items: ['mantenimiento', 'deposito'], equipos: ['mantenimiento', 'deposito'], familias: ['deposito'], items: ['deposito'], planilla_familias: ['deposito'],
   retiro_items: ['deposito'], retiros: ['deposito'], sectores: ['deposito'], subfamilias: ['deposito'],
-  item_proveedores: ['deposito', 'proveedores'], reparacion_entregas: ['mantenimiento', 'deposito', 'proveedores'], reparacion_items: ['mantenimiento', 'deposito', 'proveedores'], reparaciones: ['mantenimiento', 'deposito', 'proveedores'],
+  item_proveedores: ['deposito', 'proveedores'], reparacion_entregas: ['deposito', 'proveedores'], reparacion_items: ['deposito', 'proveedores'], reparaciones: ['deposito', 'proveedores'],
   rotulo_disenos: ['envios'], rotulos_bultos: ['envios'], rotulos_fotos: ['envios'], rotulos_generados: ['envios'],
   task_history: ['tareas'], tasks: ['tareas'],
   ajustes_inventario: ['deposito'], ajuste_items: ['deposito'],
@@ -20,9 +20,9 @@ const FUNCIONES = {
   cancel_task: [['tareas'], { p_task_id: randomUUID() }],
   reprogram_task: [['tareas'], { p_task_id: randomUUID(), p_new_assigned_date: hoy() }],
   process_pending_tasks_for_user: [['tareas'], null],
-  crear_reparacion: [['mantenimiento', 'deposito', 'proveedores'], { p_proveedor_id: randomUUID(), p_motivo: 'x', p_fecha_salida: hoy(), p_envio_id: null, p_items: [] }],
-  eliminar_reparacion: [['mantenimiento', 'deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
-  restaurar_reparacion: [['mantenimiento', 'deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
+  crear_reparacion: [['deposito', 'proveedores'], { p_proveedor_id: randomUUID(), p_motivo: 'x', p_fecha_salida: hoy(), p_envio_id: null, p_items: [] }],
+  eliminar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
+  restaurar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
 };
 FUNCIONES.crear_ajuste_inventario = [['deposito'], { p_motivo: '', p_lineas: [] }];
 FUNCIONES.anular_ajuste_inventario = [['deposito'], { p_ajuste_id: randomUUID(), p_motivo: 'x' }];

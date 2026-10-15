@@ -51,7 +51,7 @@ escribe una migración y qué prueba qué) está en [COMPONENTES.md](COMPONENTES
 - **Tres tipos de relación entre módulos:**
   1. *Dependencia obligatoria:* `envios` necesita `proveedores`; `mantenimiento` necesita `deposito`. Si falta, no se puede activar.
   2. *Integración entre dos módulos:* los proveedores por repuesto existen solo si están `deposito` y `proveedores`; las reparaciones, solo si están
-     `mantenimiento`, `deposito` y `proveedores`; elegir un comisionista al armar un envío, solo si están `envios` y `comisionistas`.
+     `deposito` y `proveedores`; elegir un comisionista al armar un envío, solo si están `envios` y `comisionistas`.
   3. *Independientes:* `comisionistas`, `deposito` (su núcleo) y `tareas`.
   Las tablas de un componente instalado siempre existen; lo que cambia es el acceso. Por eso un módulo se puede apagar y volver a prender sin perder datos.
 - **Un módulo nuevo nace apagado** (solo está activo lo que la licencia dice de forma expresa).

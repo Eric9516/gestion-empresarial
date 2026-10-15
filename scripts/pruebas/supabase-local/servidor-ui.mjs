@@ -48,11 +48,10 @@ for (const [clave, c] of Object.entries(CLIENTES)) {
     const ret = (await sv('POST', '/rest/v1/retiros', { usuario_id: dueno, sector_id: sector, observacion_general: 'Retiro de ejemplo' }))[0].id;
     await sv('POST', '/rest/v1/retiro_items', { retiro_id: ret, item_id: item, cantidad: 2 });
     await sv('POST', '/rest/v1/rotulos_generados', { proveedor_id: prov, grupo_id: randomUUID(), numero_documento: 'R-0001' });
-    if (c.comps.includes('mantenimiento')) {
-      await sv('POST', '/rest/v1/equipos', { sector: 'Planta de ejemplo', nombre: 'Prensa de ejemplo' });
-      const rep = (await sv('POST', '/rest/v1/reparaciones', { proveedor_id: prov, motivo: 'Reparación de ejemplo', fecha_salida: hoy, responsable_id: dueno }))[0].id;
-      await sv('POST', '/rest/v1/reparacion_items', { reparacion_id: rep, item_id: item, cantidad: 1, descuenta_stock: false });
-    }
+    // Las reparaciones son del Depósito (Abastecimiento): las tiene todo cliente con depósito y proveedores.
+    const rep = (await sv('POST', '/rest/v1/reparaciones', { proveedor_id: prov, motivo: 'Reparación de ejemplo', fecha_salida: hoy, responsable_id: dueno }))[0].id;
+    await sv('POST', '/rest/v1/reparacion_items', { reparacion_id: rep, item_id: item, cantidad: 1, descuenta_stock: false });
+    if (c.comps.includes('mantenimiento')) await sv('POST', '/rest/v1/equipos', { sector: 'Planta de ejemplo', nombre: 'Prensa de ejemplo' });
   }
   await sv('POST', '/rest/v1/tasks', { user_id: dueno, title: 'Tarea de ejemplo', status: 'pending', traffic_level: 'green', start_date: hoy, assigned_date: hoy, pending_days: 0, carry_count: 0, is_stagnant: false });
   writeFileSync(join(RAIZ, `.env.ui-${clave}`), `VITE_SUPABASE_URL=${url}\nVITE_SUPABASE_ANON_KEY=${p.claveAnon}\n`);

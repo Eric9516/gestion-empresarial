@@ -1,6 +1,6 @@
 # Gestión empresarial
 
-Plantilla de aplicación interna para empresas, por módulos: proveedores, comisionistas, envíos con rótulos, depósito (repuestos, stock, retiros, ajustes, reposición), mantenimiento (equipos y reparaciones) y tareas. Cada cliente recibe solo los módulos que contrata. Los datos propios de cada empresa (nombre, logo, dirección, diseño de rótulos) se cargan desde **Configuración**, no están en el código.
+Plantilla de aplicación interna para empresas, por módulos: proveedores, comisionistas, envíos con rótulos, depósito (repuestos, stock, retiros, ajustes, reposición y reparaciones: lo que se manda a reparar afuera), mantenimiento (equipos) y tareas. Cada cliente recibe solo los módulos que contrata. Los datos propios de cada empresa (nombre, logo, dirección, diseño de rótulos) se cargan desde **Configuración**, no están en el código.
 
 > **Estado:** plantilla en construcción, derivada de una instalación real. La base de datos se arma por componentes y se instala
 > sin datos con un solo comando (ver [docs/NUEVO-CLIENTE.md](docs/NUEVO-CLIENTE.md)), o desde el panel de administración. Lo que falta para ofrecerla a

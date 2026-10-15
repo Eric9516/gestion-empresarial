@@ -184,19 +184,28 @@ if (porComponentes) {
   ok('no se prende Envíos si Proveedores está apagado', /Primero activá "proveedores"/.test((await apagar(A, 'envios', false)).error ?? ''));
   ok('se prende Proveedores y después Envíos', !(await apagar(A, 'proveedores', false)).error && !(await apagar(A, 'envios', false)).error);
 
-  // Mantenimiento como módulo propio
+  // Mantenimiento como módulo propio (los equipos). Las reparaciones NO son de Mantenimiento: son del Depósito (necesitan Depósito y Proveedores).
   const prov = (await q(`insert into public.proveedores (nombre) values ('ProvM') returning id`))[0].id;
-  const rep = await como('authenticated', A, `select public.crear_reparacion('${prov}', 'prueba', current_date, null, '[{"item_id":"${item}","cantidad":1}]'::jsonb) as id`);
-  ok('con Mantenimiento prendido se crea una reparación', Array.isArray(rep) && !!rep[0]?.id, JSON.stringify(rep).slice(0, 140));
+  const crearRep = (motivo) => como('authenticated', A, `select public.crear_reparacion('${prov}', '${motivo}', current_date, null, '[{"item_id":"${item}","cantidad":1}]'::jsonb) as id`);
+  const rep = await crearRep('prueba');
+  ok('con el Depósito y Proveedores prendidos se crea una reparación', Array.isArray(rep) && !!rep[0]?.id, JSON.stringify(rep).slice(0, 140));
   ok('el dueño apaga Mantenimiento', !(await apagar(A, 'mantenimiento')).error);
-  ok('apagado: las reparaciones no se pueden crear', /no está activo/.test((await como('authenticated', A, `select public.crear_reparacion('${prov}', 'otra', current_date, null, '[{"item_id":"${item}","cantidad":1}]'::jsonb)`)).error ?? ''));
-  ok('apagado: la base bloquea la lectura de reparaciones', filas(await como('authenticated', A, 'select * from public.reparaciones')) === 0);
+  const otra = await crearRep('otra');
+  ok('con Mantenimiento apagado las reparaciones siguen funcionando (no son de Mantenimiento)', Array.isArray(otra) && !!otra[0]?.id, JSON.stringify(otra).slice(0, 140));
+  ok('con Mantenimiento apagado se siguen leyendo las reparaciones', filas(await como('authenticated', A, 'select * from public.reparaciones')) >= 2);
   ok('apagado: la base bloquea los equipos', filas(await como('authenticated', A, 'select * from public.equipos')) === 0);
   ok('apagado: el Depósito sigue funcionando', filas(await como('authenticated', A, 'select * from public.items')) >= 1);
   await apagar(A, 'mantenimiento', false);
   await lic('{"proveedores":true,"comisionistas":true,"envios":true,"deposito":true,"tareas":true,"mantenimiento":false}');
-  ok('si la licencia no incluye Mantenimiento: no hay reparaciones (aunque el depósito esté prendido)', /no está activo/.test((await como('authenticated', A, `select public.crear_reparacion('${prov}', 'x', current_date, null, '[]'::jsonb)`)).error ?? '') && filas(await como('authenticated', A, 'select * from public.reparaciones')) === 0);
-  ok('...y el dueño no puede prenderlo', /no está incluido/.test((await apagar(A, 'mantenimiento', false)).error ?? ''));
+  const sinMant = await crearRep('sin-mantenimiento');
+  ok('si la licencia no incluye Mantenimiento, las reparaciones siguen (el depósito y los proveedores están prendidos)', Array.isArray(sinMant) && !!sinMant[0]?.id && filas(await como('authenticated', A, 'select * from public.reparaciones')) >= 3, JSON.stringify(sinMant).slice(0, 140));
+  ok('...y los equipos no existen para él (bloqueados)', filas(await como('authenticated', A, 'select * from public.equipos')) === 0);
+  ok('...y el dueño no puede prender Mantenimiento', /no está incluido/.test((await apagar(A, 'mantenimiento', false)).error ?? ''));
+  // las reparaciones sí dependen del Depósito y de Proveedores
+  await lic('{"proveedores":false,"comisionistas":true,"envios":false,"deposito":true,"tareas":true,"mantenimiento":false}');
+  ok('sin Proveedores en la licencia no se pueden crear reparaciones ni leerlas', /no está activo/.test((await crearRep('sin-prov')).error ?? '') && filas(await como('authenticated', A, 'select * from public.reparaciones')) === 0);
+  await lic('{"proveedores":true,"comisionistas":true,"envios":true,"deposito":false,"tareas":true,"mantenimiento":false}');
+  ok('sin Depósito en la licencia no se pueden crear reparaciones ni leerlas', /no está activo/.test((await crearRep('sin-dep')).error ?? '') && filas(await como('authenticated', A, 'select * from public.reparaciones')) === 0);
 
   // la licencia sigue siendo solo del vendedor
   await lic(TODOS6);

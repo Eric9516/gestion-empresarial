@@ -69,7 +69,7 @@ r = await cliente('componente', '--ref', A.ref, '--agregar', 'abastecimiento');
 ok('sin --confirmo solo simula (no instala nada)', r.codigo === 0 && /Simulación/.test(r.salida) && !(await tablas(A)).includes('proveedores'), r.salida.slice(-150));
 r = await cliente('componente', '--ref', A.ref, '--agregar', 'abastecimiento', '--confirmo');
 ok('instalar Abastecimiento', r.codigo === 0 && /Componente instalado/.test(r.salida), r.salida.slice(-250));
-ok('aparecen las tablas de Abastecimiento y siguen las de la Base', (await tablas(A)).includes('proveedores') && (await tablas(A)).includes('items') && (await tablas(A)).includes('tasks') && !(await tablas(A)).includes('equipos'));
+ok('aparecen las tablas de Abastecimiento y siguen las de la Base', (await tablas(A)).includes('proveedores') && (await tablas(A)).includes('items') && (await tablas(A)).includes('tasks') && (await tablas(A)).includes('reparaciones') && !(await tablas(A)).includes('equipos'));
 lic = await licencia(A);
 ok('la licencia anota Abastecimiento y los módulos nuevos siguen APAGADOS', JSON.stringify(lic.componentes) === '["abastecimiento","base"]' && lic.modulos.proveedores === false && lic.modulos.deposito === false, JSON.stringify(lic));
 r = await cliente('componente', '--ref', A.ref, '--agregar', 'abastecimiento', '--confirmo');
@@ -83,7 +83,7 @@ ok('la licencia quedó con Tareas, Proveedores y Depósito', lic.modulos.tareas 
 await q(A, `insert into public.proveedores (nombre) values ('Proveedor que ya estaba')`);
 r = await cliente('componente', '--ref', A.ref, '--agregar', 'mantenimiento', '--confirmo');
 ok('instalar Mantenimiento', r.codigo === 0, r.salida.slice(-250));
-ok('aparecen sus tablas y los datos que había siguen', (await tablas(A)).includes('reparaciones') && (await q(A, 'select count(*)::int as n from public.proveedores'))[0].n === 1);
+ok('aparecen sus tablas (equipos) y los datos que había siguen', (await tablas(A)).includes('equipos') && (await tablas(A)).includes('reparaciones') && (await q(A, 'select count(*)::int as n from public.proveedores'))[0].n === 1);
 lic = await licencia(A);
 ok('la licencia anota los tres componentes', JSON.stringify(lic.componentes) === '["abastecimiento","base","mantenimiento"]', JSON.stringify(lic.componentes));
 r = await cliente('modulos', '--ref', A.ref, '--activar', 'mantenimiento', '--confirmo');

@@ -11,8 +11,8 @@ La base de datos se arma por **componentes**. Cada cliente recibe solo los que c
 | Componente | Tablas | Carpetas de archivos |
 |---|---|---|
 | **Base** (siempre) | `usuarios_perfil`, `configuracion`, `licencia`, `preferencias_modulos`, `audit_log`, `error_logs`, `sugerencias`, `tasks`, `task_history` | — |
-| **Abastecimiento** | `proveedores`, `contactos`, `comisionistas` · `rotulos_generados`, `rotulos_bultos`, `rotulos_fotos`, `rotulo_disenos` · `items`, `familias`, `subfamilias`, `planilla_familias`, `item_proveedores` · `retiros`, `retiro_items`, `ajustes_inventario`, `ajuste_items`, `sectores` | `items`, `rotulos` |
-| **Mantenimiento** | `equipos`, `equipo_items`, `reparaciones`, `reparacion_items`, `reparacion_entregas` | `documentos` |
+| **Abastecimiento** | `proveedores`, `contactos`, `comisionistas` · `rotulos_generados`, `rotulos_bultos`, `rotulos_fotos`, `rotulo_disenos` · `items`, `familias`, `subfamilias`, `planilla_familias`, `item_proveedores` · `retiros`, `retiro_items`, `ajustes_inventario`, `ajuste_items`, `sectores` · `reparaciones`, `reparacion_items`, `reparacion_entregas` | `items`, `rotulos` |
+| **Mantenimiento** | `equipos`, `equipo_items` | `documentos` |
 
 **Regla de dependencias** (siempre en una sola dirección): la Base no depende de nada; Abastecimiento depende de la Base; Mantenimiento
 depende de la Base y de Abastecimiento. La prueba de esquema la vigila (ninguna clave entre tablas puede ir al revés). Los permisos por
@@ -32,8 +32,8 @@ Un **módulo** es lo que el cliente ve y contrata; un **componente** es de dónd
 | `proveedores` | Abastecimiento | — |
 | `comisionistas` | Abastecimiento | — |
 | `envios` | Abastecimiento | `proveedores` |
-| `deposito` | Abastecimiento | — |
-| `mantenimiento` | Mantenimiento | `deposito` (las reparaciones, además, `proveedores`) |
+| `deposito` | Abastecimiento | — (las reparaciones y los proveedores por repuesto, además, `proveedores`) |
+| `mantenimiento` | Mantenimiento | `deposito` |
 
 Los componentes que se instalan salen de los módulos contratados: solo Tareas → Base; Proveedores, Comisionistas, Envíos o Depósito → Base +
 Abastecimiento; Mantenimiento → los tres.
@@ -105,5 +105,11 @@ Las migraciones nuevas ya no pasan por ahí.
 
 ## 8. Pase de Cremac
 
-Aplicar a Cremac las migraciones nuevas (`...1100_*` de cada componente) **antes** de publicar esta versión de la app: si no, la pestaña Reparaciones queda
-oculta hasta que la licencia tenga la clave `mantenimiento`. Pasos exactos en el capítulo 10 del [manual](MANUAL-PASO-A-PASO.md).
+Aplicar a Cremac las migraciones nuevas (`...1100_*` de cada componente) **antes** de publicar esta versión de la app. Pasos exactos en el capítulo 10 del [manual](MANUAL-PASO-A-PASO.md).
+
+### Las reparaciones son del Depósito (2026-10-14)
+
+Una reparación es lo que se manda a reparar afuera: un proveedor (el taller), repuestos del depósito y un envío. No usa los equipos. Por eso sus tablas (`reparaciones`, `reparacion_items`,
+`reparacion_entregas`) y sus funciones son del componente **Abastecimiento**, y las bloquea la licencia de `deposito` y `proveedores`, no la de `mantenimiento`. Mantenimiento queda para los equipos y para lo
+que se agregue (manuales, órdenes de trabajo). Cómo se hizo: se movieron en `scripts/pruebas/esquema/componentes.mjs` (y la función `fn_audit_log_reparaciones` en `scripts/herramientas/clasificar.mjs`) y se regeneraron las partes
+de cada componente con `scripts/herramientas/repartir.mjs`; `abastecimiento/20260101001300_reparaciones_en_el_deposito.sql` deja las bases que ya existían (Cremac) como una instalación nueva (es idempotente).

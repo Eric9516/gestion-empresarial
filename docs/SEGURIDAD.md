@@ -77,7 +77,7 @@ Un módulo funciona solo si se cumplen **dos llaves** (detalle en [COMPONENTES.m
 
 Un módulo apagado, por cualquiera de las dos llaves, queda **bloqueado para todos, incluido el dueño**, con una regla de seguridad por tabla, una por carpeta de
 archivos y una guarda en las funciones del servidor que se saltan las reglas de tabla. Los módulos que dependen de otros se bloquean si falta alguno (por ejemplo,
-las reparaciones necesitan Mantenimiento, Depósito y Proveedores).
+las reparaciones necesitan Depósito y Proveedores; los equipos, Mantenimiento y Depósito).
 
 **Lo no contratado no existe:** además de la licencia, cada cliente recibe solo los componentes de los módulos que contrata, así que las tablas de lo no contratado
 no están en su base. Quien tiene las claves de administración de su propio proyecto de Supabase podría editar la tabla `licencia`, pero no puede encender lo que no está instalado.

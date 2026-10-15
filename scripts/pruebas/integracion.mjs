@@ -280,7 +280,7 @@ const NECESITA = {
   rotulos_generados: ['envios'], rotulos_bultos: ['envios'], rotulos_fotos: ['envios'], rotulo_disenos: ['envios'],
   items: ['deposito'], familias: ['deposito'], subfamilias: ['deposito'], planilla_familias: ['deposito'], retiros: ['deposito'],
   retiro_items: ['deposito'], sectores: ['deposito'], equipos: ['mantenimiento', 'deposito'], equipo_items: ['mantenimiento', 'deposito'],
-  reparaciones: ['mantenimiento', 'deposito', 'proveedores'], reparacion_items: ['mantenimiento', 'deposito', 'proveedores'], item_proveedores: ['deposito', 'proveedores'],
+  reparaciones: ['deposito', 'proveedores'], reparacion_items: ['deposito', 'proveedores'], item_proveedores: ['deposito', 'proveedores'],
   tasks: ['tareas'],
 };
 const verTodas = async token => {
@@ -313,7 +313,7 @@ for (const apagado of ['proveedores', 'comisionistas', 'envios', 'deposito', 'ma
     r = await http('/rest/v1/rpc/create_task', { metodo: 'POST', token: dueno.token, cuerpo: { p_title: 'No debería' } });
     ok('   …crear una tarea se rechaza', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
   }
-  if (apagado === 'deposito' || apagado === 'proveedores' || apagado === 'mantenimiento') {
+  if (apagado === 'deposito' || apagado === 'proveedores') {
     r = await http('/rest/v1/rpc/crear_reparacion', { metodo: 'POST', token: dueno.token, cuerpo: { p_proveedor_id: prov.id, p_motivo: 'x', p_fecha_salida: '2026-01-01', p_envio_id: null, p_items: [] } });
     ok('   …crear una reparación se rechaza por el módulo (no por otra causa)', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
   }
@@ -401,11 +401,11 @@ ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length ==
   await rpcDueno(dueno.token, 'proveedores', false);
   await rpcDueno(dueno.token, 'envios', false);
 
-  // Mantenimiento como módulo propio
+  // Mantenimiento como módulo propio (los equipos). Las reparaciones son del Depósito: no dependen de él.
   r = await rpcDueno(dueno.token, 'mantenimiento', true);
   ok('El dueño apaga Mantenimiento', r.estado < 300, msg(r));
   r = await http('/rest/v1/rpc/crear_reparacion', { metodo: 'POST', token: dueno.token, cuerpo: { p_proveedor_id: prov.id, p_motivo: 'x', p_fecha_salida: '2026-01-01', p_envio_id: null, p_items: [] } });
-  ok('...no se crean reparaciones', r.estado >= 400 && /no est[aá] activo/i.test(msg(r)), msg(r));
+  ok('...las reparaciones siguen disponibles (no son de Mantenimiento: esta llamada solo falla porque no lleva artículos)', r.estado >= 400 && !/no est[aá] activo/i.test(msg(r)) && /art[ií]culo/i.test(msg(r)), msg(r));
   ok('...pero el Depósito sigue funcionando', (await http('/rest/v1/items?select=*&limit=1', { token: dueno.token })).datos?.length === 1);
   await rpcDueno(dueno.token, 'mantenimiento', false);
 

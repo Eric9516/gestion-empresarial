@@ -13,6 +13,6 @@ alter policy contactos_select on public.contactos to authenticated;
 alter policy planilla_familias_select on public.planilla_familias to authenticated;
 
 -- Sin sesión no hace falta ningún permiso de tabla, salvo leer la configuración.
-revoke all on table public."comisionistas", public."contactos", public."familias", public."item_proveedores", public."items", public."planilla_familias", public."proveedores", public."retiro_items", public."retiros", public."rotulo_disenos", public."rotulos_bultos", public."rotulos_fotos", public."rotulos_generados", public."sectores", public."subfamilias" from anon;
+revoke all on table public."comisionistas", public."contactos", public."familias", public."item_proveedores", public."items", public."planilla_familias", public."proveedores", public."reparacion_entregas", public."reparacion_items", public."reparaciones", public."retiro_items", public."retiros", public."rotulo_disenos", public."rotulos_bultos", public."rotulos_fotos", public."rotulos_generados", public."sectores", public."subfamilias" from anon;
 
 revoke all on all sequences in schema public from anon;

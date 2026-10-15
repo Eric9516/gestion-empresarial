@@ -2,7 +2,7 @@
 // Un mismo usuario de prueba cambia de perfil entre combinaciones (los permisos se leen del perfil, no del token).
 import { terminar, q, http, sv, msg, hecho, crearUsuario, entrar, hoy, randomUUID, SERVICIO, SIN_MANT, limpiarRestos } from './ayudas-local.mjs';
 // Un cliente Plan 1 (sin el componente Mantenimiento) no tiene estas tablas: las comprobaciones que las tocan tienen que dar "no" (el módulo no existe).
-const TABLAS_MANT = new Set(['equipos', 'equipo_items', 'reparaciones', 'reparacion_items', 'reparacion_entregas']);
+const TABLAS_MANT = new Set(['equipos', 'equipo_items']);
 
 const TRABAJADORES = Number(process.env.TRABAJADORES ?? 8);
 const SOLO = process.env.SOLO ? process.env.SOLO.split(',') : null; // filtrar por etiqueta
@@ -82,8 +82,7 @@ for (let w = 0; w < TRABAJADORES; w++) {
   f.tarea = (await sv('POST', '/rest/v1/tasks', { user_id: ids[w], title: 'ZZ-m tarea propia', status: 'pending', traffic_level: 'green', start_date: hoy(), assigned_date: hoy(), pending_days: 0, carry_count: 0, is_stagnant: false })).d[0].id;
   rastrear('tasks', f.tarea);
   // una reparación con una línea y una entrega, para leer y para eliminar/restaurar
-  if (SIN_MANT) { f.rep = randomUUID(); f.repItem = randomUUID(); f.repEntrega = randomUUID(); } // un cliente sin Mantenimiento no tiene esas tablas
-  else {
+  { // las reparaciones son del Depósito: existen aunque el cliente no tenga Mantenimiento
     const rr = await sv('POST', '/rest/v1/reparaciones', { proveedor_id: f.prov, motivo: 'ZZ-m', fecha_salida: hoy(), responsable_id: otroId });
     f.rep = rastrear('reparaciones', rr.d[0].id);
     const ri = await sv('POST', '/rest/v1/reparacion_items', { reparacion_id: f.rep, item_id: f.item, cantidad: 2, descuenta_stock: true });
@@ -262,7 +261,7 @@ const modsDe = (area, e) => {
   if (area === 'lectura') {
     if (r(/^leer (equipos|equipo_items)$/)) return ['mantenimiento', 'deposito'];
     if (r(/^leer (item_proveedores)$/)) return ['deposito', 'proveedores'];
-    if (r(/^leer (reparaciones|reparacion_items|reparacion_entregas)$/)) return ['mantenimiento', 'deposito', 'proveedores'];
+    if (r(/^leer (reparaciones|reparacion_items|reparacion_entregas)$/)) return ['deposito', 'proveedores'];
     if (r(/^leer (familias|subfamilias|sectores|items|planilla_familias)$/) || r(/retiros/)) return ['deposito'];
     if (r(/^leer (contactos|proveedores)$/)) return ['proveedores'];
     if (r(/^leer comisionistas$/)) return ['comisionistas'];
@@ -281,7 +280,7 @@ const modsDe = (area, e) => {
     if (r(/equipo/)) return ['mantenimiento', 'deposito'];
     return ['deposito'];
   }
-  if (area === 'reparaciones') return ['mantenimiento', 'deposito', 'proveedores'];
+  if (area === 'reparaciones') return ['deposito', 'proveedores'];
   if (area === 'retiros') return ['deposito'];
   if (area === 'tareas') return ['tareas'];
   if (area === 'archivos') return r(/foto de repuesto/) ? ['deposito'] : r(/manual/) ? ['mantenimiento', 'deposito'] : ['envios'];

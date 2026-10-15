@@ -13,6 +13,12 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
 5. ✅ **Subido a GitHub** (2026-10-11/12). Ojo: el sitio de Cremac en Netlify se publica desde este repositorio, así que cada subida a `main` actualiza Cremac.
 6. ⏳ **Limpieza manual:** sacar la llave SSH `claude-droplet-20261008` del archivo `/root/.ssh/authorized_keys` del servidor, y, recién cuando el socio termine de usarlo (su copia de pantallas apunta a esa base: NO borrarlo antes), borrar a mano el proyecto `ensayo-cremac` de Supabase (tiene una copia de datos reales).
 
+7. ✅/⏳ **Reparaciones movidas al Depósito (2026-10-14).** Eran del módulo "mantenimiento" por una mala clasificación: una reparación es lo que se manda a reparar afuera (proveedor, repuestos del depósito y envío), no usa los equipos.
+   Ahora son del componente Abastecimiento y las bloquea la licencia de `deposito` y `proveedores`; Mantenimiento queda para los equipos y lo que diseñe el socio. Hecho y probado en local (esquema desde cero, equivalencia con la cadena original,
+   Cremac hoy + la migración nueva = instalación nueva, panel, matrices). Falta, en este orden: (a) aplicar a Cremac la migración nueva con `pnpm cliente actualizar --ref <Cremac>` **antes** de subir el código; (b) subir el código (republica Cremac);
+   (c) **volver a instalar el panel en el servidor** (cambió el archivo generado con las migraciones: hasta entonces el panel instala la versión anterior); (d) volver a exportar la copia de pantallas del socio (cambiaron sus textos y reglas);
+   (e) regenerar el PDF del manual del dueño (`docs/manual-del-dueno/`), que todavía dice que Reparaciones es de Mantenimiento.
+
 ## Para poder ofrecerlo a otra empresa
 
 1. **Formatos de código propios de la primera instalación.** Las familias y subfamilias exigen **exactamente 2 letras

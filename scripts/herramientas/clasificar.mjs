@@ -19,7 +19,7 @@ export const FUNCIONES = {
   rotulo_disenos_limpiar_predeterminado: 'abastecimiento',
   ajustes_proteger: 'abastecimiento',
   fn_audit_log_ajustes: 'abastecimiento',
-  fn_audit_log_reparaciones: 'mantenimiento',
+  fn_audit_log_reparaciones: 'abastecimiento',
 };
 
 // Sentencias que, por el nombre que mencionan, tienen que ir con otro componente para respetar el orden (la clave se agregó en Abastecimiento y se quita en una versión posterior).

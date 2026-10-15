@@ -20,9 +20,9 @@ Lo marcado con ❓ son decisiones que faltan.
 | Componente | Qué incluye |
 |---|---|
 | **Base** (siempre) | usuarios, permisos, configuración, historial, **Tareas** |
-| **Abastecimiento** | proveedores y contactos, comisionistas, envíos con rótulos, **todos los depósitos** (repuestos, insumos, stock, retiros, ajustes), requerimientos |
+| **Abastecimiento** | proveedores y contactos, comisionistas, envíos con rótulos, **todos los depósitos** (repuestos, insumos, stock, retiros, ajustes), reparaciones (lo que se manda a reparar afuera), requerimientos |
 | **Administración** *(antes "Comercial")* | **todo lo administrativo**: órdenes de compra, recepción, órdenes de pago, y lo que se vaya agregando (facturas, cuentas corrientes, etc.) |
-| **Mantenimiento** *(grande)* | equipos con documentación, sectores, órdenes de trabajo, reparaciones, mantenimiento programado |
+| **Mantenimiento** *(grande)* | equipos con documentación, órdenes de trabajo, mantenimiento programado |
 | **Producción** *(a futuro: solo si un cliente la pide)* | ⏸ no se construye por ahora (ver sección 6) |
 
 **Los tres planes que se venden** (cada uno incluye todo lo del anterior):
@@ -70,7 +70,7 @@ Lo marcado con ❓ son decisiones que faltan.
 
 ## 5. Mantenimiento
 
-Sectores → equipos → documentos (manuales y despieces; el servidor de archivos ya está listo), órdenes de trabajo (quién, qué equipo, qué repuestos consumió, cuánto tardó, estado), historial por equipo y mantenimiento programado. Los repuestos salen del stock de Abastecimiento; las reparaciones externas usan los proveedores.
+Sectores → equipos → documentos (manuales y despieces; el servidor de archivos ya está listo), órdenes de trabajo (quién, qué equipo, qué repuestos consumió, cuánto tardó, estado), historial por equipo y mantenimiento programado. Los repuestos salen del stock de Abastecimiento. Las reparaciones que se mandan a un taller externo **no son de Mantenimiento: son del Depósito** (usan proveedores y repuestos).
 
 ## 6. Producción (a futuro, solo si un cliente la pide)
 
@@ -103,7 +103,7 @@ Todavía no se diseñó. Para armarlo hace falta que me cuentes cómo trabajan e
 | Etapa | Qué se hace | Está lista cuando… |
 |---|---|---|
 | **E0** ⏳ | Terminar y probar el **panel** (agregar organización, datos para publicar, prueba real con otra cuenta de Supabase) | se da de alta un cliente de punta a punta. **Hecho y probado con un Supabase simulado; falta instalarlo en el servidor y la prueba real** |
-| **E1** ✅ | **Reorganizar lo existente en componentes** (y que el dueño pueda apagar módulos de su plan, sección 12): Tareas a la Base; proveedores + comisionistas + envíos + depósitos juntos en Abastecimiento; equipos, sectores y reparaciones a Mantenimiento. La instalación crea **solo lo del plan contratado** | un cliente de prueba "Plan 1" no tiene ni una tabla de Mantenimiento ni de Producción; Cremac queda idéntico. **Hecho** (la parte de Administración y Producción no existe todavía). Falta correr el instalador y la pantalla del dueño contra un Supabase real |
+| **E1** ✅ | **Reorganizar lo existente en componentes** (y que el dueño pueda apagar módulos de su plan, sección 12): Tareas a la Base; proveedores + comisionistas + envíos + depósitos juntos en Abastecimiento; los equipos a Mantenimiento (los sectores y las reparaciones quedaron con el Depósito, en Abastecimiento). La instalación crea **solo lo del plan contratado** | un cliente de prueba "Plan 1" no tiene ni una tabla de Mantenimiento ni de Producción; Cremac queda idéntico. **Hecho** (la parte de Administración y Producción no existe todavía). Falta correr el instalador y la pantalla del dueño contra un Supabase real |
 | **E2** | **Configurable por empresa**: nombres, formato del código de repuesto, formatos regionales | otra empresa usa sus propios nombres y códigos |
 | **E3** | **Requerimientos** + pantalla de consulta | un depósito emite un requerimiento y Compras lo ve |
 | **E4** | **Administración**: órdenes de compra, recepción, órdenes de pago | un requerimiento llega hasta una orden de pago |
