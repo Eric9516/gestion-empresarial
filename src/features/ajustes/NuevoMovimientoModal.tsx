@@ -143,7 +143,7 @@ export default function NuevoMovimientoModal({ open, onClose, claseInicial = 'ca
       </div>
       <p style={{ fontSize: 13, color: 'var(--text-mid)', marginBottom: 12 }}>
         {clase === 'carga'
-          ? <>Entra mercadería que no es una corrección (por ejemplo, una caja que se revisa y se carga). <strong>Solo suma</strong>.</>
+          ? <>Entra mercadería que no viene de una compra (por ejemplo, la devolución de un sector). <strong>Solo suma</strong>.</>
           : <>Para corregir el stock cuando salió o entró material sin anotarse. Cada artículo <strong>suma</strong> o <strong>resta</strong>.</>}
         {' '}Todo queda registrado con su número y no se puede editar ni borrar.
       </p>

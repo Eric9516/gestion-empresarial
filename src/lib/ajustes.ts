@@ -10,7 +10,7 @@ export const NOMBRE_DE_LA_CLASE: Record<ClaseMovimiento, string> = { carga: 'Car
 
 // Los motivos más comunes de cada tipo (el último, "Otro", deja escribir uno propio).
 export const MOTIVOS: Record<ClaseMovimiento, string[]> = {
-  carga: ['Revisión de cajas', 'Material recibido sin remito', 'Devolución de un sector', 'Otro'],
+  carga: ['Devolución de un sector', 'Otro'],
   ajuste: ['Conteo físico', 'Material retirado sin anotar', 'Rotura', 'Pérdida', 'Vencimiento', 'Otro'],
 };
 
