@@ -231,7 +231,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
                   <div
                     className="value"
                     style={{ cursor: 'pointer', color: 'var(--blue)', display: 'inline-flex', alignItems: 'center', gap: 5, width: 'fit-content' }}
-                    title="Ver historial de movimientos (retiros y ajustes)"
+                    title="Ver historial de movimientos (retiros, cargas y ajustes)"
                     {...clicConTeclado(() => setHistorialOpen(true))}
                   >
                     {item.stock} <span style={{ fontSize: 12 }}><Icono n="lista" /></span>

@@ -8,9 +8,10 @@ const cuando = (ts: string) => new Date(ts).toLocaleString('es-AR');
 function Etiqueta({ h }: { h: HistorialItemFila }) {
   if (h.tipo === 'retiro') return null;
   const suma = h.tipo === 'ajuste_suma';
+  const nombre = h.clase === 'carga' ? 'Carga de stock' : `Ajuste (${suma ? 'suma' : 'resta'})`;
   return (
     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: 0.3, whiteSpace: 'nowrap', background: suma ? 'var(--success-bg)' : 'var(--danger-bg)', color: suma ? 'var(--success)' : 'var(--danger)' }}>
-      Ajuste ({suma ? 'suma' : 'resta'})
+      {nombre}
     </span>
   );
 }
@@ -22,14 +23,14 @@ export default function HistorialStockModal({ item, onClose }: { item: { id: str
     <Modal open={!!item} onClose={onClose} title={<><Icono n="lista" /> Historial de movimientos — {item?.codigo ?? ''}</>}>
       {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
       {!isLoading && !historial?.length && (
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Todavía no hay movimientos de este repuesto (ni retiros ni ajustes).</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Todavía no hay movimientos de este repuesto (ni retiros, ni cargas, ni ajustes).</p>
       )}
       {!!historial?.length && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
           {historial.map(h => (
             <div key={`${h.tipo}-${h.id}`} style={{ padding: '10px 12px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)', fontSize: 13, opacity: h.anulado ? 0.65 : 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontWeight: 700 }}>
-                <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>{h.usuarioNombre} <Etiqueta h={h} /></span>
+                <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>{h.usuarioNombre} <Etiqueta h={h} />{h.comprobante && <span style={{ fontWeight: 600, color: 'var(--text-mid)' }}>{h.comprobante}</span>}</span>
                 <span style={{ color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{cuando(h.created_at)}</span>
               </div>
               {h.tipo === 'retiro' ? (
@@ -42,6 +43,7 @@ export default function HistorialStockModal({ item, onClose }: { item: { id: str
                 </div>
               )}
               {h.observacion && <div style={{ color: 'var(--text-muted)', marginTop: 3 }}>{h.tipo === 'retiro' ? h.observacion : `Motivo: ${h.observacion}`}</div>}
+              {h.referencia && <div style={{ color: 'var(--text-muted)', marginTop: 3 }}>Referencia: {h.referencia}</div>}
               {h.anulado && (
                 <div style={{ color: 'var(--danger)', marginTop: 3, fontWeight: 600 }}>
                   Anulado{h.anuladoAt ? ` el ${cuando(h.anuladoAt)}` : ''}: {h.motivoAnulacion}. El stock volvió a como estaba.

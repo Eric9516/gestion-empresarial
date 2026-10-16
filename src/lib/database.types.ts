@@ -1511,10 +1511,14 @@ export type Database = {
           anulado: boolean
           anulado_at: string | null
           cantidad: number
+          clase: string
           created_at: string
           id: string
           motivo: string
           motivo_anulacion: string | null
+          numero: number
+          punto_venta: number
+          referencia: string | null
           stock_antes: number | null
           stock_despues: number | null
           tipo: string

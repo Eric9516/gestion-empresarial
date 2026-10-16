@@ -44,6 +44,16 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
     await page.getByRole('button', { name: /Guardar el ajuste/ }).click();
     await page.getByRole('button', { name: 'Sí, ajustar' }).click();
     await expect(page.getByText(/Ajuste de inventario registrada: AJU 0001-\d{8}/)).toBeVisible();
+
+    // el historial del repuesto distingue la carga del ajuste y muestra el número de cada comprobante
+    await page.goto('/mantenimiento');
+    await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
+    await page.getByText('Rodamiento de ejemplo').first().click();
+    await page.getByTitle(/Ver historial de movimientos/).click();
+    const historial = page.getByRole('dialog').filter({ hasText: 'Historial de movimientos' });
+    await expect(historial.getByText(/CAR 0001-\d{8}/).first()).toBeVisible();
+    await expect(historial.getByText('Carga de stock').first()).toBeVisible();
+    await expect(historial.getByText(/AJU 0001-\d{8}/).first()).toBeVisible();
   });
 
   test('un ajuste no puede dejar el stock en negativo', async ({ page }) => {
