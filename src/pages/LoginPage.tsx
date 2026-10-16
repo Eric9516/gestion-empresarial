@@ -86,7 +86,6 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
           
           <Icono n="candado" /> Acceso restringido — Solo usuarios autorizados
-          <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text-muted)' }}>Desarrollado por Eric Cantoni · 2025</div>
         </div>
       </div>
     </main>
