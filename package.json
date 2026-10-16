@@ -11,6 +11,7 @@
     "test": "vitest run",
     "cliente": "node scripts/cliente.mjs",
     "pruebas:pantalla": "playwright test",
+    "pruebas:escala": "node scripts/pruebas/escala/escala.mjs --items 50000 --retiros 50000 --auditoria 100000 --estricto",
     "pruebas:integracion": "node scripts/pruebas/integracion.mjs",
     "pruebas:esquema": "node scripts/pruebas/esquema/esquema.mjs && node scripts/pruebas/esquema/esquema.mjs --componentes && node scripts/pruebas/esquema/equivalencia.mjs && node scripts/pruebas/esquema/actualizacion.mjs",
     "pruebas:supabase-local": "node scripts/pruebas/supabase-local/integracion-local.mjs && node scripts/pruebas/supabase-local/instalador-local.mjs && node scripts/pruebas/supabase-local/matriz-modulos.mjs && node scripts/pruebas/supabase-local/logica.mjs && node scripts/pruebas/supabase-local/matriz-horarios.mjs && node scripts/pruebas/supabase-local/cruce-planes.mjs && node scripts/pruebas/supabase-local/matriz-permisos.mjs"
