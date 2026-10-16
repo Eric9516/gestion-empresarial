@@ -11,7 +11,7 @@ const TABLAS = {
   item_proveedores: ['deposito', 'proveedores'], reparacion_entregas: ['deposito', 'proveedores'], reparacion_items: ['deposito', 'proveedores'], reparaciones: ['deposito', 'proveedores'],
   rotulo_disenos: ['envios'], rotulos_bultos: ['envios'], rotulos_fotos: ['envios'], rotulos_generados: ['envios'],
   task_history: ['tareas'], tasks: ['tareas'],
-  ajustes_inventario: ['deposito'], ajuste_items: ['deposito'], movimientos_stock: ['deposito'], depositos: ['deposito'], stock_por_deposito: ['deposito'],
+  ajustes_inventario: ['deposito'], ajuste_items: ['deposito'], movimientos_stock: ['deposito'], depositos: ['deposito'], usuarios_depositos: ['deposito'],
 };
 const FUNCIONES = {
   create_task: [['tareas'], { p_title: '', p_description: '', p_traffic_level: 'green' }],

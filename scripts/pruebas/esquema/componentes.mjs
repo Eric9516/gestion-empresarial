@@ -15,7 +15,7 @@ export const COMPONENTE = {
   proveedores: 'abastecimiento', contactos: 'abastecimiento', comisionistas: 'abastecimiento',
   rotulos_generados: 'abastecimiento', rotulos_bultos: 'abastecimiento', rotulos_fotos: 'abastecimiento', rotulo_disenos: 'abastecimiento',
   items: 'abastecimiento', familias: 'abastecimiento', subfamilias: 'abastecimiento', planilla_familias: 'abastecimiento', item_proveedores: 'abastecimiento',
-  retiros: 'abastecimiento', retiro_items: 'abastecimiento', ajustes_inventario: 'abastecimiento', ajuste_items: 'abastecimiento', numeradores: 'abastecimiento', movimientos_stock: 'abastecimiento', depositos: 'abastecimiento', stock_por_deposito: 'abastecimiento', sectores: 'abastecimiento',
+  retiros: 'abastecimiento', retiro_items: 'abastecimiento', ajustes_inventario: 'abastecimiento', ajuste_items: 'abastecimiento', numeradores: 'abastecimiento', movimientos_stock: 'abastecimiento', depositos: 'abastecimiento', usuarios_depositos: 'abastecimiento', sectores: 'abastecimiento',
   reparaciones: 'abastecimiento', reparacion_items: 'abastecimiento', reparacion_entregas: 'abastecimiento',
   // Mantenimiento: equipos (más adelante, manuales, órdenes de trabajo, mantenimiento programado)
   equipos: 'mantenimiento', equipo_items: 'mantenimiento',

@@ -19,8 +19,7 @@ export async function sembrar(ejecutar, { items, retiros, auditoria, usuarios = 
   from (select id, familia_id, codigo, row_number() over () as rn from public.subfamilias) s
   join public.familias f on f.id = s.familia_id
   cross join lateral generate_series(1, ${Math.ceil(items / 720)}) n
-  limit ${items};
-  select public.reconstruir_stock_por_deposito();`);
+  limit ${items};`);
   await paso('proveedores y contactos', `
   insert into public.proveedores (nombre, rubro, localidad) select 'Proveedor ' || i, 'Rubro ' || (i % 30), 'Localidad ' || (i % 200) from generate_series(1, 5000) i;
   insert into public.contactos (proveedor_id, nombre, email) select p.id, 'Contacto ' || c, 'c' || c || '@x.test' from public.proveedores p, generate_series(1, 3) c;`);

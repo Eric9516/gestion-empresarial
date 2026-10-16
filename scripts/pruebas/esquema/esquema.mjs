@@ -80,7 +80,6 @@ await db.exec(`
   insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock)
     select 'AJ1', '1', 'Repuesto', f.id, sf.id, 10 from public.familias f join public.subfamilias sf on sf.familia_id = f.id where f.codigo = 'ZZ';
   update public.usuarios_perfil set puede_ajustar_inventario = true where id = '${B}';
-  do $$ begin if to_regprocedure('public.reconstruir_stock_por_deposito()') is not null then perform public.reconstruir_stock_por_deposito(); end if; end $$;
   select set_config('app.mover_stock', 'off', false);
 `);
 const item = (await q(`select id from public.items where codigo = 'AJ1'`))[0].id;
@@ -108,34 +107,51 @@ ok('la anulación suma la cabecera y la línea al historial (4 en total)', (awai
 ok('anular de nuevo se rechaza', !!(await como('authenticated', A, `select public.anular_ajuste_inventario('${aj[0].id}', 'otra vez')`)).error);
 
 
-// --- Varios depósitos: cada uno con su stock, y el total del repuesto es la suma (solo en la instalación por componentes: la cadena original no los tiene) ---
-if ((await q(`select to_regprocedure('public.mover_stock(uuid,numeric,text,text,text,uuid,uuid)') is not null as hay`))[0].hay) {
-  const principal = (await q(`select public.deposito_principal() as id`))[0].id;
-  await db.exec(`insert into public.depositos (codigo, nombre) values ('02', 'Insumos')`);
+// --- Varios depósitos: cada uno con su letra y sus repuestos; cada usuario con su depósito (solo en la instalación por componentes: la cadena original no los tiene) ---
+if ((await q(`select to_regclass('public.depositos') is not null as hay`))[0].hay) {
+  const principal = (await q(`select id, prefijo from public.depositos where es_principal`))[0];
+  ok('el depósito principal tomó la letra de los repuestos que ya había, y el repuesto de prueba está en él', (await q(`select deposito_id from public.items where id = '${item}'`))[0].deposito_id === principal.id && /^[A-Z]$/.test(principal.prefijo));
+  await db.exec(`insert into public.depositos (codigo, nombre, prefijo) values ('02', 'Insumos', 'I')`);
   const insumos = (await q(`select id from public.depositos where codigo = '02'`))[0].id;
-  const stockEn = async dep => Number((await q(`select coalesce(sum(stock), 0) as s from public.stock_por_deposito where item_id = '${item}' and deposito_id = '${dep}'`))[0].s);
-  const total = async () => Number((await q(`select stock from public.items where id = '${item}'`))[0].stock);
-  ok('un solo depósito principal: no se puede marcar otro como principal', await db.exec(`update public.depositos set es_principal = true where codigo = '02'`).then(() => false, () => true));
-  await q(`select public.mover_stock('${item}', 5, 'carga', 'prueba', null, null, '${insumos}')`);
-  ok('el stock entra al depósito pedido y el total suma los dos (10 + 5)', (await stockEn(principal)) === 10 && (await stockEn(insumos)) === 5 && (await total()) === 15, `${await stockEn(principal)} / ${await stockEn(insumos)} / ${await total()}`);
-  const rechazo = await q(`select public.mover_stock('${item}', -7, 'retiro', 'prueba', null, null, '${insumos}')`).then(() => '', e => e.message);
-  ok('un depósito no puede quedar en negativo aunque el total alcance (hay 5 en Insumos, se piden 7)', /No hay stock suficiente de AJ1: hay 5 y se necesitan 7/.test(rechazo), rechazo.slice(0, 120));
-  ok('…y el rechazo no cambió nada', (await stockEn(insumos)) === 5 && (await total()) === 15);
-  await q(`select public.mover_stock('${item}', -3, 'retiro', 'prueba', null, null, '${insumos}')`);
-  ok('lo que sale se descuenta de ese depósito y del total (5 → 2; total 12)', (await stockEn(insumos)) === 2 && (await stockEn(principal)) === 10 && (await total()) === 12);
-  const fila = (await q(`select deposito_id, existencia, entrada, salida from public.movimientos_stock where item_id = '${item}' order by id desc limit 1`))[0];
-  ok('cada movimiento anota su depósito y el saldo de ese depósito', fila.deposito_id === insumos && Number(fila.existencia) === 2 && Number(fila.salida) === 3);
-  ok('sin decir el depósito, el movimiento va al principal', await q(`select public.mover_stock('${item}', 1, 'carga', 'prueba')`).then(async () => (await stockEn(principal)) === 11, () => false));
-  ok('el control de integridad da 0 (el total de cada repuesto es la suma de sus depósitos)', Number((await q(`select public.repuestos_sin_cuadrar_con_sus_depositos() as n`))[0].n) === 0);
-  ok('no se puede editar el stock de un depósito a mano', await db.exec(`update public.stock_por_deposito set stock = 999`).then(() => false, () => true));
-  ok('ni crear una fila de stock a mano', await db.exec(`insert into public.stock_por_deposito (deposito_id, item_id, stock) values ('${insumos}', '${item}', 1) on conflict do nothing`).then(() => false, () => true));
-  ok('un depósito con stock no se puede borrar', await db.exec(`delete from public.depositos where codigo = '02'`).then(() => false, () => true));
-  ok('las personas no pueden leer ni escribir directo en mover_stock', !!(await como('authenticated', A, `select public.mover_stock('${item}', 1, 'carga', 'x')`)).error);
-  ok('quien tiene acceso al depósito puede ver los depósitos y su stock, y nadie puede escribirlos', (await como('authenticated', A, `select count(*)::int as n from public.depositos`))[0]?.n >= 2 && !!(await como('authenticated', A, `update public.depositos set nombre = 'x'`)).error);
-  // se deja como estaba para las pruebas siguientes
-  await q(`select public.mover_stock('${item}', -1, 'ajuste', 'prueba')`);
-  await q(`select public.mover_stock('${item}', -2, 'ajuste', 'prueba', null, null, '${insumos}')`);
-  await db.exec(`select public.mover_stock('${item}', -10, 'ajuste', 'prueba'); select public.mover_stock('${item}', 10, 'ajuste', 'prueba');`);
+  ok('dos depósitos no pueden tener la misma letra ni el mismo nombre', await db.exec(`insert into public.depositos (codigo, nombre, prefijo) values ('03', 'Otro', 'I')`).then(() => false, () => true)
+    && await db.exec(`insert into public.depositos (codigo, nombre, prefijo) values ('03', 'insumos', 'P')`).then(() => false, () => true));
+  ok('la letra tiene que ser una sola mayúscula', await db.exec(`insert into public.depositos (codigo, nombre, prefijo) values ('03', 'Otro', 'ab')`).then(() => false, () => true));
+  ok('un solo depósito principal', await db.exec(`update public.depositos set es_principal = true where codigo = '02'`).then(() => false, () => true));
+
+  // crear repuestos: van al depósito elegido (entre los del usuario) y su código empieza con la letra de ese depósito
+  const fam = (await q(`select f.id as f, s.id as s, f.codigo as fc, s.codigo as sc from public.familias f join public.subfamilias s on s.familia_id = f.id where f.codigo = 'ZZ'`))[0];
+  const crear = (dep, num = null) => como('authenticated', A, `select (t.x).id as id, (t.x).codigo as codigo, (t.x).numero as numero, (t.x).deposito_id as deposito_id from (select public.crear_repuesto('${fam.f}', '${fam.s}', ${num === null ? 'null' : `'${num}'`}, 'Rodamiento nuevo', '', 0, 0, 0, '', 'Uni'${dep ? `, '${dep}'` : ''}) as x) t`);
+  const r1 = await crear(null);
+  ok('un repuesto creado sin decir el depósito va al del usuario y usa su letra', !r1.error && r1[0]?.deposito_id === principal.id && r1[0].codigo.startsWith(principal.prefijo), JSON.stringify(r1).slice(0, 150));
+  const r2 = await crear(insumos);
+  ok('creado en Insumos: su código empieza con la I y es de ese depósito', !r2.error && r2[0]?.deposito_id === insumos && r2[0].codigo === `IZZZZ${r2[0].numero}`, JSON.stringify(r2).slice(0, 150));
+  ok('la numeración es de cada depósito: ambos arrancan en su propia secuencia', !!r1[0] && !!r2[0] && Number(r2[0].numero) === 1 && Number(r1[0].numero) >= 1);
+
+  // acceso: A es dueño (ve todo); C es un administrador del depósito (activo, no dueño) que al recibir su rol queda asignado al principal
+  const C = '00000000-0000-0000-0000-0000000000c1';
+  await db.exec(`insert into auth.users (id, email) values ('${C}', 'comun@x.com'); update public.usuarios_perfil set rol = 'admin', mantenimiento_rol = 'admin' where id = '${C}';`);
+  const idsDe = async u => (await como('authenticated', u, `select * from public.depositos_del_usuario() as id`)).map(x => x.id);
+  ok('el dueño tiene acceso a todos los depósitos', (await idsDe(A)).length === 2);
+  ok('un usuario del depósito empieza solo con el principal (se le asignó solo al recibir su rol)', JSON.stringify(await idsDe(C)) === JSON.stringify([principal.id]));
+  const sinAcceso = await como('authenticated', C, `select public.crear_repuesto('${fam.f}', '${fam.s}', null, 'No debería', '', 0, 0, 0, '', 'Uni', '${insumos}')`);
+  ok('sin acceso al depósito no se puede crear ahí (aunque se pida)', !!sinAcceso.error && /no tenés acceso a ese depósito/.test(sinAcceso.error), JSON.stringify(sinAcceso).slice(0, 120));
+  const propio = await como('authenticated', C, `select (t.x).deposito_id as deposito_id, (t.x).codigo as codigo from (select public.crear_repuesto('${fam.f}', '${fam.s}', null, 'De Mantenimiento', '', 0, 0, 0, '', 'Uni') as x) t`);
+  ok('el administrador del depósito crea en el suyo, con la letra del suyo', !propio.error && propio[0]?.deposito_id === principal.id && propio[0].codigo.startsWith(principal.prefijo), JSON.stringify(propio).slice(0, 120));
+  await db.exec(`insert into public.usuarios_depositos (usuario_id, deposito_id) values ('${C}', '${insumos}')`);
+  ok('al darle acceso a otro depósito, el usuario lo ve (y sigue viendo el suyo)', (await idsDe(C)).length === 2);
+  const enInsumos = await como('authenticated', C, `select (t.x).deposito_id as deposito_id, (t.x).codigo as codigo from (select public.crear_repuesto('${fam.f}', '${fam.s}', null, 'De Insumos', '', 0, 0, 0, '', 'Uni', '${insumos}') as x) t`);
+  ok('con acceso a los dos, elige dónde crea y cada código lleva la letra de su depósito', !enInsumos.error && enInsumos[0]?.deposito_id === insumos && enInsumos[0].codigo.startsWith('I'), JSON.stringify(enInsumos).slice(0, 120));
+  ok('quien no es dueño no puede darse acceso a sí mismo ni a otro (no escribe en las asignaciones)', !!(await como('authenticated', C, `insert into public.usuarios_depositos (usuario_id, deposito_id) values ('${C}', '${principal.id}')`)).error);
+
+  // cada movimiento anota el depósito de su repuesto
+  const itemI = r2[0].id;
+  await db.exec(`select set_config('request.jwt.claim.sub', '${A}', false)`);
+  await q(`select public.mover_stock('${itemI}', 5, 'carga', 'prueba')`);
+  ok('el movimiento de un repuesto de Insumos anota el depósito Insumos', (await q(`select deposito_id from public.movimientos_stock where item_id = '${itemI}' order by id desc limit 1`))[0].deposito_id === insumos);
+  ok('las personas no pueden usar mover_stock ni escribir depósitos', !!(await como('authenticated', A, `select public.mover_stock('${item}', 1, 'carga', 'x')`)).error
+    && !!(await como('authenticated', A, `update public.depositos set nombre = 'x'`)).error);
+  ok('quien tiene acceso ve los depósitos', (await como('authenticated', A, `select count(*)::int as n from public.depositos`))[0]?.n >= 2);
+  ok('un depósito con repuestos no se puede borrar', await db.exec(`delete from public.depositos where codigo = '02'`).then(() => false, () => true));
 }
 
 

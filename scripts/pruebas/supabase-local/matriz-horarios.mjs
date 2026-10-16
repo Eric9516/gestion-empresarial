@@ -68,7 +68,6 @@ const itemBase = await (async () => {
   // datos de prueba: el stock inicial se siembra por SQL (en la aplicación solo cambia con movimientos)
   const r = await q(null, `select set_config('app.mover_stock', 'on', true); insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido) values ('ZZB' || substr(md5(random()::text), 1, 5), '1', 'ZZ-h base', '${famId}', '${subId}', 10, 0, 0) returning id`);
   if (!r[0]?.id) throw new Error('repuesto base: no se creó');
-  await q(null, 'select public.reconstruir_stock_por_deposito() as n'); // el stock queda también en el depósito principal
   return r[0].id;
 })();
 // Prueba de las pruebas (SOLO en el simulador local): MUTAR=utc | sinvencimiento | sinestado rompe a propósito una regla para comprobar que esta batería lo detecta.
@@ -324,7 +323,6 @@ try {
     const subId = (await sv('GET', '/rest/v1/subfamilias?select=id&limit=1')).d[0].id;
     const itemR = await q(null, `select set_config('app.mover_stock', 'on', true); insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido) values ('ZZH' || substr(md5(random()::text), 1, 5), '1', 'ZZ-h retiros', '${famId}', '${subId}', 100000, 0, 0) returning id`); // datos de prueba
     if (!itemR[0]?.id) throw new Error('item de prueba: no se creó');
-    await q(null, 'select public.reconstruir_stock_por_deposito() as n');
     const itemId = itemR[0].id;
     // la edad se fija con el reloj de la BASE (no el de esta computadora), para no depender de diferencias de hora entre las dos
     const EDADES = [['1 hora', 3600], ['12 horas', 43200], ['23 h 59 min 30 s', 86370], ['24 h 0 min 30 s', 86430], ['48 horas', 172800]];

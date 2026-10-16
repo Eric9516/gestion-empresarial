@@ -143,20 +143,31 @@ Los códigos son los mismos que usa este producto (`M` + familia + subfamilia + 
 - Número de línea, cantidades alineadas, descripciones completas, y **firmas** (quien pide y quien autoriza) cuando la empresa las use.
 - Los campos "Cuenta" y "Destino interno" son opcionales y con nombres claros ("Sector de destino", "Cuenta contable" solo si la empresa la usa); no se imprimen en el documento que va al proveedor (ya decidido: la orden de compra no muestra quién pide ni el sector).
 
-## Varios depósitos: estructura hecha (etapa 1, 2026-10-16)
+## Varios depósitos: el modelo y la estructura hecha (etapa 1, 2026-10-16)
 
-**Qué hay:** la tabla `depositos` (código, nombre, punto de venta para numerar sus comprobantes, activo, uno solo marcado como principal) y la tabla `stock_por_deposito` (repuesto + depósito → stock, nunca negativo).
-Todo el stock que había pasó al **depósito principal** ("Depósito principal", renombrable). `items.stock` sigue existiendo y es el **total** (la suma de los depósitos): lo siguen usando el catálogo, el carrito, el informe de reposición y todo lo que ya andaba.
+**Un depósito es un área con SU catálogo, su stock y sus usuarios.** Cada depósito tiene su propia **letra**: los repuestos de Mantenimiento empiezan con la M, los de otro depósito con la suya. Un repuesto pertenece a **un solo depósito**
+(nadie compra lo que no usa: Mantenimiento los rodamientos, la planta de dulce los tarros). Por eso el stock sigue siendo el del repuesto (`items.stock`) y no hace falta una tabla de stock por depósito.
 
-**Reglas:**
-- El stock se mueve solo con `mover_stock(repuesto, cantidad, …, depósito)`. Sin decir el depósito, va al principal. Si el depósito no alcanza, se rechaza aunque el total sí alcance ("hay 5 y se necesitan 7").
-- Cada movimiento de la ficha anota su depósito, y su saldo es el de ese depósito.
-- Orden de candados: primero el repuesto (candado "sin clave", que no choca con el que ya tiene quien inserta una línea que lo menciona) y después la fila de su depósito. Con el candado fuerte (`FOR UPDATE`) la prueba de 40 usuarios dio 77 bloqueos mutuos y el rendimiento cayó de 220 a 35 operaciones por segundo; con `FOR NO KEY UPDATE`, cero bloqueos y 212 por segundo.
-- Control de integridad: `repuestos_sin_cuadrar_con_sus_depositos()` tiene que dar 0 (la prueba de concurrencia lo verifica). `reconstruir_stock_por_deposito()` rearma el principal desde el total (herramienta de reparación y de carga de datos de prueba; no es para personas).
+**Qué hay (base de datos):**
+- `depositos`: código, nombre, **letra** (única), punto de venta para numerar sus comprobantes, activo y cuál es el principal (el primero: recibe lo que ya existía y es el depósito de quien no tiene otro).
+- `items.deposito_id`: a qué depósito pertenece cada repuesto. Lo que se carga sin decirlo va al principal.
+- `usuarios_depositos`: a qué depósitos tiene acceso cada persona. Por defecto uno solo (quien recibe acceso al depósito queda asignado al principal); con permiso sobre otros, puede hacer **lo mismo que ya podía, en todos los asignados**. El dueño ve todos, siempre.
+- `crear_repuesto` crea en el depósito pedido (entre los del usuario) o en el suyo, y el código empieza con la letra de ese depósito; la **numeración es de cada depósito**.
+- Cada movimiento de la ficha anota el depósito de su repuesto.
+- Todo lo que hay en Cremac queda en el depósito principal, con la letra que ya usan sus códigos (la M).
+
+**Regla de visibilidad (etapa siguiente, en la base y no en la pantalla):** cada persona ve solo los repuestos, retiros, ajustes, movimientos, reparaciones e informes de sus depósitos. Mantenimiento no ve nada de Insumos.
+Un retiro, una carga o un ajuste es de **un** depósito (todas sus líneas del mismo) y se numera con el punto de venta de ese depósito.
+
+**Pedidos entre depósitos** (Producción le pide cajas a Insumos): Producción **busca** artículos de los depósitos que "aceptan pedidos de otras áreas" (solo código, descripción y unidad; sin stock). Insumos lo entrega con un **retiro de su stock con destino Producción**:
+se da de baja en Insumos y **no pasa al stock de Producción** (ya es para usar). Lo que sobra vuelve como carga con el motivo "Devolución de un sector". No hay transferencias entre depósitos ni artículos duplicados.
+
+**Quién define los depósitos:** al crear el cliente desde el panel (cantidad, nombres y letras; por defecto uno solo) y después el dueño los edita desde Configuración. Con un solo depósito la app se ve como siempre (sin selectores).
 
 **Lo que falta, en orden:**
-1. Elegir depósito en las pantallas (búsqueda, retiro, movimientos, ficha) y el nombre y alta de depósitos para el dueño.
-2. Mínimos y punto de pedido **por depósito** (hoy son del repuesto) y el informe de reposición por depósito.
-3. Permisos por depósito (quién ve y mueve cuál).
-4. Transferencias entre depósitos (un comprobante con origen y destino) y numeración por depósito.
-5. Reparaciones, retiros y ajustes con depósito explícito en la base (hoy van al principal).
+1. Separar lo que ve cada depósito (reglas de seguridad), elegir depósito en las pantallas de quien tiene varios, y crear y editar depósitos y asignar personas (Configuración y panel).
+2. Mínimos y punto de pedido siguen siendo del repuesto (no hace falta por depósito); el informe de reposición se arma por depósito.
+3. Pedidos entre depósitos y requerimientos (etapa de Compras).
+4. Numeración de los comprobantes con el punto de venta del depósito.
+
+**Lección técnica:** al mover stock hay que pedir el candado del repuesto en modo "sin clave" (`FOR NO KEY UPDATE`); con el fuerte (`FOR UPDATE`) dos retiros del mismo repuesto se trababan entre sí (77 bloqueos mutuos en la prueba de 40 usuarios).

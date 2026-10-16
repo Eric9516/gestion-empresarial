@@ -136,7 +136,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
     }
     setSaving(true);
     try {
-      const guardado = await saveItem.mutateAsync({ id: itemActual?.id ?? null, input, familia, subfamilia, version: itemActual?.updated_at, numeroAutomatico: numeroAuto });
+      const guardado = await saveItem.mutateAsync({ id: itemActual?.id ?? null, input, familia, subfamilia, version: itemActual?.updated_at, numeroAutomatico: numeroAuto, prefijo: itemActual?.codigo.charAt(0) });
       toast(esEdicion ? 'Repuesto actualizado' : `Repuesto agregado: ${guardado.codigo}`, 'success');
       onClose();
     } catch (e) {

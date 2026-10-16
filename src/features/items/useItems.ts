@@ -223,13 +223,14 @@ export function useSaveItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
-      id, input, familia, subfamilia, version, numeroAutomatico,
-    }: { id: string | null; input: ItemInput; familia: Familia; subfamilia: Subfamilia; version?: string; numeroAutomatico?: boolean }): Promise<{ id: string; codigo: string }> => {
+      id, input, familia, subfamilia, version, numeroAutomatico, prefijo = 'M',
+    }: { id: string | null; input: ItemInput; familia: Familia; subfamilia: Subfamilia; version?: string; numeroAutomatico?: boolean; prefijo?: string }): Promise<{ id: string; codigo: string }> => {
       if (id) {
         if (!version) throw new Error('Falta la versión del repuesto para guardar los cambios.');
         const numeroPad = input.numero.padStart(5, '0');
         const body = {
-          codigo: `M${familia.codigo}${subfamilia.codigo}${numeroPad}`,
+          // la letra del código es la del depósito del repuesto: al editar no cambia
+          codigo: `${prefijo}${familia.codigo}${subfamilia.codigo}${numeroPad}`,
           numero: numeroPad,
           descripcion: input.descripcion,
           familia_id: input.familia_id,
