@@ -128,3 +128,23 @@ y "datos para publicar la app". Pendiente:
 - ⏳ **Funciones de alto riesgo** (no hechas a propósito): borrar proyectos, restaurar backups. Si se agregan: doble firma y escribir el nombre del cliente.
 - ✅ Íconos: toda la app usa un solo componente (`src/components/Icono.tsx`, íconos de la librería lucide) en lugar de emojis, y una prueba (`src/lib/iconos.test.ts`) impide que vuelvan.
 - ⏳ Resto del pulido de diseño (colores, tipografías, ordenar estilos repetidos) en las apps de clientes: pedido aparte.
+
+## Hacia una suite completa para vender (decidido 2026-10-16; no se construye todavía)
+
+La intención es salir a vender un sistema integral, no solo para una empresa. Hacen falta, además de lo operativo (depósitos, requerimientos, compras, orden de pago), las áreas **contable, impositiva, de recursos humanos, de ventas y de fondos**.
+Se toma como modelo un sistema administrativo existente (21 documentos revisados): se replica lo que hace y se mejora cómo lo hace. **Antes de construir algo de esto, se redacta la versión nueva de [PLAN-PRODUCTO.md](PLAN-PRODUCTO.md) y se revisa junto con el dueño.**
+
+Componentes nuevos a sumar (cada uno se enciende o se apaga por plan, como los demás):
+- **Contabilidad**: plan de cuentas (hasta 15 niveles; cuentas que agrupan y cuentas que reciben asientos), asientos, mayor, balances, diario foliado, libros de IVA compras y ventas, centros de costo. Una cuenta con movimientos no se borra.
+- **Fondos** (dentro de Administración o aparte): caja, bancos, cartera de cheques de terceros con estados (en cartera, entregado, depositado), cheques propios, libro de bancos, órdenes de pago y recibos contra comprobantes seleccionados, con pagos y cobros a cuenta.
+- **Ventas**: facturación electrónica de ARCA, facturar y remitir después (mercadería pendiente), listas de precios, notas de venta con cláusulas, recibos con varios valores, intereses sobre cuentas corrientes, anticuación y proyección de saldos.
+- **Recursos Humanos**: primero legajos y novedades; después la liquidación de sueldos (conceptos con fórmulas y cuenta contable, recibos, libro de sueldos, informes configurables).
+- **Terceros unificados**: una sola ficha para cliente, proveedor y socio (con sus relaciones, datos impositivos, condiciones de venta y de compra, límite de crédito, calificación, zona y ruta). Compras, Ventas y Fondos dependen de esto.
+- **Comprobantes**: borrador antes de procesar (se carga y se corrige; al procesar se registra y no se toca más), número correlativo, reimpresión y documentos relacionados.
+
+La mejora principal frente al sistema de referencia: **cada comprobante genera su asiento contable solo** (en el de referencia se arman a mano) y no hay datos duplicados entre áreas (allá modificar un asiento obliga a borrar también en Fondos). Eso pide construir temprano el núcleo contable (plan de cuentas y motor de asientos), aunque sea mínimo.
+
+Orden propuesto (a revisar): 1) operativo, 2) núcleo contable y fondos, 3) ventas con facturación electrónica, 4) recursos humanos.
+
+Riesgos: la parte impositiva, de facturación y de sueldos depende de normas que cambian, y un error lo paga el cliente. Hace falta que un contador y alguien de liquidación de sueldos validen lo construido, y un proceso para actualizar cuando cambia una norma. Se puede aprovechar trabajo ya hecho en otros proyectos del dueño (estados contables y generación de asientos desde ARCA).
+No se construye (queda para si un cliente lo pide): lo propio de cooperativas de servicios (lectura de medidores con colectores, liquidación de obras de pavimento).
