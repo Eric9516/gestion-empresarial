@@ -19,7 +19,7 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
     await abrirMovimientos(page);
 
     // Carga de stock: solo suma, no pide motivo
-    await page.getByRole('button', { name: '+ Cargar stock' }).click();
+    await page.getByRole('button', { name: '+ Nuevo movimiento' }).click();
     await expect(page.getByRole('button', { name: 'Guardar la carga' })).toBeDisabled();
     await agregarElRepuesto(page);
     await expect(page.getByRole('button', { name: /Suma/ })).toHaveCount(0); // en una carga no hay suma/resta por línea
@@ -35,7 +35,8 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
     await expect(page.getByText(/CAR 0001-\d{8}/).first()).toBeVisible();
 
     // Ajuste: resta lo cargado (pide motivo)
-    await page.getByRole('button', { name: '+ Ajuste' }).click();
+    await page.getByRole('button', { name: '+ Nuevo movimiento' }).click();
+    await page.getByRole('group', { name: 'Tipo de movimiento' }).getByRole('button', { name: 'Ajuste' }).click();
     await agregarElRepuesto(page);
     await page.getByLabel(/Cantidad \(/).fill('7');
     await expect(page.getByRole('button', { name: /Guardar el ajuste/ })).toBeDisabled(); // falta el motivo
@@ -47,7 +48,8 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
 
   test('un ajuste no puede dejar el stock en negativo', async ({ page }) => {
     await abrirMovimientos(page);
-    await page.getByRole('button', { name: '+ Ajuste' }).click();
+    await page.getByRole('button', { name: '+ Nuevo movimiento' }).click();
+    await page.getByRole('group', { name: 'Tipo de movimiento' }).getByRole('button', { name: 'Ajuste' }).click();
     await agregarElRepuesto(page);
     await page.getByLabel(/Cantidad \(/).fill('999999');
     await expect(page.getByText(/no puede quedar en negativo/)).toBeVisible();

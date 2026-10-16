@@ -5,7 +5,7 @@ import { useToast } from '../../components/ToastProvider';
 import { useAuth } from '../../auth/AuthContext';
 import { isOwner } from '../../lib/types';
 import { fechaLocalDe } from '../../lib/fechaHoy';
-import { comprobanteTexto, formatoCantidad, NOMBRE_DE_LA_CLASE, type ClaseMovimiento } from '../../lib/ajustes';
+import { comprobanteTexto, formatoCantidad, NOMBRE_DE_LA_CLASE } from '../../lib/ajustes';
 import { exportarExcel, type FilaExcel } from '../../lib/exportExcel';
 import { registrarErrorAccion } from '../../lib/errorLogging';
 import { useAjustesQuery, useAnularAjuste, type Ajuste } from './useAjustes';
@@ -168,8 +168,6 @@ export default function AjustesScreen() {
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
   const [nuevoOpen, setNuevoOpen] = useState(false);
-  const [claseNueva, setClaseNueva] = useState<ClaseMovimiento>('carga');
-  const abrirNuevo = (c: ClaseMovimiento) => { setClaseNueva(c); setNuevoOpen(true); };
   const [detalleId, setDetalleId] = useState<string | null>(null);
   const [anulando, setAnulando] = useState<Ajuste | null>(null);
 
@@ -287,8 +285,7 @@ export default function AjustesScreen() {
         <Input type="date" aria-label="Desde" title="Desde" value={desde} onChange={e => setDesde(e.target.value)} style={{ width: 150 }} />
         <Input type="date" aria-label="Hasta" title="Hasta" value={hasta} onChange={e => setHasta(e.target.value)} style={{ width: 150 }} />
         <Button variant="ghost" size="sm" onClick={() => void exportar()}>Excel</Button>
-        <Button variant="success" size="sm" onClick={() => abrirNuevo('carga')}>+ Cargar stock</Button>
-        <Button variant="primary" size="sm" onClick={() => abrirNuevo('ajuste')}>+ Ajuste</Button>
+        <Button variant="primary" size="sm" onClick={() => setNuevoOpen(true)}>+ Nuevo movimiento</Button>
       </div>
 
       {!isLoading && !isError && filas.length > 0 && (
@@ -313,7 +310,7 @@ export default function AjustesScreen() {
         />
       )}
 
-      <NuevoMovimientoModal open={nuevoOpen} onClose={() => setNuevoOpen(false)} claseInicial={claseNueva} />
+      <NuevoMovimientoModal open={nuevoOpen} onClose={() => setNuevoOpen(false)} />
       <DetalleAjuste ajuste={detalle} onClose={() => setDetalleId(null)} onAnular={a => { setDetalleId(null); setAnulando(a); }} puedeAnular={puedeAnular} />
       <AnularModal ajuste={anulando} onClose={() => setAnulando(null)} />
     </div>
