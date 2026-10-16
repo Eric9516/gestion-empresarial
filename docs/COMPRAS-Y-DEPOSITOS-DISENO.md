@@ -142,3 +142,21 @@ Los códigos son los mismos que usa este producto (`M` + familia + subfamilia + 
 - **Código QR** que abre el documento en la app (ver estado, recibir mercadería) escaneándolo desde el papel.
 - Número de línea, cantidades alineadas, descripciones completas, y **firmas** (quien pide y quien autoriza) cuando la empresa las use.
 - Los campos "Cuenta" y "Destino interno" son opcionales y con nombres claros ("Sector de destino", "Cuenta contable" solo si la empresa la usa); no se imprimen en el documento que va al proveedor (ya decidido: la orden de compra no muestra quién pide ni el sector).
+
+## Varios depósitos: estructura hecha (etapa 1, 2026-10-16)
+
+**Qué hay:** la tabla `depositos` (código, nombre, punto de venta para numerar sus comprobantes, activo, uno solo marcado como principal) y la tabla `stock_por_deposito` (repuesto + depósito → stock, nunca negativo).
+Todo el stock que había pasó al **depósito principal** ("Depósito principal", renombrable). `items.stock` sigue existiendo y es el **total** (la suma de los depósitos): lo siguen usando el catálogo, el carrito, el informe de reposición y todo lo que ya andaba.
+
+**Reglas:**
+- El stock se mueve solo con `mover_stock(repuesto, cantidad, …, depósito)`. Sin decir el depósito, va al principal. Si el depósito no alcanza, se rechaza aunque el total sí alcance ("hay 5 y se necesitan 7").
+- Cada movimiento de la ficha anota su depósito, y su saldo es el de ese depósito.
+- Orden de candados: primero el repuesto (candado "sin clave", que no choca con el que ya tiene quien inserta una línea que lo menciona) y después la fila de su depósito. Con el candado fuerte (`FOR UPDATE`) la prueba de 40 usuarios dio 77 bloqueos mutuos y el rendimiento cayó de 220 a 35 operaciones por segundo; con `FOR NO KEY UPDATE`, cero bloqueos y 212 por segundo.
+- Control de integridad: `repuestos_sin_cuadrar_con_sus_depositos()` tiene que dar 0 (la prueba de concurrencia lo verifica). `reconstruir_stock_por_deposito()` rearma el principal desde el total (herramienta de reparación y de carga de datos de prueba; no es para personas).
+
+**Lo que falta, en orden:**
+1. Elegir depósito en las pantallas (búsqueda, retiro, movimientos, ficha) y el nombre y alta de depósitos para el dueño.
+2. Mínimos y punto de pedido **por depósito** (hoy son del repuesto) y el informe de reposición por depósito.
+3. Permisos por depósito (quién ve y mueve cuál).
+4. Transferencias entre depósitos (un comprobante con origen y destino) y numeración por depósito.
+5. Reparaciones, retiros y ajustes con depósito explícito en la base (hoy van al principal).

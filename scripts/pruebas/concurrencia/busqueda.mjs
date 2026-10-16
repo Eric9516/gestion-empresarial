@@ -26,6 +26,7 @@ try {
   await admin.query(`select set_config('app.mover_stock', 'on', false)`);
   await admin.query(`insert into public.items (codigo, numero, descripcion, detalles, familia_id, subfamilia_id, stock) values ('MZZPU00003', '00003', 'Repuesto especial único', 'compatible con la prensa hidráulica XJ-77', '${fam.id}', '${sub.id}', 1)`);
   await admin.query(`insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido) values ('MZZRP00007', '00007', 'Sello especial de reposición', '${fam.id}', '${sub.id}', 2, 10, 5)`);
+  await admin.query(`select public.reconstruir_stock_por_deposito()`);
   await admin.query(`select set_config('app.mover_stock', 'off', false)`);
   await admin.query(`analyze public.items`);
   await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);

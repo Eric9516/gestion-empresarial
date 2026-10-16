@@ -56,6 +56,7 @@ try {
   await admin.query(`select set_config('app.mover_stock', 'on', false)`); // solo para dejar los datos de prueba (en la aplicación el stock se cambia con mover_stock)
   await admin.query(`update public.items set stock = ${STOCK_INICIAL} where id = any($1::uuid[])`, [hot]);
   await admin.query(`update public.items set stock = ${STOCK_ESCASO} where id = any($1::uuid[])`, [escasos]);
+  await admin.query(`select public.reconstruir_stock_por_deposito()`); // el stock de cada repuesto queda también en el depósito principal
   await admin.query(`select set_config('app.mover_stock', 'off', false)`);
   const baseRetirado = new Map((await admin.query(`select item_id, sum(cantidad) as s from public.retiro_items where item_id = any($1::uuid[]) group by item_id`, [[...hot, ...escasos]])).rows.map(r => [r.item_id, Number(r.s)]));
   const inicioDeLaPrueba = (await admin.query(`select now() as t`)).rows[0].t;
@@ -193,6 +194,9 @@ try {
   // La lista de movimientos tiene que cuadrar con el stock: el saldo del último movimiento de cada repuesto es su stock, y cada movimiento nuevo suma o resta exactamente lo que dice.
   const sinCuadrar = Number((await admin.query(`select count(*) as n from public.items i join lateral (select existencia from public.movimientos_stock m where m.item_id = i.id and m.existencia is not null order by m.id desc limit 1) u on true where u.existencia is distinct from coalesce(i.stock, 0)`)).rows[0].n);
   const saltos = Number((await admin.query(`select count(*) as n from (select existencia - lag(existencia) over (partition by item_id order by id) - (entrada - salida) as d from public.movimientos_stock where existencia is not null) t where d is not null and d <> 0`)).rows[0].n);
+  // El stock total de cada repuesto es siempre la suma de sus depósitos.
+  const sinCuadrarDepositos = Number((await admin.query(`select public.repuestos_sin_cuadrar_con_sus_depositos() as n`)).rows[0].n);
+  const depositosNegativos = Number((await admin.query(`select count(*) as n from public.stock_por_deposito where stock < 0`)).rows[0].n);
   const huerfanos = Number((await admin.query(`select count(*) as n from public.retiros r where r.created_at >= $1 and not exists (select 1 from public.retiro_items ri where ri.retiro_id = r.id)`, [inicioDeLaPrueba])).rows[0].n);
   const bloqueos = [...errores].filter(([k]) => k.includes('40P01')).reduce((s, [, v]) => s + v, 0);
   const duplicados = [...errores].filter(([k]) => k.includes('23505')).reduce((s, [, v]) => s + v, 0);
@@ -201,6 +205,7 @@ try {
     ['stock sin perder ni inventar unidades (repuestos más usados)', distintos.length === 0, distintos.length ? `${distintos.length} de ${hot.length} repuestos con stock equivocado (${unidades} unidades de diferencia)` : `${hot.length} repuestos verificados`],
     ['el stock nunca quedó negativo (ningún repuesto) y los de poco stock cuadran exacto', negativos === 0 && escasosMal.length === 0, negativos || escasosMal.length ? `${negativos} repuestos en negativo; ${escasosMal.length} de poco stock que no cuadran` : `${escasos.length} repuestos de poco stock, ${contadores.rechazosPorStock} retiros rechazados por no alcanzar`],
     ['la lista de movimientos cuadra con el stock (último saldo = stock actual, sin saltos entre un movimiento y el siguiente)', sinCuadrar === 0 && saltos === 0, sinCuadrar || saltos ? `${sinCuadrar} repuestos cuyo último saldo no es su stock; ${saltos} saltos` : ''],
+    ['el total de cada repuesto es la suma de sus depósitos y ningún depósito quedó en negativo', sinCuadrarDepositos === 0 && depositosNegativos === 0, sinCuadrarDepositos || depositosNegativos ? `${sinCuadrarDepositos} repuestos que no cuadran con sus depósitos; ${depositosNegativos} depósitos en negativo` : ''],
     ['ningún retiro quedó vacío (encabezado sin líneas)', huerfanos === 0, huerfanos ? `${huerfanos} retiros vacíos` : ''],
     ['ningún bloqueo mutuo entre transacciones (deadlock)', bloqueos === 0, bloqueos ? `${bloqueos} bloqueos mutuos` : ''],
     ['ningún código de repuesto repetido al crear a la vez', duplicados === 0, duplicados ? `${duplicados} repetidos` : ''],

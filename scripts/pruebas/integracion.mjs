@@ -365,7 +365,7 @@ await poner([]);
 ok('Y al ponerlos expresamente activos, todo vuelve', Object.values(await verTodas(dueno.token)).every(v => v === true));
 
 const reglas = sql(`select count(*)::int as n from pg_policies where policyname = 'bloqueo_modulo' and permissive = 'RESTRICTIVE'`);
-ok('Cada tabla de módulo tiene su regla de bloqueo (26 reglas)', /"n":\s*26/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
+ok('Cada tabla de módulo tiene su regla de bloqueo (28 reglas)', /"n":\s*28/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
 const regStorage = sql(`select count(*)::int as n from pg_policies where tablename = 'objects' and policyname like 'bloqueo_modulo_%'`);
 ok('Cada carpeta de archivos tiene su regla (3 reglas)', /"n":\s*3/.test(regStorage));
 const audLic = await http('/rest/v1/audit_log?select=descripcion,usuario_nombre&tabla=eq.licencia&order=id.desc', { token: dueno.token });
