@@ -36,10 +36,17 @@ export type Database = {
           anulado: boolean
           anulado_at: string | null
           anulado_por: string | null
+          clase: string
           created_at: string
+          emisor: Json | null
+          fecha: string
           id: string
           motivo: string
           motivo_anulacion: string | null
+          numero: number
+          observaciones: string | null
+          punto_venta: number
+          referencia: string | null
           usuario_id: string
         }
         Insert: never
@@ -146,9 +153,12 @@ export type Database = {
           zona_horaria: string
           comisionistas_campos_custom: Json | null
           empresa_direccion: string | null
+          empresa_cuit: string | null
           empresa_email: string | null
           empresa_nombre: string | null
+          empresa_razon_social: string | null
           empresa_telefono: string | null
+          empresa_web: string | null
           id: number
           inicial_cerrada_at: string | null
           logo_base64: string | null
@@ -163,9 +173,12 @@ export type Database = {
           zona_horaria?: string
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
+          empresa_cuit?: string | null
           empresa_email?: string | null
           empresa_nombre?: string | null
+          empresa_razon_social?: string | null
           empresa_telefono?: string | null
+          empresa_web?: string | null
           id?: number
           inicial_cerrada_at?: string | null
           logo_base64?: string | null
@@ -180,9 +193,12 @@ export type Database = {
           zona_horaria?: string
           comisionistas_campos_custom?: Json | null
           empresa_direccion?: string | null
+          empresa_cuit?: string | null
           empresa_email?: string | null
           empresa_nombre?: string | null
+          empresa_razon_social?: string | null
           empresa_telefono?: string | null
+          empresa_web?: string | null
           id?: number
           inicial_cerrada_at?: string | null
           logo_base64?: string | null
@@ -426,6 +442,7 @@ export type Database = {
           stock_minimo: number
           subfamilia_id: string
           ubicacion: string | null
+          unidad: string
           updated_at: string
         }
         Insert: {
@@ -458,6 +475,7 @@ export type Database = {
           stock_minimo?: number
           subfamilia_id: string
           ubicacion?: string | null
+          unidad?: string
           updated_at?: string
         }
         Update: {
@@ -490,6 +508,7 @@ export type Database = {
           stock_minimo?: number
           subfamilia_id?: string
           ubicacion?: string | null
+          unidad?: string
           updated_at?: string
         }
         Relationships: [
@@ -1433,6 +1452,7 @@ export type Database = {
           p_stock_minimo: number
           p_subfamilia_id: string
           p_ubicacion: string
+          p_unidad: string
         }
         Returns: Database['public']['Tables']['items']['Row']
       }
@@ -1477,7 +1497,14 @@ export type Database = {
       }
       anular_ajuste_inventario: { Args: { p_ajuste_id: string; p_motivo: string }; Returns: undefined }
       can_ajustar_inventario: { Args: never; Returns: boolean }
+      aplicar_importacion_stock: { Args: { p_filas: Json }; Returns: Json }
+      // (la base devuelve { documentos: [ids], lineas: n })
+      comprobante_texto: { Args: { p_clase: string; p_numero: number; p_punto_venta: number }; Returns: string }
       crear_ajuste_inventario: { Args: { p_lineas: Json; p_motivo: string }; Returns: string }
+      crear_movimiento_stock: {
+        Args: { p_clase: string; p_fecha: string; p_lineas: Json; p_motivo: string; p_observaciones: string; p_referencia: string }
+        Returns: Json
+      }
       historial_ajustes_por_item: {
         Args: { p_item_id: string }
         Returns: {

@@ -52,10 +52,9 @@ try {
   const [fam] = (await admin.query(`select id from public.familias order by codigo limit 1`)).rows;
   const subfamilias = (await admin.query(`select id from public.subfamilias where familia_id = $1 order by codigo limit 3`, [fam.id])).rows.map(r => r.id);
   // el stock inicial se deja como lo dejaría una persona (con su usuario), porque la base no deja tocar repuestos sin saber quién es
-  await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${uid(1)}', false)`);
+  await admin.query(`select set_config('request.jwt.claim.sub', '${uid(1)}', false)`);
   await admin.query(`update public.items set stock = ${STOCK_INICIAL} where id = any($1::uuid[])`, [hot]);
   await admin.query(`update public.items set stock = ${STOCK_ESCASO} where id = any($1::uuid[])`, [escasos]);
-  await admin.query(`reset role`);
   const baseRetirado = new Map((await admin.query(`select item_id, sum(cantidad) as s from public.retiro_items where item_id = any($1::uuid[]) group by item_id`, [[...hot, ...escasos]])).rows.map(r => [r.item_id, Number(r.s)]));
   const inicioDeLaPrueba = (await admin.query(`select now() as t`)).rows[0].t;
 
@@ -81,9 +80,21 @@ try {
     } catch (e) { try { await cx.query('rollback'); } catch { /* conexión caída */ } throw e; }
     finally { cx.release(); }
   }
-  const medir = async (nombre, usuario, fn) => {
+  // Sin cambiar de rol (para reproducir el comportamiento anterior, cuando una persona podía escribir el stock directo).
+  async function txComoDuenoDeLaBase(usuario, fn) {
+    const cx = await pool.connect();
+    try {
+      await cx.query('begin');
+      await cx.query(`select set_config('request.jwt.claim.sub', $1, true)`, [usuario]);
+      const r = await fn(cx);
+      await cx.query('commit');
+      return r;
+    } catch (e) { try { await cx.query('rollback'); } catch { /* conexión caída */ } throw e; }
+    finally { cx.release(); }
+  }
+  const medir = async (nombre, usuario, fn, comoDueno = false) => {
     const t = performance.now();
-    try { const r = await tx(usuario, fn); registrar(nombre, performance.now() - t); return r; }
+    try { const r = await (comoDueno ? txComoDuenoDeLaBase : tx)(usuario, fn); registrar(nombre, performance.now() - t); return r; }
     catch (e) { registrar(nombre, performance.now() - t); fallar(nombre, e); return null; }
   };
 
@@ -103,8 +114,8 @@ try {
       await dormir(20 + azar(120));
       const { stock, version } = f.rows[0];
       const ubicacion = `Estante ${azar(1000)}`;
-      if (VIEJO) { await medir('editar: guardar', u, c => c.query(`update public.items set ubicacion = $2, stock = $3 where id = $1`, [id, ubicacion, stock])); return; }
-      const g = await medir('editar: guardar', u, c => c.query(`update public.items set ubicacion = $2, stock = $3 where id = $1 and updated_at = $4::timestamptz returning id`, [id, ubicacion, stock, version]));
+      if (VIEJO) { await medir('editar: guardar', u, c => c.query(`update public.items set ubicacion = $2, stock = $3 where id = $1`, [id, ubicacion, stock]), true); return; }
+      const g = await medir('editar: guardar', u, c => c.query(`update public.items set ubicacion = $2 where id = $1 and updated_at = $3::timestamptz returning id`, [id, ubicacion, version]));
       if (g && !g.rowCount) contadores.conflictos++;
     }],
     [22, 'retirar', async u => {

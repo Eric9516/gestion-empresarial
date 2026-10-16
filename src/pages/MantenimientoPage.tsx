@@ -52,7 +52,7 @@ function MantenimientoContent() {
     ...(verReparaciones ? [{ icon: <Icono n="herramienta" />, label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
     ...(modulos.tareas ? [{ icon: <Icono n="exito" />, label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
     ...(esAdmin ? [{ icon: <Icono n="informe" />, label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
-    ...(verAjustes ? [{ icon: <Icono n="balanza" />, label: 'Ajustes', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
+    ...(verAjustes ? [{ icon: <Icono n="balanza" />, label: 'Movimientos', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
     ...(canExit ? [{ icon: <><Icono n="volver" /> </>, label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
 
@@ -96,7 +96,7 @@ function MantenimientoContent() {
           <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}><Icono n="informe" /> Informe</button>
         )}
         {verAjustes && (
-          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}><Icono n="balanza" /> Ajustes</button>
+          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}><Icono n="balanza" /> Movimientos</button>
         )}
       </nav>
 

@@ -5,6 +5,10 @@ import { useToast } from '../../components/ToastProvider';
 import { useAddFamilia, useAddSubfamilia, useFamiliasQuery, useSubfamiliasQuery } from '../familias/useFamilias';
 import { useRepuestoFresco, useSaveItem, type Item, type ItemInput } from './useItems';
 import { ConflictoDeEdicion } from '../../lib/conflicto';
+import { useAuth } from '../../auth/AuthContext';
+import { puedeAjustarInventario } from '../../lib/types';
+import { formatoCantidad } from '../../lib/ajustes';
+import NuevoMovimientoModal from '../ajustes/NuevoMovimientoModal';
 import { useRepuestosDeSubfamilia } from './useNumeracion';
 import NuevoCodigoModal from './NuevoCodigoModal';
 import { repuestoConNumero } from '../../lib/numeracion';
@@ -21,13 +25,19 @@ interface Props {
   item: Item | null;
 }
 
-const emptyInput: ItemInput = { familia_id: '', subfamilia_id: '', numero: '', descripcion: '', ubicacion: '', stock: null, stock_minimo: null, punto_pedido: null, detalles: '' };
+const emptyInput: ItemInput = { familia_id: '', subfamilia_id: '', numero: '', descripcion: '', ubicacion: '', unidad: 'Uni', stock: null, stock_minimo: null, punto_pedido: null, detalles: '' };
+
+// Unidades de medida más usadas (se puede escribir otra).
+const UNIDADES = ['Uni', 'Kg', 'Lt', 'Mt', 'Caja', 'Par', 'Juego', 'Rollo', 'Bolsa'];
 
 // Campo numérico opcional: vacío se guarda como null (y después como 0).
 const aNumeroONull = (v: string) => (v === '' ? null : Number(v));
 
 export default function ItemForm({ open, onClose, item }: Props) {
   const toast = useToast();
+  const { profile } = useAuth();
+  const puedeCambiarStock = puedeAjustarInventario(profile);
+  const [cambiandoStock, setCambiandoStock] = useState(false);
   const { data: familias } = useFamiliasQuery();
   const { data: subfamilias } = useSubfamiliasQuery();
   const saveItem = useSaveItem();
@@ -54,7 +64,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
     setInput(itemActual
       ? {
         familia_id: itemActual.familia_id, subfamilia_id: itemActual.subfamilia_id, numero: itemActual.numero,
-        descripcion: itemActual.descripcion, ubicacion: itemActual.ubicacion ?? '', stock: itemActual.stock,
+        descripcion: itemActual.descripcion, ubicacion: itemActual.ubicacion ?? '', unidad: itemActual.unidad, stock: itemActual.stock,
         stock_minimo: itemActual.stock_minimo, punto_pedido: itemActual.punto_pedido, detalles: itemActual.detalles ?? '',
       }
       : emptyInput);
@@ -238,8 +248,26 @@ export default function ItemForm({ open, onClose, item }: Props) {
           <Input id="item-form-6" type="text" placeholder="Ej: Estante 3B" value={input.ubicacion} onChange={e => setInput(prev => ({ ...prev, ubicacion: e.target.value }))} />
         </div>
         <div className="form-group">
-          <label htmlFor="item-form-7">Stock</label>
-          <Input id="item-form-7" type="number" min={0} placeholder="0" value={input.stock ?? ''} onChange={e => setInput(prev => ({ ...prev, stock: aNumeroONull(e.target.value) }))} />
+          <label htmlFor="item-form-7">{esEdicion ? 'Stock' : 'Stock inicial'}</label>
+          {esEdicion ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <strong id="item-form-7" style={{ fontSize: 15 }}>{formatoCantidad(itemActual?.stock ?? 0)} {itemActual?.unidad}</strong>
+              {puedeCambiarStock && itemActual && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setCambiandoStock(true)}><Icono n="balanza" /> Cambiar stock…</Button>
+              )}
+              <p style={{ flexBasis: '100%', fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>El stock cambia con una carga o un ajuste (queda con su comprobante), no se escribe acá.</p>
+            </div>
+          ) : (
+            <>
+              <Input id="item-form-7" type="number" min={0} placeholder="0" value={input.stock ?? ''} onChange={e => setInput(prev => ({ ...prev, stock: aNumeroONull(e.target.value) }))} />
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '6px 0 0' }}>Si lo cargás, queda registrado como una carga inicial.</p>
+            </>
+          )}
+        </div>
+        <div className="form-group">
+          <label htmlFor="item-form-unidad">Unidad de medida</label>
+          <Input id="item-form-unidad" type="text" list="item-form-unidades" maxLength={20} placeholder="Uni" value={input.unidad} onChange={e => setInput(prev => ({ ...prev, unidad: e.target.value }))} />
+          <datalist id="item-form-unidades">{UNIDADES.map(u => <option key={u} value={u} />)}</datalist>
         </div>
         <div className="form-group">
           <label htmlFor="item-form-8">Stock mínimo (cantidad que quiero tener)</label>
@@ -256,6 +284,14 @@ export default function ItemForm({ open, onClose, item }: Props) {
       </div>
       </fieldset>
     </Modal>
+    {cambiandoStock && itemActual && (
+      <NuevoMovimientoModal
+        open
+        onClose={() => setCambiandoStock(false)}
+        claseInicial="ajuste"
+        repuestoInicial={{ id: itemActual.id, codigo: itemActual.codigo, descripcion: itemActual.descripcion, stock: itemActual.stock, unidad: itemActual.unidad }}
+      />
+    )}
     {nuevoCodigo === 'familia' && (
       <NuevoCodigoModal
         onClose={() => setNuevoCodigo(null)}

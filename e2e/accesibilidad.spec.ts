@@ -40,7 +40,7 @@ test.describe('Accesibilidad', () => {
     // Cada pestaña de cada sección, una por una.
     for (const [ruta, pestanas] of [
       ['/', ['Comisionistas', 'Envíos', 'Tareas']],
-      ['/mantenimiento', ['A retirar', 'Retiros', 'Tareas', 'Reparaciones', 'Informe', 'Ajustes']],
+      ['/mantenimiento', ['A retirar', 'Retiros', 'Tareas', 'Reparaciones', 'Informe', 'Movimientos']],
     ] as const) {
       for (const pestana of pestanas) {
         test(`${ruta === '/' ? 'Directorio' : 'Depósito'}: pestaña ${pestana}`, async ({ page }) => {

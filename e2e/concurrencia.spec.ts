@@ -83,7 +83,7 @@ test.describe('Concurrencia', () => {
 
     const pedir = (i: number) => page.request.post(`${url}/rest/v1/rpc/crear_repuesto`, {
       headers: cab,
-      data: { p_familia_id: fam.id, p_subfamilia_id: sub.id, p_numero: null, p_descripcion: `zz concurrencia ${i}`, p_ubicacion: '', p_stock: 1, p_stock_minimo: 0, p_punto_pedido: 0, p_detalles: '' },
+      data: { p_familia_id: fam.id, p_subfamilia_id: sub.id, p_numero: null, p_descripcion: `zz concurrencia ${i}`, p_ubicacion: '', p_stock: 0, p_stock_minimo: 0, p_punto_pedido: 0, p_detalles: '' },
     });
     const respuestas = await Promise.all(Array.from({ length: 8 }, (_, i) => pedir(i)));
     const items = await Promise.all(respuestas.map(async r => { expect(r.ok(), await r.text()).toBe(true); return r.json() as Promise<{ id: string; codigo: string }>; }));

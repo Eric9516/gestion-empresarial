@@ -18,7 +18,7 @@ export type Item = Omit<Database['public']['Tables']['items']['Row'], ColumnasFu
 };
 
 // La familia y la subfamilia NO se piden pegadas a cada repuesto (se repetirían miles de veces): son listas chicas, se piden una vez aparte y se enchufan después.
-const COLUMNAS_DE_LA_LISTA = 'id,codigo,numero,descripcion,detalles,ubicacion,stock,stock_minimo,punto_pedido,activo,familia_id,subfamilia_id,'
+const COLUMNAS_DE_LA_LISTA = 'id,codigo,numero,descripcion,detalles,ubicacion,unidad,stock,stock_minimo,punto_pedido,activo,familia_id,subfamilia_id,'
   + 'foto_url,foto_url_2,foto_url_3,foto_pendiente,foto_pendiente_2,foto_pendiente_3,estado_reposicion';
 
 type RepuestoSinNombres = Omit<Item, 'familias' | 'subfamilias'>;
@@ -84,6 +84,8 @@ export type ItemInput = {
   numero: string;
   descripcion: string;
   ubicacion: string;
+  unidad: string;
+  // Solo se usa al crear (entra como una "Carga inicial"); al editar, el stock no se escribe acá: cambia con un movimiento.
   stock: number | null;
   stock_minimo: number | null;
   punto_pedido: number | null;
@@ -165,7 +167,7 @@ export function useSaveItem() {
           familia_id: input.familia_id,
           subfamilia_id: input.subfamilia_id,
           ubicacion: input.ubicacion || null,
-          stock: input.stock,
+          unidad: input.unidad.trim() || 'Uni',
           stock_minimo: input.stock_minimo ?? 0,
           punto_pedido: input.punto_pedido ?? 0,
           detalles: input.detalles || null,
@@ -181,6 +183,7 @@ export function useSaveItem() {
         p_numero: numeroAutomatico ? (null as unknown as string) : input.numero,
         p_descripcion: input.descripcion,
         p_ubicacion: input.ubicacion,
+        p_unidad: input.unidad.trim() || 'Uni',
         p_stock: input.stock as number,
         p_stock_minimo: input.stock_minimo as number,
         p_punto_pedido: input.punto_pedido as number,

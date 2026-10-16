@@ -178,7 +178,7 @@ t('deposito', 'editar sector', p => p.mantAdm, upd('sectores', x => x.f.sec, () 
 t('deposito', 'eliminar sector', p => p.mantAdm, del('sectores', mk('sectores', () => ({ nombre: 'ZZ-m borrar ' + sufijo() }))));
 t('deposito', 'crear repuesto', p => p.mantAdm, ins('items', x => ({ codigo: `ZZN${x.w}${sufijo()}`, numero: '1', descripcion: 'ZZ-m', familia_id: x.f.fam, subfamilia_id: x.f.sub })));
 t('deposito', 'editar repuesto: descripción', p => p.mantAdm, upd('items', x => x.f.item, () => ({ descripcion: 'ZZ-m repuesto ' + randomUUID() })));
-t('deposito', 'editar repuesto: stock directo', p => p.mantAdm, upd('items', x => x.f.item, () => ({ stock: 300 + Math.random() * 600 })));
+t('deposito', 'editar repuesto: stock directo (ya no lo puede cambiar nadie)', () => false, upd('items', x => x.f.item, () => ({ stock: 300 + Math.random() * 600 })));
 t('deposito', 'editar repuesto: stock mínimo', p => p.mantAcc, upd('items', x => x.f.item, () => ({ stock_minimo: 0 })));
 t('deposito', 'eliminar repuesto', p => p.own, del('items', mk('items', x => ({ codigo: `ZZD${x.w}${sufijo()}`, numero: '1', descripcion: 'ZZ-m borrar', familia_id: x.f.fam, subfamilia_id: x.f.sub }))));
 t('deposito', 'vincular proveedor a repuesto', p => p.mantAdm, ins('item_proveedores', x => ({ item_id: x.f.item, proveedor_id: proveedorBase.id })));

@@ -22,6 +22,8 @@ export function useSaveConfiguracion() {
   return useMutation({
     mutationFn: async (body: {
       empresa_nombre: string; empresa_direccion: string; empresa_telefono: string; empresa_email: string; logo_base64?: string;
+      // Salen en los comprobantes (remitos, cargas de stock…)
+      empresa_razon_social?: string; empresa_cuit?: string; empresa_web?: string;
       // null = volver a los colores originales de la app
       color_primario?: string | null; color_deposito?: string | null;
       zona_horaria?: string;

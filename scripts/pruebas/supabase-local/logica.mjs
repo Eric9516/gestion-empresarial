@@ -30,6 +30,13 @@ const sector = R('sectores', (await sv('POST', '/rest/v1/sectores', { nombre: 'Z
 const nuevoItem = async (extra = {}) => R('items', (await sv('POST', '/rest/v1/items', { codigo: 'ZZL' + sufijo(), numero: '1', descripcion: 'ZZ-l repuesto', familia_id: fam, subfamilia_id: sub, stock: 100, stock_minimo: 0, punto_pedido: 0, ...extra })).d[0].id);
 const stockDe = async id => Number((await sv('GET', `/rest/v1/items?select=stock&id=eq.${id}`)).d[0].stock);
 const item = async id => (await sv('GET', `/rest/v1/items?select=*&id=eq.${id}`)).d[0];
+// El stock ya no se escribe a mano: para dejar un repuesto con un stock dado se hace un ajuste (como lo haría un dueño).
+const fijarStock = async (id, valor) => {
+  const d = valor - await stockDe(id);
+  if (!d) return;
+  const r = await P.dueno.u('POST', '/rest/v1/rpc/crear_movimiento_stock', { p_clase: 'ajuste', p_fecha: null, p_motivo: 'ZZ-l preparar la prueba', p_referencia: null, p_observaciones: null, p_lineas: [{ item_id: id, tipo: d > 0 ? 'suma' : 'resta', cantidad: Math.abs(d) }] });
+  if (!hecho(r)) throw new Error('no se pudo dejar el stock en ' + valor + ': ' + msg(r));
+};
 const provId = (await sv('GET', '/rest/v1/proveedores?select=id&limit=1')).d[0].id;
 const ultimaAuditoria = async (desde, filtro = '') => (await sv('GET', `/rest/v1/audit_log?select=*&id=gt.${desde}${filtro}&order=id.asc`)).d;
 const maxAudit = async () => Number((await sv('GET', '/rest/v1/audit_log?select=id&order=id.desc&limit=1')).d[0]?.id ?? 0);
@@ -59,13 +66,14 @@ seccion('Stock y retiros');
 seccion('Reposición (stock mínimo y punto de pedido)');
 {
   const it = await nuevoItem();
-  const a = await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock_minimo: 10, punto_pedido: 6, stock: 3, estado_reposicion: 'compras' });
+  await fijarStock(it, 3);
+  const a = await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock_minimo: 10, punto_pedido: 6, estado_reposicion: 'compras' });
   const i1 = await item(it);
   ok('con stock bajo el punto de pedido, el estado "compras" queda y se fecha', hecho(a) && i1.estado_reposicion === 'compras' && !!i1.estado_reposicion_at, msg(a) + JSON.stringify([i1.estado_reposicion, i1.estado_reposicion_at]));
-  await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock: 50 });
+  await fijarStock(it, 50);
   const i2 = await item(it);
   ok('al reponer el stock por encima del punto de pedido, el estado se limpia solo', i2.estado_reposicion === null && i2.estado_reposicion_at === null, JSON.stringify(i2.estado_reposicion));
-  await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock: 2 });
+  await fijarStock(it, 2);
   const m = await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { estado_reposicion: 'inventado' });
   ok('un estado de reposición inventado se rechaza', !hecho(m), msg(m));
   const n = await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock_minimo: -1 });
@@ -281,9 +289,11 @@ seccion('Historial (auditoría)');
   let f = await ultimaAuditoria(a, `&tabla=eq.items&registro_id=eq.${it}`);
   ok('editar un repuesto queda en el historial con el autor', f.length === 1 && f[0].accion === 'update' && f[0].usuario_email === P.adminDep.mail, JSON.stringify(f.map(x => [x.accion, x.usuario_email])));
   a = await maxAudit();
-  await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock: 77 });
-  f = await ultimaAuditoria(a, `&tabla=eq.items&registro_id=eq.${it}`);
-  ok('cambiar el stock a mano queda en el historial', f.length === 1, f.length);
+  const directo = await P.adminDep.u('PATCH', `/rest/v1/items?id=eq.${it}`, { stock: 77 });
+  ok('cambiar el stock a mano se rechaza (se hace con un movimiento)', !hecho(directo) && /movimiento/i.test(msg(directo)), msg(directo));
+  await fijarStock(it, 77);
+  f = await ultimaAuditoria(a, '&tabla=eq.ajustes_inventario');
+  ok('cambiar el stock con un movimiento queda en el historial con su comprobante', f.length === 1 && /AJU 0001-\d{8}/.test(f[0].descripcion), JSON.stringify(f.map(x => x.descripcion)));
   a = await maxAudit();
   const r = (await P.comunDep.u('POST', '/rest/v1/retiros', { usuario_id: P.comunDep.id, sector_id: sector })).d[0].id; R('retiros', r);
   const l = (await P.comunDep.u('POST', '/rest/v1/retiro_items', { retiro_id: r, item_id: it, cantidad: 2 })).d[0].id;

@@ -121,3 +121,24 @@ contabilidad (cuentas por artículo), ventas, comercio electrónico, doble aprob
 4. **Depósitos de Cremac**: cuántos son, cómo se llaman y qué guarda cada uno, para convertir el stock actual.
 5. **Fecha de vencimiento o de entrega prometida** en la orden de compra, para marcar atrasos (no se vio en las capturas).
 6. Si una **compra que se consume directo** necesita un camino aparte ("salida directa") o alcanza con recibirla sin sumar al stock y retirarla.
+
+## El requerimiento impreso: ejemplo del sistema de la fábrica (2026-10-16)
+
+El dueño pasó un requerimiento real (REQUERIMIENTO 0028-00002528, 21/09/2026, "Solicita: Requerimiento de Mantenimiento"). Se toma como **ejemplo para mejorar, no para copiar**.
+
+**Qué trae:** encabezado en dos bloques (a la izquierda logo, domicilio, teléfono, correo y web de la empresa; a la derecha el tipo de documento, el número `0028 00002528` y la fecha); "Solicita" (el área), "Cuenta" (código contable), "Destino interno"; tabla con código de artículo, cantidad, **unidad de medida**, descripción y **fecha de entrega por línea**; recuadro de observaciones; al pie, operador y fecha y hora.
+Los códigos son los mismos que usa este producto (`M` + familia + subfamilia + 5 dígitos, por ejemplo `MRMED00001`) e incluyen un **artículo de servicio** (`MSRFL00001`, "Flete") en el mismo requerimiento.
+
+**Qué se toma:**
+- El número con **punto de venta + correlativo de 8 dígitos** (`0028-00002528`); el punto de venta es el depósito o área que lo emite.
+- Encabezado de la empresa tomado de la configuración, tipo y número bien visibles, fecha.
+- **Unidad de medida** en cada línea (hoy los artículos no la tienen: hay que agregarla al catálogo).
+- **Artículos de servicio** (flete, reparación, mano de obra) que se piden y se compran pero **nunca suman stock**: una marca en el artículo ("no maneja stock").
+- **Fecha requerida por línea** (para que Compras sepa qué es urgente).
+- Observaciones, y al pie quién lo hizo y cuándo.
+
+**Qué se mejora:**
+- Una hoja A4 que se ajusta al contenido (la del ejemplo reserva una caja enorme vacía) y que **sigue en la página siguiente con el encabezado repetido** y "página 1 de 2".
+- **Código QR** que abre el documento en la app (ver estado, recibir mercadería) escaneándolo desde el papel.
+- Número de línea, cantidades alineadas, descripciones completas, y **firmas** (quien pide y quien autoriza) cuando la empresa las use.
+- Los campos "Cuenta" y "Destino interno" son opcionales y con nombres claros ("Sector de destino", "Cuenta contable" solo si la empresa la usa); no se imprimen en el documento que va al proveedor (ya decidido: la orden de compra no muestra quién pide ni el sector).

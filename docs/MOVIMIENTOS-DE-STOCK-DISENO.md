@@ -70,3 +70,22 @@ La pestaña **Ajustes** pasa a **Movimientos de stock**: una lista de todos los 
 3. **Motivos de ajuste**: ¿lista fija (rotura, pérdida, conteo, vencido, otro) o texto libre?
 4. Si el retiro imprime el comprobante al confirmarse, o queda para imprimir después.
 5. Qué pasa con las reparaciones que descuentan stock al salir: ¿generan su propio comprobante o cuelgan del número de la reparación?
+
+## Etapa 1 (hecha) y lo que sigue
+
+**Hecho:** pestaña "Movimientos" con cargas (`CAR`) y ajustes (`AJU`) numerados sin saltos, fecha, motivo, referencia, observaciones, unidad de medida, stock actual y "quedará" por línea; el stock ya no se escribe en la ficha del repuesto (botón "Cambiar stock…"); la base rechaza cualquier cambio directo del stock; la importación desde Excel queda registrada como ajustes; datos de la empresa (razón social, CUIT, web) para los comprobantes. Sin costos ni precios, por decisión del dueño.
+
+## Ideas tomadas de los manuales del sistema anterior (solo ideas, no se copia nada)
+
+Para las etapas siguientes, de más a menos cercana:
+
+1. **Tipo de operación como dato, no fijo en el código**: compra (suma), corrección (suma o resta), transferencia entre depósitos (resta en uno y suma en otro, en un solo comprobante), salida a un sector. Cada tipo dice si usa depósitos de origen y destino y si pide proveedor.
+2. **Cabecera de una carga por compra**: proveedor (del Directorio), comprobante del proveedor y remito del proveedor por separado, y un "concepto" libre. Hoy hay un solo campo "Referencia".
+3. **Transferencia entre depósitos**: un comprobante con depósito de origen y de destino. Necesita el stock por repuesto y depósito (Fase de depósitos múltiples).
+4. **Control de recepción**: cantidad remitida contra cantidad recibida e inspeccionada, aprobado o rechazado y motivo del rechazo. Va con Compras (la recepción de una orden de compra).
+5. **Ficha de movimientos por artículo**: todos los movimientos de un repuesto entre dos fechas, filtrable por tipo y por usuario, exportable a Excel. Hoy existe el historial por repuesto; falta el filtro por fechas y tipo.
+6. **Hoja de trabajo para el conteo físico**: listado imprimible por depósito o familia para anotar lo contado; después se carga como un ajuste por conteo. Opción de no listar lo que está en cero.
+7. **Datos de existencia en la ficha**: stock máximo y fecha del último inventario (además del mínimo y el punto de pedido que ya hay).
+8. **Alta rápida de varios artículos seguidos** ("próximo ítem") dentro de una misma carga.
+9. **Comprobantes con variables de impresión**: fecha de emisión, tipo de comprobante, punto y número, datos del destinatario, remito relacionado, transportista, destino y guía. Sirve de lista de campos para el remito de la etapa 2.
+10. **Pendiente de remitir**: mercadería reservada (señada) que no salió del stock todavía. Tema de ventas; se deja anotado.

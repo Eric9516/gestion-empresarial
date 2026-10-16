@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { fetchUsuariosPorIds, nombreUsuario } from '../../lib/usuarios';
-import type { TipoAjuste } from '../../lib/ajustes';
+import type { ClaseMovimiento, TipoAjuste } from '../../lib/ajustes';
 
 export interface AjusteLinea {
   id: string;
@@ -9,13 +9,19 @@ export interface AjusteLinea {
   cantidad: number;
   stock_antes: number | null;
   stock_despues: number | null;
-  items: { codigo: string; descripcion: string } | null;
+  items: { codigo: string; descripcion: string; unidad: string } | null;
 }
 
 export interface Ajuste {
   id: string;
   created_at: string;
   usuario_id: string;
+  clase: ClaseMovimiento;
+  fecha: string;
+  punto_venta: number;
+  numero: number;
+  referencia: string | null;
+  observaciones: string | null;
   motivo: string;
   anulado: boolean;
   anulado_por: string | null;
@@ -38,7 +44,7 @@ export function useAjustesQuery() {
       for (let desde = 0; ; desde += PAGE_SIZE) {
         const { data, error } = await supabase
           .from('ajustes_inventario')
-          .select('*, ajuste_items(id, tipo, cantidad, stock_antes, stock_despues, items(codigo, descripcion))')
+          .select('*, ajuste_items(id, tipo, cantidad, stock_antes, stock_despues, items(codigo, descripcion, unidad))')
           .order('created_at', { ascending: false })
           .range(desde, desde + PAGE_SIZE - 1);
         if (error) throw error;
@@ -65,13 +71,14 @@ function useRefrescarTodo() {
   };
 }
 
-export function useCrearAjuste() {
+// Una carga de stock o un ajuste: un documento con su número, todo o nada. Devuelve el comprobante (por ejemplo "CAR 0001-00000012").
+export function useCrearMovimiento() {
   const refrescar = useRefrescarTodo();
   return useMutation({
-    mutationFn: async ({ motivo, lineas }: { motivo: string; lineas: { item_id: string; tipo: TipoAjuste; cantidad: number }[] }) => {
-      const { data, error } = await supabase.rpc('crear_ajuste_inventario', { p_motivo: motivo, p_lineas: lineas });
+    mutationFn: async (m: { clase: ClaseMovimiento; fecha: string; motivo: string; referencia: string; observaciones: string; lineas: { item_id: string; tipo: TipoAjuste; cantidad: number }[] }) => {
+      const { data, error } = await supabase.rpc('crear_movimiento_stock', { p_clase: m.clase, p_fecha: m.fecha, p_motivo: m.motivo, p_referencia: m.referencia, p_observaciones: m.observaciones, p_lineas: m.lineas });
       if (error) throw error;
-      return data;
+      return data as { id: string; comprobante: string };
     },
     onSuccess: refrescar,
   });
