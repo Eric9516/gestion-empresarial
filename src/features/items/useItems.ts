@@ -7,10 +7,20 @@ import type { Database } from '../../lib/database.types';
 import type { Familia, Subfamilia } from '../familias/useFamilias';
 import type { EstadoReposicion } from './reposicion';
 
-export type Item = Database['public']['Tables']['items']['Row'] & {
+// Columnas que la lista de repuestos NO trae: datos de auditoría (quién y cuándo subió la foto o borró el repuesto) que solo hacen falta en la papelera y en
+// fotos pendientes, que los piden por su cuenta. Con miles de repuestos, no mandarlos por cada fila achica bastante lo que se descarga al abrir la app.
+type ColumnasFueraDeLaLista = 'eliminado_at' | 'eliminado_por' | 'foto_subida_at' | 'foto_subida_at_2' | 'foto_subida_at_3' | 'foto_subida_por' | 'foto_subida_por_2' | 'foto_subida_por_3' | 'estado_reposicion_at' | 'created_at' | 'updated_at';
+
+export type Item = Omit<Database['public']['Tables']['items']['Row'], ColumnasFueraDeLaLista> & {
   familias: Pick<Familia, 'id' | 'codigo' | 'nombre'> | null;
   subfamilias: Pick<Subfamilia, 'id' | 'codigo' | 'nombre'> | null;
 };
+
+// La familia y la subfamilia NO se piden pegadas a cada repuesto (se repetirían miles de veces): son listas chicas, se piden una vez aparte y se enchufan después.
+const COLUMNAS_DE_LA_LISTA = 'id,codigo,numero,descripcion,detalles,ubicacion,stock,stock_minimo,punto_pedido,activo,familia_id,subfamilia_id,'
+  + 'foto_url,foto_url_2,foto_url_3,foto_pendiente,foto_pendiente_2,foto_pendiente_3,estado_reposicion';
+
+type RepuestoSinNombres = Omit<Item, 'familias' | 'subfamilias'>;
 
 // Compacta el segmento numérico final (p.ej. "003" o "00003") a su valor sin
 // ceros a la izquierda, para poder matchear "PU003" contra el código real
@@ -87,21 +97,34 @@ export function useItemsQuery() {
   return useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const all: Item[] = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await supabase
-          .from('items')
-          .select('*, familias(id,codigo,nombre), subfamilias(id,codigo,nombre)')
-          .eq('activo', true)
-          .order('codigo', { ascending: true })
-          .range(from, from + PAGE_SIZE - 1);
-        if (error) throw error;
-        all.push(...(data as Item[]));
-        if (!data || data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+      // La primera tanda trae además el total; las que faltan se piden todas a la vez (antes se pedían de a una, esperando cada respuesta).
+      const pedirTanda = (desde: number) => supabase
+        .from('items')
+        .select(COLUMNAS_DE_LA_LISTA, desde === 0 ? { count: 'exact' } : undefined)
+        .eq('activo', true)
+        .order('codigo', { ascending: true })
+        .range(desde, desde + PAGE_SIZE - 1);
+      const [primera, familias, subfamilias] = await Promise.all([
+        pedirTanda(0),
+        supabase.from('familias').select('id,codigo,nombre'),
+        supabase.from('subfamilias').select('id,codigo,nombre'),
+      ]);
+      if (primera.error) throw primera.error;
+      if (familias.error) throw familias.error;
+      if (subfamilias.error) throw subfamilias.error;
+      const total = primera.count ?? primera.data.length;
+      const desdes: number[] = [];
+      for (let d = PAGE_SIZE; d < total; d += PAGE_SIZE) desdes.push(d);
+      const resto = await Promise.all(desdes.map(pedirTanda));
+      const filas = [...(primera.data as unknown as RepuestoSinNombres[])];
+      for (const r of resto) {
+        if (r.error) throw r.error;
+        filas.push(...(r.data as unknown as RepuestoSinNombres[]));
       }
-      return all;
+      // Cada repuesto apunta al mismo objeto de su familia y subfamilia (no una copia por repuesto): menos memoria y las comparaciones por identidad siguen andando.
+      const porFamilia = new Map(familias.data.map(x => [x.id, x]));
+      const porSubfamilia = new Map(subfamilias.data.map(x => [x.id, x]));
+      return filas.map((r): Item => ({ ...r, familias: porFamilia.get(r.familia_id) ?? null, subfamilias: porSubfamilia.get(r.subfamilia_id) ?? null }));
     },
   });
 }
@@ -139,7 +162,7 @@ export function useSaveItem() {
 }
 
 // Marca (o desmarca, con null) el estado de reposición de varios repuestos.
-// La fecha "desde cuándo" la pone la base; acá se vuelve a copiar a la lista
+// La fecha "desde cuándo" la pone la base (y la lista no la trae); acá se vuelve a copiar el estado a la lista
 // en memoria en vez de recargar los 5.000 repuestos. Se manda en tandas
 // porque los ids viajan en la URL.
 const TANDA_IDS = 100;
@@ -148,13 +171,13 @@ export function useMarcarEstadoReposicion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ids, estado }: { ids: string[]; estado: EstadoReposicion | null }) => {
-      const actualizados: Pick<Item, 'id' | 'estado_reposicion' | 'estado_reposicion_at'>[] = [];
+      const actualizados: Pick<Item, 'id' | 'estado_reposicion'>[] = [];
       for (let i = 0; i < ids.length; i += TANDA_IDS) {
         const { data, error } = await supabase
           .from('items')
           .update({ estado_reposicion: estado })
           .in('id', ids.slice(i, i + TANDA_IDS))
-          .select('id, estado_reposicion, estado_reposicion_at');
+          .select('id, estado_reposicion');
         if (error) throw error;
         actualizados.push(...data);
       }
@@ -164,7 +187,7 @@ export function useMarcarEstadoReposicion() {
       const porId = new Map(actualizados.map(a => [a.id, a]));
       queryClient.setQueryData<Item[]>(QUERY_KEY, viejos => viejos?.map(it => {
         const nuevo = porId.get(it.id);
-        return nuevo ? { ...it, estado_reposicion: nuevo.estado_reposicion, estado_reposicion_at: nuevo.estado_reposicion_at } : it;
+        return nuevo ? { ...it, estado_reposicion: nuevo.estado_reposicion } : it;
       }));
     },
   });

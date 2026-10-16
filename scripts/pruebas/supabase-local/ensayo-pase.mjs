@@ -61,7 +61,6 @@ const fotoAntes = {};
 for (const t of ['items', 'proveedores', 'comisionistas', 'contactos', 'tasks', 'usuarios_perfil', 'configuracion', 'reparaciones', 'rotulos_generados']) {
   fotoAntes[t] = (await q(copia, `select to_jsonb(x) as j from public.${t} x order by to_jsonb(x)->>'id', to_jsonb(x)::text`)).map((r) => r.j);
 }
-const auditAntes = new Set((await q(copia, 'select id from public.audit_log')).map((r) => r.id));
 for (const _ of [0]) {
 }
 

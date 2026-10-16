@@ -117,7 +117,7 @@ export default function ProveedorForm({ open, onClose, proveedor }: Props) {
           {fields.length === 0 && <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>Sin contactos aún. Hacé clic en "Agregar contacto".</p>}
           {fields.map((f, i) => (
             <div className="contact-row" key={f.id}>
-              <button type="button" className="btn-remove-contact" onClick={() => remove(i)}><Icono n="cerrar" /></button>
+              <button type="button" className="btn-remove-contact" aria-label="Quitar contacto" title="Quitar contacto" onClick={() => remove(i)}><Icono n="cerrar" /></button>
               <div className="contact-row-grid">
                 <div className="form-group">
                   <label htmlFor={`contacto-${f.id}-nombre`}>Nombre y apellido *</label>

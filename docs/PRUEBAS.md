@@ -9,6 +9,7 @@ Todo se corre desde la carpeta del proyecto. Lo que está **sin probar** figura 
 | `pnpm test` | Lógica de la app: módulos y licencia, numeración, ajustes, fechas, marca, errores, lectura y escritura de Excel, y que ninguna pantalla use emojis como ícono | 98 |
 | `pnpm lint` · `npx tsc -b` · `pnpm build` · `pnpm audit` | Código sin errores; tipos; la app compila; ninguna dependencia con fallas conocidas | sin errores |
 | `pnpm pruebas:esquema` | La base de datos desde cero (en memoria): cadena original y cadena por componentes, que den **el mismo esquema**, que cada plan instale solo lo suyo, ampliar sin perder datos y el camino de **Cremac** (base vieja con datos + migraciones nuevas) | todo bien |
+| `pnpm pruebas:pantalla` | **La app en un navegador de verdad** (Playwright con el Microsoft Edge instalado), contra el Supabase local: entrar (clave mal, sin sesión, ya adentro), Directorio (buscar, filtrar, agregar/cambiar/quitar contactos de un proveedor, comisionistas), Depósito (buscar por código, retirar con sector, que el stock baje y devolverlo desde el historial) y Reparaciones (recibir una entrega con remito), en computadora y en celular. Arranca y corta solo el servidor y la app; tarda un minuto. Archivos en `e2e/` | 11 |
 | `pnpm pruebas:supabase-local` | Las siete de abajo, contra el **Supabase local** (ver apartado 2). Tarda unos 15 minutos | todo bien |
 | ↳ `integracion-local.mjs` | La prueba de integración **real** (`scripts/pruebas/integracion.mjs`): usuarios, dueños, stock, historial, funciones de usuarios, módulos, interruptor del dueño, ajustes, acceso sin sesión, bloqueados, zona horaria | 184 |
 | ↳ `instalador-local.mjs` | El instalador **real** `pnpm cliente` de punta a punta: cliente solo-Tareas, ampliarlo a Abastecimiento y a Mantenimiento, activar módulos, adoptar una base que ya existía, y todo lo que se niega a hacer | 41 |
@@ -96,7 +97,8 @@ Se rompió a propósito para comprobar que detecta: usar siempre hora UTC (1.024
 * **El panel instalado en un servidor** y detrás de Tailscale; los avisos al celular (ntfy).
 * **Publicar la app** (Netlify) y los correos de Supabase.
 * **El pase de Cremac** sobre su base real (se probó el camino sobre una base armada igual, con datos).
-* **Rendimiento** con muchos datos.
+* **Rendimiento** con muchos datos (la lista de repuestos se estimó, no se midió con 50.000).
+* **Pantallas sin prueba de pantalla todavía:** Rótulos, Tareas, Ajustes de stock, Informe de reposición, Familias, importaciones de Excel y la configuración del dueño.
 
 ## 6. Cuando se agrega algo
 

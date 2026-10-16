@@ -41,7 +41,7 @@ for (let i = 0; i < TRABAJADORES; i++) {
 }
 // perfil base de los trabajadores (la combinación lo cambia)
 
-const familiaBase = (await sv('GET', '/rest/v1/familias?select=id,codigo&limit=1')).d[0];
+
 const config0 = (await sv('GET', '/rest/v1/configuracion?select=*&id=eq.1')).d[0];
 const diseno0 = (await sv('GET', '/rest/v1/rotulo_disenos?select=id,nombre&limit=1')).d[0];
 const planilla0 = (await sv('GET', '/rest/v1/planilla_familias?select=nombre_archivo&limit=1')).d[0];
@@ -49,8 +49,8 @@ const proveedorBase = (await sv('GET', '/rest/v1/proveedores?select=id&limit=1')
 
 // sembrados compartidos
 await crear('sugerencias', { usuario_id: otroId, mensaje: 'ZZ-m sugerencia' });
-const errorOtro = await crear('error_logs', { usuario_id: otroId, mensaje: 'ZZ-m error' });
-const sectorComun = await crear('sectores', { nombre: 'ZZ-m sector común ' + sufijo() });
+await crear('error_logs', { usuario_id: otroId, mensaje: 'ZZ-m error' });
+await crear('sectores', { nombre: 'ZZ-m sector común ' + sufijo() });
 const tareaOtro = (await sv('POST', '/rest/v1/tasks', { user_id: otroId, title: 'ZZ-m tarea ajena', status: 'pending', traffic_level: 'green', start_date: hoy(), assigned_date: hoy(), pending_days: 0, carry_count: 0, is_stagnant: false })).d[0].id;
 rastrear('tasks', tareaOtro);
 await sv('POST', '/rest/v1/task_history', { task_id: tareaOtro, user_id: otroId, action: 'created', note: 'ZZ-m' });
@@ -204,7 +204,7 @@ t('retiros', 'editar retiro propio (menos de 24 h)', SIEMPRE, upd('retiros', x =
 t('retiros', 'editar retiro propio (más de 24 h)', p => p.verRet, upd('retiros', x => x.f.retViejo, () => ({ observacion_general: 'ZZ' })));
 t('retiros', 'editar retiro ajeno', p => p.verRet, upd('retiros', x => x.f.retOtro, () => ({ observacion_general: 'ZZ' })));
 t('retiros', 'borrar retiro propio (menos de 24 h)', SIEMPRE, del('retiros', mk('retiros', x => ({ usuario_id: x.me, sector_id: x.f.sec }))));
-t('retiros', 'borrar retiro propio (más de 24 h)', p => p.verRet, del('retiros', async x => { const id = await mk('retiros', x2 => ({ usuario_id: x.me, sector_id: x.f.sec }))(x); await sv('PATCH', `/rest/v1/retiros?id=eq.${id}`, { created_at: new Date(Date.now() - 30 * 3600e3).toISOString() }); return id; }));
+t('retiros', 'borrar retiro propio (más de 24 h)', p => p.verRet, del('retiros', async x => { const id = await mk('retiros', () => ({ usuario_id: x.me, sector_id: x.f.sec }))(x); await sv('PATCH', `/rest/v1/retiros?id=eq.${id}`, { created_at: new Date(Date.now() - 30 * 3600e3).toISOString() }); return id; }));
 t('retiros', 'borrar retiro ajeno', p => p.verRet, del('retiros', mk('retiros', x => ({ usuario_id: otroId, sector_id: x.f.sec }))));
 
 // soporte

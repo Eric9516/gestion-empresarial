@@ -15,7 +15,9 @@ import './styles/index.css';
 
 initSentry();
 
-const queryClient = new QueryClient();
+// Lo que ya se pidió se considera fresco 30 segundos: al pasar de una pantalla a otra o volver a la pestaña no se vuelve a pedir lo mismo al servidor.
+// Lo que uno mismo cambia se actualiza igual y al instante (cada cambio invalida lo que toca); los datos que sí tienen que ser siempre nuevos fijan su propio plazo.
+const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

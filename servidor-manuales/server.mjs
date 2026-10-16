@@ -80,6 +80,7 @@ async function leerMeta(id) {
 }
 
 function limpiarNombre(nombre) {
+  // oxlint-disable-next-line no-control-regex -- justamente se limpian los caracteres de control del nombre del archivo
   const base = path.basename(String(nombre || 'archivo')).replace(/[\u0000-\u001f\u007f"\\/:*?<>|]/g, '_').trim();
   return (base || 'archivo').slice(0, 180);
 }
@@ -149,6 +150,7 @@ async function usuarioDe(req) {
 
 // ---------- subir ----------
 function subir(req, res, usuario) {
+  // oxlint-disable-next-line no-async-promise-executor -- la subida se escribió así a propósito y está probada; no se cambia sin necesidad
   return new Promise(async resolve => {
     const largo = Number(req.headers['content-length'] || 0);
     if (largo > CFG.maxBytes + 1024 * 1024) { error(res, 413, `El archivo supera el máximo de ${Math.round(CFG.maxBytes / 1048576)} MB.`); return resolve(); }

@@ -58,7 +58,7 @@ describe('código del servidor', () => {
     const p = leer('src', 'server', 'planes.ts');
     const consultas = [...p.matchAll(/api\.consultar\(\s*ref,\s*([^,)]+)/g)].map(x => x[1]!.trim());
     // Cada consulta es una plantilla fija; las únicas variables interpoladas son REG (constante) y m.nombre/m.sql (empaquetados y validados).
-    for (const c of consultas) expect(c).toMatch(/^[`'"]|^\`/);
+    for (const c of consultas) expect(c).toMatch(/^[`'"]|^`/);
     const interpolaciones = [...p.matchAll(/consultar\([^;]*?\$\{([^}]+)\}/gs)].map(x => x[1]!.trim());
     for (const i of interpolaciones) expect(['REG', 'm.nombre', 'm.sql', 'REG'].includes(i), `interpolación inesperada en SQL: ${i}`).toBe(true);
   });

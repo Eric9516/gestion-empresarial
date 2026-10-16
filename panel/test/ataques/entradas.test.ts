@@ -146,6 +146,7 @@ describe('fuzzing del armado de planes (sin red ni límites)', () => {
         const c = conRefValido && (tipo === 'actualizar' || tipo === 'modulos') ? { ...cuerpo, ref: refValido } : cuerpo;
         try {
           const plan = await construirPlan(deps, tipo, c);
+    // oxlint-disable-next-line no-control-regex -- justamente se buscan caracteres de control
           return plan.pasos.length >= 1 && plan.pasos.length <= 60 && !JSON.stringify(plan.resumen).match(/[\u0000-\u001f]/);
         } catch (e) { return e instanceof ErrorHttp && [400, 404].includes(e.estado); }
       },

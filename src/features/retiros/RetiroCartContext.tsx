@@ -80,6 +80,7 @@ export function RetiroCartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// oxlint-disable-next-line react/only-export-components -- el hook que lee este contexto va junto a su proveedor a propósito
 export function useRetiroCart() {
   const ctx = useContext(RetiroCartContext);
   if (!ctx) throw new Error('useRetiroCart debe usarse dentro de <RetiroCartProvider>');

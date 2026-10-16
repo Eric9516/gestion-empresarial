@@ -45,3 +45,8 @@ panel/*.local
 
 # archivos temporales de las pruebas de pantalla con el Supabase local
 .env.ui-*
+
+# Resultados de las pruebas de pantalla
+test-results
+playwright-report
+.env.ui-*
