@@ -258,7 +258,7 @@ export default function AjustesScreen() {
         <div className="search-wrap">
           <Input type="text" placeholder="Artículo, motivo o quién lo hizo..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
-        <Select className="filter-select" value={filtro} onChange={e => setFiltro(e.target.value as Filtro)}>
+        <Select className="filter-select" aria-label="Filtrar ajustes" value={filtro} onChange={e => setFiltro(e.target.value as Filtro)}>
           <option value="todos">Todos</option>
           <option value="restas">Con restas (salió sin anotar)</option>
           <option value="sumas">Con sumas</option>

@@ -303,11 +303,11 @@ export default function InformeReposicion() {
         <div className="search-wrap">
           <Input type="text" placeholder="Buscar por código o descripción..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
-        <Select className="filter-select" value={familiaId} onChange={e => setFamiliaId(e.target.value)}>
+        <Select className="filter-select" aria-label="Familia" value={familiaId} onChange={e => setFamiliaId(e.target.value)}>
           <option value="">Todas las familias</option>
           {familias?.map(f => <option key={f.id} value={f.id}>{f.nombre}</option>)}
         </Select>
-        <Select className="filter-select" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value as FiltroEstado)}>
+        <Select className="filter-select" aria-label="Filtrar por estado" value={filtroEstado} onChange={e => setFiltroEstado(e.target.value as FiltroEstado)}>
           <option value="">Todos los estados</option>
           <option value="sin">Sin marcar</option>
           <option value="presupuesto">{ETIQUETA_ESTADO.presupuesto}</option>
@@ -332,6 +332,7 @@ export default function InformeReposicion() {
             <Button variant="ghost" size="sm" onClick={() => setSeleccion(new Set())}>Limpiar selección</Button>
             <Select
               className="filter-select"
+              aria-label="Marcar los seleccionados como"
               value=""
               disabled={marcar.isPending}
               onChange={e => void marcarSeleccionados(e.target.value === 'sin' ? null : e.target.value as EstadoReposicion)}

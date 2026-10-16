@@ -148,11 +148,11 @@ export default function ItemsList() {
         <div className="search-wrap">
           <Input type="text" placeholder="Código, número o descripción..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Select className="filter-select" value={familiaId} onChange={e => { setFamiliaId(e.target.value); setSubfamiliaId(''); }}>
+        <Select className="filter-select" aria-label="Familia" value={familiaId} onChange={e => { setFamiliaId(e.target.value); setSubfamiliaId(''); }}>
           <option value="">Todas las familias</option>
           {familias?.map(f => <option key={f.id} value={f.id}>{f.nombre} ({f.codigo})</option>)}
         </Select>
-        <Select className="filter-select" value={subfamiliaId} onChange={e => setSubfamiliaId(e.target.value)}>
+        <Select className="filter-select" aria-label="Subfamilia" value={subfamiliaId} onChange={e => setSubfamiliaId(e.target.value)}>
           <option value="">Todas las subfamilias</option>
           {subfamiliasDeLaFamilia.map(s => <option key={s.id} value={s.id}>{s.nombre} ({s.codigo})</option>)}
         </Select>
@@ -176,7 +176,7 @@ export default function ItemsList() {
       {!isLoading && !isError && sinFiltro && items?.length !== 0 && (
         <div className="empty-state">
           <div className="empty-icon"><Icono n="buscar" /></div>
-          <h3>Buscá un repuesto</h3>
+          <h2>Buscá un repuesto</h2>
           <p>Escribí un código, número o descripción, o elegí una familia para ver resultados.</p>
         </div>
       )}

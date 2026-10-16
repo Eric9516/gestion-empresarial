@@ -11,6 +11,10 @@ import { initSentry } from './lib/sentry';
 import { registrarError } from './lib/errorLogging';
 import App from './App';
 
+// Las tipografías de la marca se sirven desde la propia app (no desde Google): Nunito para todo el texto y Playfair Display solo en negrita para el nombre de la empresa.
+// Se bajan solo las letras que se usan (latino) y con `swap`: el texto se ve enseguida con la letra del sistema y cambia en cuanto llega la propia.
+import '@fontsource-variable/nunito/wght.css';
+import '@fontsource/playfair-display/latin-700.css';
 import './styles/index.css';
 
 initSentry();

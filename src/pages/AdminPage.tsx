@@ -109,7 +109,7 @@ function AdminContent() {
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
           <div>
             <div className="header-logo-fallback">{nombreEmpresa}</div>
-            <div className="header-title">Configuración</div>
+            <h1 className="header-title">Configuración</h1>
           </div>
         </div>
         <div className="header-right">

@@ -125,11 +125,11 @@ export default function ListaDirectorio<T extends { id: string; activo: boolean 
         <div className="search-wrap">
           <Input type="text" placeholder={textos.buscar} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Select className="filter-select" value={grupoFiltro} onChange={e => setGrupoFiltro(e.target.value)}>
+        <Select className="filter-select" aria-label={`Filtrar por ${grupo.plural.toLowerCase()}`} value={grupoFiltro} onChange={e => setGrupoFiltro(e.target.value)}>
           <option value="">{grupo.todos}</option>
           {grupos.map(g => <option key={g} value={g}>{g}</option>)}
         </Select>
-        <Select className="filter-select" style={{ minWidth: 130 }} value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value as typeof estadoFiltro)}>
+        <Select className="filter-select" aria-label="Filtrar por estado" style={{ minWidth: 130 }} value={estadoFiltro} onChange={e => setEstadoFiltro(e.target.value as typeof estadoFiltro)}>
           <option value="activo">Solo activos</option>
           <option value="">Todos</option>
           <option value="inactivo">Inactivos</option>

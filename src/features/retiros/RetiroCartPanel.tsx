@@ -63,7 +63,7 @@ export default function RetiroCartPanel() {
     return (
       <div className="empty-state">
         <div className="empty-icon"><Icono n="carrito" /></div>
-        <h3>No tenés nada para retirar todavía</h3>
+        <h2>No tenés nada para retirar todavía</h2>
         <p>Buscá un repuesto y tocá "Retirar".</p>
       </div>
     );

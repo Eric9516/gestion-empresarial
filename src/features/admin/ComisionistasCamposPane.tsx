@@ -63,7 +63,7 @@ export default function ComisionistasCamposPane() {
         {campos.map((campo, i) => (
           <div className="campo-custom-row" key={campo.id}>
             <Input type="text" className="cc-label" placeholder="Nombre del campo" value={campo.label} onChange={e => updateRow(i, { label: e.target.value })} />
-            <Select className="cc-tipo" value={campo.tipo} onChange={e => updateRow(i, { tipo: e.target.value as CampoCustom['tipo'] })}>
+            <Select className="cc-tipo" aria-label="Tipo de campo" value={campo.tipo} onChange={e => updateRow(i, { tipo: e.target.value as CampoCustom['tipo'] })}>
               {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </Select>
             <button className="btn-remove-contact" onClick={() => removeRow(i)} title="Eliminar campo"><Icono n="cerrar" /></button>

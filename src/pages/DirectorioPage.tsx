@@ -63,7 +63,7 @@ function DirectorioContent() {
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
           <div>
             <div className="header-logo-fallback">{nombreEmpresa}</div>
-            <div className="header-title">Directorio</div>
+            <h1 className="header-title">Directorio</h1>
           </div>
         </div>
         <div className="header-right">
@@ -79,7 +79,7 @@ function DirectorioContent() {
         </div>
       </header>
 
-      <nav className="app-nav">
+      <nav className="app-nav" aria-label="Secciones">
         {pestañas.map(p => (
           <button key={p.id} className={`nav-tab${tab === p.id ? ' active' : ''}`} onClick={() => setTabElegida(p.id)}>{p.icon} {p.label}</button>
         ))}

@@ -239,7 +239,7 @@ export default function HistorialRetiros() {
           <table>
             <thead>
               <tr>
-                <th></th>
+                <th><span className="sr-only">Detalle</span></th>
                 <th>Fecha</th>
                 {admin && <th>Usuario</th>}
                 <th>Sector</th>
@@ -255,9 +255,15 @@ export default function HistorialRetiros() {
                 const totalCantidad = r.retiro_items.reduce((s, ri) => s + ri.cantidad, 0);
                 return (
                   <Fragment key={r.id}>
-                    <tr style={{ cursor: 'pointer' }} aria-expanded={abierto} {...clicConTeclado(() => toggleRetiro(r.id), null)}>
+                    <tr style={{ cursor: 'pointer' }} onClick={() => toggleRetiro(r.id)}>
                       <td style={{ width: 28 }}>
-                        <span style={{ display: 'inline-block', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}><Icono n="desplegar" /></span>
+                        <button
+                          type="button"
+                          aria-expanded={abierto}
+                          aria-label={abierto ? 'Ocultar el detalle del retiro' : 'Ver el detalle del retiro'}
+                          onClick={e => { e.stopPropagation(); toggleRetiro(r.id); }}
+                          style={{ display: 'inline-flex', background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'inherit', transition: 'transform 0.15s', transform: abierto ? 'rotate(90deg)' : 'none' }}
+                        ><Icono n="desplegar" /></button>
                       </td>
                       <td>{fechaHora}</td>
                       {admin && <td>{usuarioNombre}</td>}
@@ -354,17 +360,17 @@ export default function HistorialRetiros() {
         <div className="search-wrap">
           <Input type="text" placeholder="Buscar por repuesto, sector u operario..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
         </div>
-        <Input type="date" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} style={{ maxWidth: 200 }} />
+        <Input type="date" aria-label="Fecha" value={fechaFiltro} onChange={e => setFechaFiltro(e.target.value)} style={{ maxWidth: 200 }} />
         <Button variant="ghost" size="sm" onClick={() => setFechaFiltro('')}>Ver últimos 30 días</Button>
         {admin && (
-          <Select className="filter-select" value={usuarioFiltro} onChange={e => setUsuarioFiltro(e.target.value)}>
+          <Select className="filter-select" aria-label="Filtrar por usuario" value={usuarioFiltro} onChange={e => setUsuarioFiltro(e.target.value)}>
             <option value="">Todos los usuarios</option>
             {[...usuarios].sort((a, b) => (a.nombre || a.email || '').localeCompare(b.nombre || b.email || '')).map(u => (
               <option key={u.id} value={u.id}>{`${u.nombre || ''} ${u.apellido || ''}`.trim() || u.email}</option>
             ))}
           </Select>
         )}
-        <Select className="filter-select" value={vista} onChange={e => setVista(e.target.value as Vista)}>
+        <Select className="filter-select" aria-label="Forma de ver los retiros" value={vista} onChange={e => setVista(e.target.value as Vista)}>
           <option value="tabla">Vista tabla</option>
           <option value="dias">Vista por día</option>
         </Select>
@@ -376,7 +382,7 @@ export default function HistorialRetiros() {
       {!isLoading && !isError && !retiros.length && (
         <div className="empty-state">
           <div className="empty-icon"><Icono n="lista" /></div>
-          <h3>Todavía no hay retiros</h3>
+          <h2>Todavía no hay retiros</h2>
           <p>Los que confirmes van a aparecer acá.</p>
         </div>
       )}
@@ -384,7 +390,7 @@ export default function HistorialRetiros() {
       {!isLoading && !isError && !!retiros.length && !retirosFiltrados.length && (
         <div className="empty-state">
           <div className="empty-icon"><Icono n="buscar" /></div>
-          <h3>Sin resultados</h3>
+          <h2>Sin resultados</h2>
           <p>Probá con otro código, sector u operario.</p>
         </div>
       )}

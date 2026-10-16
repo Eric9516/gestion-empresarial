@@ -75,7 +75,7 @@ const tarjeta = (c: Comisionista, { admin, ver, editar, eliminar }: AccionesDeFi
     <div className="prov-card-actions">
       <Button variant="ghost" size="sm" onClick={() => ver(c)}><Icono n="ver" /> Ver</Button>
       {admin && <Button variant="ghost" size="sm" onClick={() => editar(c)}><Icono n="editar" /> Editar</Button>}
-      {admin && <Button variant="dangerGhost" size="sm" onClick={() => eliminar(c)}><Icono n="borrar" /></Button>}
+      {admin && <Button variant="dangerGhost" size="sm" aria-label="Eliminar" title="Eliminar" onClick={() => eliminar(c)}><Icono n="borrar" /></Button>}
     </div>
   </div>
 );

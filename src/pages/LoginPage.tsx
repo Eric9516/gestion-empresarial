@@ -22,7 +22,7 @@ function AuthDecorations() {
   const drops = GOTAS;
 
   return (
-    <div className="auth-decorations">
+    <div className="auth-decorations" aria-hidden="true">
       {drops.map((d, i) => (
         <div key={i} className="icon-float" style={{ left: d.left, animationDuration: d.animationDuration, animationDelay: d.animationDelay, fontSize: d.fontSize }}>
           <Icono n={d.emoji} tam="1em" trazo={1.5} />
@@ -59,7 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-screen">
+    <main className="auth-screen">
       <AuthDecorations />
       <div className="auth-card">
         <div className="auth-logo">
@@ -67,7 +67,7 @@ export default function LoginPage() {
             ? <img src={config.logo_base64} alt={nombreEmpresa} />
             : <div className="auth-logo-fallback">{nombreEmpresa[0]}</div>}
         </div>
-        <div className="auth-title">{nombreEmpresa}</div>
+        <h1 className="auth-title">{nombreEmpresa}</h1>
         <div className="auth-subtitle"><Icono n="clave" /> Ingresá con tu cuenta</div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -89,6 +89,6 @@ export default function LoginPage() {
           <div style={{ marginTop: 20, fontSize: 11, color: 'var(--text-muted)' }}>Desarrollado por Eric Cantoni · 2025</div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

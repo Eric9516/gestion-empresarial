@@ -79,8 +79,8 @@ export default function ProveedoresList() {
         <div className="prov-card-actions">
           <Button variant="ghost" size="sm" onClick={() => ver(p)}><Icono n="ver" /> Ver</Button>
           {admin && <Button variant="ghost" size="sm" onClick={() => editar(p)}><Icono n="editar" /> Editar</Button>}
-          <Button variant="ghost" size="sm" onClick={() => setRotuloProvId(p.id)}><Icono n="etiqueta" /></Button>
-          {admin && <Button variant="dangerGhost" size="sm" onClick={() => eliminar(p)}><Icono n="borrar" /></Button>}
+          <Button variant="ghost" size="sm" aria-label="Rótulo" title="Rótulo" onClick={() => setRotuloProvId(p.id)}><Icono n="etiqueta" /></Button>
+          {admin && <Button variant="dangerGhost" size="sm" aria-label="Eliminar" title="Eliminar" onClick={() => eliminar(p)}><Icono n="borrar" /></Button>}
         </div>
       </div>
     );

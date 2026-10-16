@@ -28,7 +28,7 @@ export default function ResponsiveList<T>({ columns, data, renderCard, keyField,
     return (
       <div className="empty-state">
         <div className="empty-icon">{emptyIcon}</div>
-        <h3>{emptyTitle}</h3>
+        <h2>{emptyTitle}</h2>
         <p>{emptyDescription}</p>
       </div>
     );
@@ -39,7 +39,7 @@ export default function ResponsiveList<T>({ columns, data, renderCard, keyField,
       {vista !== 'tarjetas' && <div className="table-wrap">
         <table>
           <thead>
-            <tr>{columns.map(c => <th key={c.header}>{c.header}</th>)}</tr>
+            <tr>{columns.map(c => <th key={c.header}>{c.header || <span className="sr-only">Acciones</span>}</th>)}</tr>
           </thead>
           <tbody>
             {data.map(row => (

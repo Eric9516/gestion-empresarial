@@ -61,9 +61,9 @@ test.describe('Depósito: buscar y retirar un repuesto', () => {
 
     // 5) se devuelve esa unidad desde el historial (el retiro de ejemplo tiene 2 unidades; el nuestro, 1) y el stock vuelve a lo de antes
     await page.getByRole('button', { name: 'Retiros', exact: true }).first().click();
-    // Primero se espera a que el historial cargue (las filas aparecen), recién después se abren de a una.
-    await expect(page.locator('tr[aria-expanded]').first()).toBeVisible();
-    const cerradas = page.locator('tr[aria-expanded="false"]');
+    // Primero se espera a que el historial cargue (aparecen los botones de abrir cada retiro), recién después se abren de a uno.
+    const cerradas = page.getByRole('button', { name: 'Ver el detalle del retiro' });
+    await expect(cerradas.first()).toBeVisible();
     for (let n = 0; n < 10 && await cerradas.count(); n++) await cerradas.first().click();
     const devolver = page.getByRole('button', { name: /Devolver/ });
     await expect(devolver.first()).toBeVisible();

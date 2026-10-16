@@ -63,7 +63,7 @@ function MantenimientoContent() {
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
           <div>
             <div className="header-logo-fallback">{nombreEmpresa}</div>
-            <div className="header-title">Depósito de mantenimiento</div>
+            <h1 className="header-title">Depósito de mantenimiento</h1>
           </div>
         </div>
         <div className="header-right">
@@ -79,7 +79,7 @@ function MantenimientoContent() {
         </div>
       </header>
 
-      <nav className="app-nav">
+      <nav className="app-nav" aria-label="Secciones">
         <button className={`nav-tab${tab === 'buscar' ? ' active' : ''}`} onClick={() => setTab('buscar')}><Icono n="buscar" /> Buscar</button>
         <button className={`nav-tab${tab === 'carrito' ? ' active' : ''}`} onClick={() => setTab('carrito')}>
           

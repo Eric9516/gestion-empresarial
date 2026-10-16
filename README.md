@@ -23,9 +23,45 @@ Plantilla de aplicación interna para empresas, por módulos: proveedores, comis
 
 ## Tecnología
 
-- React 19 + TypeScript + Vite
-- Supabase (base PostgreSQL, login, Storage y Edge Functions)
-- TanStack Query para datos, Vitest para pruebas, Oxlint para lint
+- React 19 + TypeScript (modo estricto) + Vite 8, Tailwind 4 y Radix
+- Supabase (base PostgreSQL, login, Storage y Edge Functions); los permisos los hace cumplir la base (RLS), no la pantalla
+- TanStack Query para datos, Vitest y Playwright para pruebas, axe para accesibilidad, Oxlint para lint
+- Tipografías propias (Nunito y Playfair Display) servidas desde la app, sin depender de Google
+
+## Cómo está armado
+
+```mermaid
+flowchart LR
+  subgraph cliente["Un cliente"]
+    app["App web (React)<br/>un sitio por cliente"] -->|"login + datos<br/>(permisos por fila)"| db[("Supabase<br/>PostgreSQL + Auth + Storage")]
+    app -.->|"manuales y planos pesados"| arch["Servidor de archivos"]
+  end
+  panel["Panel de administración<br/>(desde el celular, detrás de Tailscale)"] -->|"instala, actualiza, activa módulos"| db
+  inst["pnpm cliente<br/>(instalador)"] -->|"solo los componentes contratados"| db
+  subgraph comp["La base se arma por componentes"]
+    base["Base<br/>usuarios, tareas, marca, licencia"] --> abas["Abastecimiento<br/>proveedores, depósito, retiros, reparaciones"] --> mant["Mantenimiento<br/>equipos y documentación"]
+  end
+  comp -.-> db
+```
+
+El mismo código sirve a todos los clientes: lo propio de cada uno (nombre, logo, colores, módulos, claves) vive en su proyecto de Supabase.
+Un módulo funciona si la licencia lo incluye **y** el dueño no lo apagó; la base de cada cliente tiene solo las tablas de lo que contrató.
+
+## Calidad, medida
+
+| Qué se cuida | Cómo | Resultado |
+|---|---|---|
+| Permisos y seguridad de los datos | Cada configuración posible de usuario (272) × 120 operaciones, contra una base PostgreSQL real en memoria | 32.640 comprobaciones, 0 diferencias |
+| Módulos y planes | 71 combinaciones de módulos; 16 estados de licencia × 33 usuarios × 120 operaciones | 3.220 y 63.360, 0 diferencias |
+| Todo lo que depende de la hora | Fecha local en 23 zonas horarias, tareas, vencimientos | 12.581, 0 diferencias |
+| La base desde cero y al actualizar | Instalación por componentes = instalación original; ampliar sin perder datos | idénticas |
+| Lógica de la app | Vitest | 124 pruebas |
+| La app en un navegador de verdad | Playwright: entrar, retirar y devolver stock, recibir una reparación, editar contactos, en computadora y celular | pasan |
+| Accesibilidad | axe (WCAG 2.1 AA) en cada pantalla y pestaña, y en el menú del celular | 0 problemas |
+| Velocidad | Búsqueda en memoria medida con 5.000, 20.000 y 50.000 repuestos; el arranque no repite ningún pedido | peor caso 55 ms con 50.000 |
+| Panel de administración | Pruebas de ataque (autenticación, sesiones, CSRF, entradas, concurrencia) | 610 |
+
+Todo corre solo en cada cambio (GitHub Actions) y nada de esto toca un proyecto real de Supabase. Detalle en [docs/PRUEBAS.md](docs/PRUEBAS.md).
 
 ## Puesta en marcha
 
@@ -64,7 +100,8 @@ Variables opcionales para Sentry (reporte de errores):
 | `pnpm dev` | Servidor de desarrollo |
 | `pnpm build` | Chequea tipos y genera la versión de producción en `dist/` |
 | `pnpm lint` | Revisa el código con Oxlint |
-| `pnpm test` | Corre las pruebas |
+| `pnpm test` | Corre las pruebas de la lógica |
+| `pnpm pruebas:pantalla` | Abre la app en un navegador y prueba los flujos reales y la accesibilidad (arranca solo un Supabase local de ejemplo) |
 | `pnpm cliente nuevo ...` | Crea el proyecto de Supabase de un cliente nuevo y lo deja instalado |
 | `pnpm cliente actualizar --ref ...` | Aplica a un cliente las migraciones y funciones nuevas |
 | `pnpm cliente modulos --ref ...` | Ve y cambia los módulos que tiene contratados un cliente (solo lo hace quien vende) |

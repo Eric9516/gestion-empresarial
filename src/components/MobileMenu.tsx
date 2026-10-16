@@ -47,8 +47,8 @@ export default function MobileMenu({ open, onClose, navItems }: Props) {
 
   return (
     <>
-      <div className={`mobile-menu-overlay${open ? ' open' : ''}`} onClick={onClose} />
-      <div className={`mobile-menu${open ? ' open' : ''}`}>
+      <div className={`mobile-menu-overlay${open ? ' open' : ''}`} onClick={onClose} aria-hidden="true" />
+      <div className={`mobile-menu${open ? ' open' : ''}`} inert={!open} aria-hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="Menú">
         <div className="mobile-menu-header">
           <div className="mobile-menu-user-info">
             <div className="user-avatar">{inicial}</div>
@@ -57,10 +57,10 @@ export default function MobileMenu({ open, onClose, navItems }: Props) {
               <div className="mobile-menu-email">{profile?.email}</div>
             </div>
           </div>
-          <button className="mobile-menu-close" onClick={onClose}><Icono n="cerrar" /></button>
+          <button className="mobile-menu-close" onClick={onClose} aria-label="Cerrar menú"><Icono n="cerrar" /></button>
         </div>
 
-        <nav className="mobile-menu-nav">
+        <nav className="mobile-menu-nav" aria-label="Menú principal">
           {navItems.map((item, i) => (
             <button key={i} className={`mobile-nav-item${item.active ? ' active' : ''}`} onClick={() => ir(item.onClick)}>
               <span className="mobile-nav-icon">{item.icon}</span><span>{item.label}</span>

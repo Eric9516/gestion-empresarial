@@ -16,6 +16,8 @@
     "pruebas:supabase-local": "node scripts/pruebas/supabase-local/integracion-local.mjs && node scripts/pruebas/supabase-local/instalador-local.mjs && node scripts/pruebas/supabase-local/matriz-modulos.mjs && node scripts/pruebas/supabase-local/logica.mjs && node scripts/pruebas/supabase-local/matriz-horarios.mjs && node scripts/pruebas/supabase-local/cruce-planes.mjs && node scripts/pruebas/supabase-local/matriz-permisos.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/nunito": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
     "@hookform/resolvers": "^5.9.1",
     "@sentry/react": "^11.4.0",
     "@supabase/supabase-js": "^2.112.3",
@@ -39,6 +41,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@electric-sql/pglite": "0.5.8",
     "@playwright/test": "^1.64.1",
     "@sentry/vite-plugin": "^5.4.0",
