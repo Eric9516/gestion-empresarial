@@ -4,14 +4,12 @@ import { useToast } from '../../components/ToastProvider';
 import { useSectoresQuery } from '../sectores/useSectores';
 import { useItemsQuery } from '../items/useItems';
 import { useRetiroCart, type RetiroCartLine } from './RetiroCartContext';
-import { useConfirmarRetiro } from './useRetiros';
+import { stockQueFalta, useConfirmarRetiro } from './useRetiros';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
-
-const SUGERENCIA_STOCK_INCORRECTO = 'El stock registrado es incorrecto: hay más unidades disponibles.';
 
 export default function RetiroCartPanel() {
   const { cart, updateCantidad, updateObservacion, removeItem, clear } = useRetiroCart();
@@ -30,9 +28,20 @@ export default function RetiroCartPanel() {
 
   const sectoresActivos = (sectores ?? []).filter(s => s.activo);
 
-  function handleRevisar() {
+  async function handleRevisar() {
     if (!cart.length) return;
     if (!sectorId) { toast('Elegí el sector antes de confirmar', 'error'); return; }
+    // El stock no puede quedar negativo: si alguna línea pide más de lo que hay, se avisa de todas juntas y no se sigue.
+    try {
+      const faltan = await stockQueFalta(cart);
+      if (faltan.length) {
+        toast(`No hay stock suficiente: ${faltan.map(f => `${f.codigo} (hay ${f.hay}, pedís ${f.pide})`).join(' · ')}. Si en el depósito hay más unidades, pedí que se ajuste el inventario.`, 'error');
+        return;
+      }
+    } catch (e) {
+      toast('No se pudo verificar el stock: ' + mensajeDeError(e), 'error');
+      return;
+    }
     const sector = sectoresActivos.find(s => s.id === sectorId);
     // Se captura una foto del carrito acá — el paso final usa esto, no vuelve a
     // leer el estado en vivo (evita el bug que tuvimos en la app vieja donde el
@@ -76,7 +85,7 @@ export default function RetiroCartPanel() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
           {cart.map(c => {
             const stockDisponible = stockPorId.get(c.item_id) ?? null;
-            const excedeStock = stockDisponible != null && c.cantidad > stockDisponible;
+            const excedeStock = c.cantidad > (stockDisponible ?? 0);
             return (
               <div key={c.item_id} style={{ padding: 8, background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -91,16 +100,7 @@ export default function RetiroCartPanel() {
                 {excedeStock && (
                   <div style={{ marginTop: 6, fontSize: 12, color: 'var(--danger)' }}>
                     
-                    <Icono n="alerta" /> Solo hay {stockDisponible} en stock.{' '}
-                    {!c.observacion && (
-                      <button
-                        type="button"
-                        style={{ fontSize: 12, color: 'var(--danger)', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                        onClick={() => updateObservacion(c.item_id, SUGERENCIA_STOCK_INCORRECTO)}
-                      >
-                        Aclarar que el stock registrado es incorrecto
-                      </button>
-                    )}
+                    <Icono n="alerta" /> {stockDisponible ? `Solo hay ${stockDisponible} en stock` : 'No hay stock cargado de este repuesto'}: no se puede retirar más. Si en el depósito hay más unidades, pedí que se ajuste el inventario.
                   </div>
                 )}
               </div>
@@ -118,7 +118,7 @@ export default function RetiroCartPanel() {
           <label htmlFor="retiro-cart-panel-2">Observación general (opcional)</label>
           <Input id="retiro-cart-panel-2" type="text" placeholder="Ej: para reparación de la envasadora" value={observacionGeneral} onChange={e => setObservacionGeneral(e.target.value)} />
         </div>
-        <Button variant="success" onClick={handleRevisar}><Icono n="ok" /> Revisar y confirmar</Button>
+        <Button variant="success" onClick={() => void handleRevisar()}><Icono n="ok" /> Revisar y confirmar</Button>
       </div>
 
       <Modal

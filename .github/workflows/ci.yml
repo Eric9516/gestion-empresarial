@@ -22,6 +22,8 @@ jobs:
       - run: pnpm test
       - run: pnpm pruebas:esquema
       - run: pnpm pruebas:escala
+      - run: pnpm pruebas:concurrencia
+      - run: pnpm pruebas:busqueda
       - run: pnpm pruebas:supabase-local
       - run: pnpm build
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../auth/AuthContext';
 import type { Database } from '../../lib/database.types';
+import { ConflictoDeEdicion } from '../../lib/conflicto';
 
 export type Contacto = Database['public']['Tables']['contactos']['Row'];
 export type Proveedor = Database['public']['Tables']['proveedores']['Row'] & { contactos: Contacto[] };
@@ -42,7 +43,7 @@ export function useSaveProveedor() {
   const { profile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ id, data, contactos }: { id: string | null; data: ProveedorInput; contactos: ContactoInput[] }) => {
+    mutationFn: async ({ id, data, contactos, version }: { id: string | null; data: ProveedorInput; contactos: ContactoInput[]; version?: string | null }) => {
       const body = {
         ...data,
         modificado_por: profile?.nombre || profile?.email || 'Usuario',
@@ -51,8 +52,13 @@ export function useSaveProveedor() {
 
       let provId = id;
       if (id) {
-        const { error } = await supabase.from('proveedores').update(body).eq('id', id);
+        // Se guarda solo si nadie lo cambió desde que se abrió (version = su "actualizado el"); si no, avisa en vez de pisar lo del otro.
+        let pedido = supabase.from('proveedores').update(body).eq('id', id);
+        if (version === null) pedido = pedido.is('updated_at', null);
+        else if (version !== undefined) pedido = pedido.eq('updated_at', version);
+        const { data: filas, error } = await pedido.select('id');
         if (error) throw error;
+        if (version !== undefined && !filas?.length) throw new ConflictoDeEdicion('este proveedor');
       } else {
         const { data: inserted, error } = await supabase.from('proveedores').insert(body).select().single();
         if (error) throw error;
@@ -85,6 +91,7 @@ export function useSaveProveedor() {
       return provId!;
     },
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEY }); },
+    onError: e => { if (e instanceof ConflictoDeEdicion) void queryClient.invalidateQueries({ queryKey: QUERY_KEY }); },
   });
 }
 

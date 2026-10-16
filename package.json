@@ -11,6 +11,8 @@
     "test": "vitest run",
     "cliente": "node scripts/cliente.mjs",
     "pruebas:pantalla": "playwright test",
+    "pruebas:busqueda": "node scripts/pruebas/concurrencia/busqueda.mjs --items 100000 --estricto",
+    "pruebas:concurrencia": "node scripts/pruebas/concurrencia/carga.mjs --items 50000 --retiros 50000 --auditoria 100000 --usuarios 40 --segundos 20 --calientes 20 --estricto",
     "pruebas:escala": "node scripts/pruebas/escala/escala.mjs --items 50000 --retiros 50000 --auditoria 100000 --estricto",
     "pruebas:integracion": "node scripts/pruebas/integracion.mjs",
     "pruebas:esquema": "node scripts/pruebas/esquema/esquema.mjs && node scripts/pruebas/esquema/esquema.mjs --componentes && node scripts/pruebas/esquema/equivalencia.mjs && node scripts/pruebas/esquema/actualizacion.mjs",
@@ -50,7 +52,9 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
+    "embedded-postgres": "18.4.0-beta.17",
     "oxlint": "^1.75.0",
+    "pg": "^8.23.1",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
     "vitest": "^5.0.2"

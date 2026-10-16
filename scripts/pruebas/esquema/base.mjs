@@ -13,9 +13,8 @@ export async function aplicar(db, archivos) {
   for (const a of archivos) await db.exec(readFileSync(isAbsolute(a) ? a : `${BASE}/${a}`, 'utf8'));
 }
 
-export async function crearBase(archivos) {
-  const db = new PGlite({ extensions: { pg_trgm, pgcrypto, uuid_ossp } });
-  await db.exec(`
+// Las piezas de Supabase que las migraciones necesitan (roles, esquemas auth y storage, auth.uid()). Se exporta para usarlo también con una PostgreSQL real (pruebas de concurrencia).
+export const PIEZAS_DE_SUPABASE_SQL = `
     create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
     create schema auth; create schema extensions; create schema storage;
     create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}'::jsonb, created_at timestamptz default now());
@@ -28,7 +27,11 @@ export async function crearBase(archivos) {
     alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
     alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
     alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
-  `);
+`;
+
+export async function crearBase(archivos) {
+  const db = new PGlite({ extensions: { pg_trgm, pgcrypto, uuid_ossp } });
+  await db.exec(PIEZAS_DE_SUPABASE_SQL);
   await aplicar(db, archivos);
   return db;
 }

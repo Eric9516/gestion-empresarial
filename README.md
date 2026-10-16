@@ -15,7 +15,8 @@ Plantilla de aplicación interna para empresas, por módulos: proveedores, comis
 - [Agregar un módulo nuevo](docs/NUEVO-MODULO.md)
 - [Seguridad y permisos](docs/SEGURIDAD.md)
 - [Pruebas: qué hay, qué cubre y qué no](docs/PRUEBAS.md)
-- [Escala: metas, qué se midió y qué falta](docs/ESCALA.md)
+- [**Rendimiento: un pilar del producto** (qué se exige, qué se midió, qué se corrigió y qué falta)](docs/RENDIMIENTO.md)
+- [Escala: metas y reglas](docs/ESCALA.md)
 - [Trabajar con alguien que desarrolla solo las pantallas](docs/DESARROLLO-CON-SOCIO.md)
 - [Plan del producto (hacia dónde crece)](docs/PLAN-PRODUCTO.md)
 - [Pendientes para que sea un producto](docs/PENDIENTES.md)
@@ -60,6 +61,7 @@ Un módulo funciona si la licencia lo incluye **y** el dueño no lo apagó; la b
 | La app en un navegador de verdad | Playwright: entrar, retirar y devolver stock, recibir una reparación, editar contactos, en computadora y celular | pasan |
 | Accesibilidad | axe (WCAG 2.1 AA) en cada pantalla y pestaña, y en el menú del celular | 0 problemas |
 | Velocidad | Búsqueda en memoria medida con 5.000, 20.000 y 50.000 repuestos; el arranque no repite ningún pedido | peor caso 55 ms con 50.000 |
+| Concurrencia y carga | Decenas de personas a la vez (buscan, editan, retiran, ajustan, crean, borran) contra una **PostgreSQL real**; el stock sale exacto, sin retiros a medias, sin bloqueos mutuos ni códigos repetidos | antes: 37 bloqueos y stock equivocado; ahora: 0 ([detalle](docs/RENDIMIENTO.md)) |
 | Escala de la base | Datos sintéticos (cientos de miles de filas) y las consultas de la app con las reglas de seguridad puestas; ninguna clave foránea sin índice | el historial de retiros pasó de 99 s a 0,2 s con 100.000 retiros ([detalle](docs/ESCALA.md)) |
 | Panel de administración | Pruebas de ataque (autenticación, sesiones, CSRF, entradas, concurrencia) | 610 |
 

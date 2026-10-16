@@ -1,5 +1,7 @@
 # Escala: pensado para crecer
 
+> El análisis completo de rendimiento (qué se exige, qué se midió, qué se corrigió y qué falta) está en [RENDIMIENTO.md](RENDIMIENTO.md).
+
 **Premisa del producto:** la app se diseña para muchísimos usuarios, muchos GB y muchos clientes, aunque hoy sea chica. Lo que es caro de cambiar después se decide hoy pensando en grande;
 lo que se puede encender más adelante se deja listo y se enciende cuando los números lo piden, con una prueba que avise.
 

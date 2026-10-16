@@ -33,6 +33,25 @@ test.describe('Depósito: buscar y retirar un repuesto', () => {
     await expect(page.getByText('Rodamiento de ejemplo')).toHaveCount(0);
   });
 
+  test('no se puede retirar más de lo que hay: se avisa con el stock real y no se registra nada', async ({ page }) => {
+    await buscarElRepuesto(page);
+    const antes = await stockMostrado(page);
+    await page.getByRole('button', { name: 'Retirar', exact: true }).first().click();
+    await page.getByRole('button', { name: /A retirar/ }).first().click();
+    await page.getByRole('spinbutton').first().fill(String(antes + 50));
+    await expect(page.getByText(/no se puede retirar más/)).toBeVisible();
+    await page.getByLabel('Sector *').selectOption({ label: 'Planta de ejemplo' });
+    await page.getByRole('button', { name: 'Revisar y confirmar' }).click();
+    await expect(page.getByText(`No hay stock suficiente: `).filter({ hasText: `(hay ${antes}, pedís ${antes + 50})` })).toBeVisible();
+    // no se abrió el resumen para confirmar y el stock no cambió
+    await expect(page.getByRole('button', { name: /Sí, confirmar retiro/ })).toHaveCount(0);
+    await buscarElRepuesto(page);
+    expect(await stockMostrado(page)).toBe(antes);
+    // se deja el carrito vacío para no afectar otras pruebas
+    await page.getByRole('button', { name: /A retirar/ }).first().click();
+    await page.getByRole('button', { name: 'Quitar' }).first().click();
+  });
+
   test('retirar: pasa a "A retirar", se confirma con el sector y el stock baja; devolverlo lo deja como estaba', async ({ page }) => {
     await buscarElRepuesto(page);
     const antes = await stockMostrado(page);

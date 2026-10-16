@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { compressImage } from '../../lib/compressImage';
 import { publicUrl } from '../../lib/storage';
 import type { Database } from '../../lib/database.types';
+import { ConflictoDeEdicion } from '../../lib/conflicto';
 import { opcionesFamilias, opcionesSubfamilias, type Familia, type Subfamilia } from '../familias/useFamilias';
 import type { EstadoReposicion } from './reposicion';
 
@@ -131,35 +132,65 @@ export function useItemsQuery() {
   return useQuery(opcionesItems);
 }
 
+// El repuesto tal como está AHORA en la base (con su versión). Se pide al abrir la edición: así se ve lo último y el guardado sabe sobre qué versión se hizo.
+export function useRepuestoFresco(id: string | undefined) {
+  return useQuery({
+    queryKey: ['items', 'uno', id],
+    enabled: !!id,
+    staleTime: 0,
+    gcTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('items').select('*').eq('id', id!).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+// Crear: la base asigna el número si no se eligió uno (dos altas a la vez nunca reciben el mismo) y devuelve el repuesto creado, con su código.
+// Editar: se guarda solo si nadie lo cambió desde que se abrió (`version` es su "actualizado el"); si lo cambiaron, avisa en vez de pisar.
 export function useSaveItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
-      id, input, familia, subfamilia,
-    }: { id: string | null; input: ItemInput; familia: Familia; subfamilia: Subfamilia }) => {
-      const numeroPad = input.numero.padStart(5, '0');
-      const body = {
-        codigo: `M${familia.codigo}${subfamilia.codigo}${numeroPad}`,
-        numero: numeroPad,
-        descripcion: input.descripcion,
-        familia_id: input.familia_id,
-        subfamilia_id: input.subfamilia_id,
-        ubicacion: input.ubicacion || null,
-        stock: input.stock,
-        stock_minimo: input.stock_minimo ?? 0,
-        punto_pedido: input.punto_pedido ?? 0,
-        detalles: input.detalles || null,
-      };
+      id, input, familia, subfamilia, version, numeroAutomatico,
+    }: { id: string | null; input: ItemInput; familia: Familia; subfamilia: Subfamilia; version?: string; numeroAutomatico?: boolean }): Promise<{ id: string; codigo: string }> => {
       if (id) {
-        const { error } = await supabase.from('items').update(body).eq('id', id);
+        if (!version) throw new Error('Falta la versión del repuesto para guardar los cambios.');
+        const numeroPad = input.numero.padStart(5, '0');
+        const body = {
+          codigo: `M${familia.codigo}${subfamilia.codigo}${numeroPad}`,
+          numero: numeroPad,
+          descripcion: input.descripcion,
+          familia_id: input.familia_id,
+          subfamilia_id: input.subfamilia_id,
+          ubicacion: input.ubicacion || null,
+          stock: input.stock,
+          stock_minimo: input.stock_minimo ?? 0,
+          punto_pedido: input.punto_pedido ?? 0,
+          detalles: input.detalles || null,
+        };
+        const { data, error } = await supabase.from('items').update(body).eq('id', id).eq('updated_at', version).select('id');
         if (error) throw error;
-        return id;
+        if (!data?.length) throw new ConflictoDeEdicion('este repuesto');
+        return { id, codigo: body.codigo };
       }
-      const { data, error } = await supabase.from('items').insert(body).select().single();
+      const { data, error } = await supabase.rpc('crear_repuesto', {
+        p_familia_id: input.familia_id,
+        p_subfamilia_id: input.subfamilia_id,
+        p_numero: numeroAutomatico ? (null as unknown as string) : input.numero,
+        p_descripcion: input.descripcion,
+        p_ubicacion: input.ubicacion,
+        p_stock: input.stock as number,
+        p_stock_minimo: input.stock_minimo as number,
+        p_punto_pedido: input.punto_pedido as number,
+        p_detalles: input.detalles,
+      });
       if (error) throw error;
-      return data.id;
+      return { id: data.id, codigo: data.codigo };
     },
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: QUERY_KEY }); },
+    onError: e => { if (e instanceof ConflictoDeEdicion) void queryClient.invalidateQueries({ queryKey: ['items', 'uno'] }); },
   });
 }
 

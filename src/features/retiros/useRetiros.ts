@@ -29,6 +29,15 @@ async function fetchUsuariosPerfil() {
   return data;
 }
 
+// El stock no puede quedar negativo (lo hace cumplir la base). Antes de confirmar se mira el stock de ahora de cada línea y se avisa de TODAS las que no alcanzan juntas,
+// en vez de que la base rechace el retiro por la primera. (Si en el medio otra persona saca el último, la base igual lo rechaza: esto es solo para avisar mejor.)
+export async function stockQueFalta(lineas: { item_id: string; codigo: string; cantidad: number }[]) {
+  const { data, error } = await supabase.from('items').select('id, stock').in('id', lineas.map(l => l.item_id));
+  if (error) throw error;
+  const hay = new Map((data ?? []).map(r => [r.id, r.stock ?? 0]));
+  return lineas.filter(l => l.cantidad > (hay.get(l.item_id) ?? 0)).map(l => ({ codigo: l.codigo, hay: hay.get(l.item_id) ?? 0, pide: l.cantidad }));
+}
+
 export function useConfirmarRetiro() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -36,18 +45,14 @@ export function useConfirmarRetiro() {
   return useMutation({
     mutationFn: async ({ sectorId, observacionGeneral, items }: { sectorId: string; observacionGeneral: string; items: RetiroCartLine[] }) => {
       if (!profile) throw new Error('Sesión no disponible');
-      const { data: retiro, error } = await supabase
-        .from('retiros')
-        .insert({ usuario_id: profile.id, sector_id: sectorId, observacion_general: observacionGeneral || null })
-        .select()
-        .single();
+      // Una sola operación en la base: el retiro y todas sus líneas, o nada (antes eran dos pedidos y si fallaba el segundo quedaba un retiro vacío).
+      const { data, error } = await supabase.rpc('confirmar_retiro', {
+        p_sector_id: sectorId,
+        p_observacion: observacionGeneral,
+        p_lineas: items.map(line => ({ item_id: line.item_id, cantidad: line.cantidad, observacion: line.observacion || '' })),
+      });
       if (error) throw error;
-
-      const { error: itemsError } = await supabase.from('retiro_items').insert(
-        items.map(line => ({ retiro_id: retiro.id, item_id: line.item_id, cantidad: line.cantidad, observacion: line.observacion || null }))
-      );
-      if (itemsError) throw itemsError;
-      return retiro.id;
+      return data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['historial-retiros'] });

@@ -1418,6 +1418,24 @@ export type Database = {
       can_view_sugerencias: { Args: never; Returns: boolean }
       cancel_task: { Args: { p_task_id: string }; Returns: undefined }
       complete_task: { Args: { p_task_id: string }; Returns: undefined }
+      confirmar_retiro: {
+        Args: { p_lineas: Json; p_observacion: string; p_sector_id: string }
+        Returns: string
+      }
+      crear_repuesto: {
+        Args: {
+          p_descripcion: string
+          p_detalles: string
+          p_familia_id: string
+          p_numero: string
+          p_punto_pedido: number
+          p_stock: number
+          p_stock_minimo: number
+          p_subfamilia_id: string
+          p_ubicacion: string
+        }
+        Returns: Database['public']['Tables']['items']['Row']
+      }
       crear_reparacion: {
         Args: {
           p_envio_id: string

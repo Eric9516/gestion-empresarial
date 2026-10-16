@@ -1,0 +1,85 @@
+// La búsqueda de repuestos con muchísimos datos, sin competencia: cuánto tarda cada tipo de búsqueda con 200.000 repuestos buscando "a mano" sobre la tabla (como se hacía)
+// y con la función buscar_repuestos, y si la función devuelve lo que tiene que devolver. Con las reglas de seguridad puestas, como las ve una persona real.
+//   node scripts/pruebas/concurrencia/busqueda.mjs [--items 200000] [--estricto]
+import { performance } from 'node:perf_hooks';
+import { sembrar } from '../escala/sembrar.mjs';
+import { iniciarPostgres, instalarEsquema } from './postgres-real.mjs';
+
+const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i >= 0 ? Number(process.argv[i + 1]) : d; };
+const ITEMS = arg('items', 200_000), ESTRICTO = process.argv.includes('--estricto');
+const PRESUPUESTO_MS = arg('presupuesto', 150);
+const U = '00000000-0000-0000-0000-000000000001';
+
+const servidor = await iniciarPostgres({ puerto: arg('puerto', 55433), conexiones: 20 });
+let admin, codigoDeSalida = 0;
+try {
+  admin = await servidor.pool(1).connect();
+  await instalarEsquema(admin);
+  await admin.query(`update public.licencia set modulos = '{"deposito":true,"proveedores":true,"comisionistas":true,"envios":true,"mantenimiento":true,"tareas":true}'::jsonb`);
+  await sembrar(sql => admin.query(sql), { items: ITEMS, retiros: 1000, auditoria: 1000 });
+  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'admin', true from auth.users on conflict (id) do nothing`);
+  await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
+  // un código con ceros a la izquierda y un repuesto con detalles, para comprobar esos casos
+  const [fam] = (await admin.query(`select id from public.familias order by codigo limit 1`)).rows;
+  const [sub] = (await admin.query(`select id from public.subfamilias where familia_id = $1 order by codigo limit 1`, [fam.id])).rows;
+  await admin.query(`reset role`);
+  await admin.query(`insert into public.items (codigo, numero, descripcion, detalles, familia_id, subfamilia_id, stock) values ('MZZPU00003', '00003', 'Repuesto especial único', 'compatible con la prensa hidráulica XJ-77', '${fam.id}', '${sub.id}', 1)`);
+  await admin.query(`analyze public.items`);
+  await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
+
+  const medir = async (sql, params) => {
+    const t = []; let filas = 0;
+    for (let i = 0; i < 5; i++) { const t0 = performance.now(); const r = await admin.query(sql, params); t.push(performance.now() - t0); filas = r.rowCount; }
+    t.sort((a, b) => a - b); return { ms: t[2], filas };
+  };
+  const CASOS = [
+    ['una palabra muy común', 'rodamiento'],
+    ['una palabra poco común', 'xj-77'],
+    ['dos palabras', 'bomba 12'],
+    ['varias palabras', 'valvula tipo 5 medida'],
+    ['un código parcial', 'MAAAA00'],
+    ['un código sin los ceros', 'PU3'],
+    ['algo que no existe', 'zzzz-nada'],
+    ['con "de" y "para"', 'filtro de aceite para motor'],
+  ];
+  console.log(`\n${ITEMS.toLocaleString('es-AR')} repuestos, con las reglas de seguridad puestas (mediana de 5 búsquedas)\n`);
+  console.log('búsqueda'.padEnd(30) + 'directa'.padStart(11) + 'función'.padStart(11) + '  filas');
+  let problemas = 0;
+  for (const [nombre, texto] of CASOS) {
+    const directa = await medir(`select id, codigo, descripcion, stock from public.items where activo and (codigo ilike $1 or descripcion ilike $1) order by codigo limit 50`, [`%${texto}%`]);
+    const funcion = await medir(`select * from public.buscar_repuestos($1, 50)`, [texto]);
+    const lento = funcion.ms > PRESUPUESTO_MS;
+    if (lento) problemas++;
+    console.log(`${lento ? '✗' : '✓'} ${nombre}`.padEnd(30) + `${directa.ms.toFixed(0)} ms`.padStart(11) + `${funcion.ms.toFixed(0)} ms`.padStart(11) + `  ${funcion.filas}`);
+  }
+
+  // ---- ¿devuelve lo que tiene que devolver? ----
+  const q = async (texto, extra = []) => (await admin.query(`select * from public.buscar_repuestos($1, 50${extra.length ? ', $2, $3' : ''})`, [texto, ...extra])).rows;
+  const revisiones = [];
+  const sinCeros = await q('PU3'); revisiones.push(['un código escrito sin ceros ("PU3") encuentra "MZZPU00003"', sinCeros.some(r => r.codigo === 'MZZPU00003')]);
+  const enDetalles = await q('prensa hidráulica'); revisiones.push(['encuentra por lo que dice en los detalles', enDetalles[0]?.codigo === 'MZZPU00003']);
+  const todas = await q('valvula tipo 5 medida'); revisiones.push(['con varias palabras, primero los que tienen todas', todas.length > 0 && todas.slice(0, 5).every(r => r.puntaje === 4 && /valvula/.test(r.descripcion) && /tipo/.test(r.descripcion) && /medida/.test(r.descripcion))]);
+  const alguna = await q('filtro aceite motor'); revisiones.push(['si ninguno tiene todas las palabras, devuelve los que tienen alguna', alguna.length > 0 && alguna.every(r => /filtro|motor/.test(r.descripcion))]);
+  const ordenadas = await q('filtro de aceite para motor'); revisiones.push(['"de" y "para" no cuentan como palabras', ordenadas.length > 0 && ordenadas.every(r => r.puntaje >= 1)]);
+  const comodines = await q('%'); revisiones.push(['un "%" escrito no busca "todo": se toma como letra', comodines.length === 0]);
+  const vacio = await q('   '); revisiones.push(['sin texto no devuelve nada', vacio.length === 0]);
+  const porFam = await q('rodamiento', [fam.id, sub.id]); revisiones.push(['filtra por familia y subfamilia', porFam.length > 0 && porFam.every(r => r.familia_id === fam.id && r.subfamilia_id === sub.id)]);
+  const limite = (await admin.query(`select count(*) as n from public.buscar_repuestos('rodamiento', 7)`)).rows[0].n; revisiones.push(['respeta el límite pedido', Number(limite) === 7]);
+  await admin.query(`reset role`);
+  await admin.query(`update public.licencia set modulos = jsonb_set(modulos, '{deposito}', 'false'::jsonb)`);
+  await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
+  let apagado = false; try { await admin.query(`select * from public.buscar_repuestos('rodamiento')`); } catch (e) { apagado = /no está activo/.test(e.message); }
+  revisiones.push(['con el módulo de depósito apagado no devuelve nada (error)', apagado]);
+  await admin.query(`reset role`);
+  await admin.query(`set role anon`);
+  let sinSesion = false; try { await admin.query(`select * from public.buscar_repuestos('rodamiento')`); } catch (e) { sinSesion = /permission denied/.test(e.message); }
+  revisiones.push(['sin sesión no se puede usar', sinSesion]);
+  await admin.query(`reset role`);
+
+  console.log('\nsi devuelve lo que tiene que devolver:');
+  for (const [nombre, ok] of revisiones) { console.log(`  ${ok ? '✓' : '✗'} ${nombre}`); if (!ok) problemas++; }
+  console.log(`\n${problemas === 0 ? 'Todo en orden' : problemas + ' problema(s)'}`);
+  if (ESTRICTO && problemas) codigoDeSalida = 1;
+} catch (e) { console.error('la prueba falló:', e); codigoDeSalida = 1; }
+finally { try { admin?.release(); } catch { /* ya liberada */ } await servidor.apagar(); }
+process.exit(codigoDeSalida);
