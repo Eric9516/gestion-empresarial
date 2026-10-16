@@ -1523,6 +1523,17 @@ export type Database = {
           total_sin_stock: number
         }[]
       }
+      historial_de_retiros: {
+        Args: { p_texto?: string; p_desde?: string; p_hasta?: string; p_usuario?: string; p_antes_en?: string; p_antes_id?: string; p_limite?: number }
+        Returns: { id: string; usuario_id: string; created_at: string; observacion_general: string | null; sector: string | null; lineas: Json }[]
+      }
+      lista_de_movimientos: {
+        Args: { p_texto?: string; p_filtro?: string; p_desde?: string; p_hasta?: string; p_antes_en?: string; p_antes_id?: string; p_limite?: number }
+        Returns: {
+          id: string; created_at: string; usuario_id: string; clase: string; fecha: string; punto_venta: number; numero: number; referencia: string | null
+          observaciones: string | null; motivo: string; anulado: boolean; anulado_por: string | null; anulado_at: string | null; motivo_anulacion: string | null; lineas: Json
+        }[]
+      }
       buscar_repuestos: {
         Args: { p_texto: string; p_limite?: number; p_familia_id?: string; p_subfamilia_id?: string }
         Returns: {

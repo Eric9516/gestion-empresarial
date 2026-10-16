@@ -5,6 +5,8 @@ import { useToast } from '../../components/ToastProvider';
 import { useAuth } from '../../auth/AuthContext';
 import { isOwner } from '../../lib/types';
 import { fechaLocalDe } from '../../lib/fechaHoy';
+import { useDebouncedValue } from '../../lib/useDebouncedValue';
+import BotonVerMas from '../../components/BotonVerMas';
 import { comprobanteTexto, formatoCantidad, NOMBRE_DE_LA_CLASE } from '../../lib/ajustes';
 import { exportarExcel, type FilaExcel } from '../../lib/exportExcel';
 import { registrarErrorAccion } from '../../lib/errorLogging';
@@ -28,14 +30,6 @@ function totales(a: Ajuste) {
   let sumado = 0, restado = 0;
   for (const l of a.ajuste_items) { if (l.tipo === 'suma') sumado += Number(l.cantidad); else restado += Number(l.cantidad); }
   return { sumado, restado };
-}
-
-function coincide(a: Ajuste, texto: string): boolean {
-  const palabras = texto.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (!palabras.length) return true;
-  const campos = [comprobanteDe(a), a.referencia, a.observaciones, a.motivo, a.usuarioNombre, a.motivo_anulacion, a.anuladoPorNombre, ...a.ajuste_items.flatMap(l => [l.items?.codigo, l.items?.descripcion])]
-    .filter((v): v is string => !!v).map(v => v.toLowerCase());
-  return palabras.every(p => campos.some(c => c.includes(p)));
 }
 
 function Estado({ a }: { a: Ajuste }) {
@@ -159,7 +153,6 @@ function AnularModal({ ajuste, onClose }: { ajuste: Ajuste | null; onClose: () =
 
 export default function AjustesScreen() {
   const { profile } = useAuth();
-  const { data: ajustes, isLoading, isError } = useAjustesQuery();
   const toast = useToast();
   const puedeAnular = isOwner(profile);
 
@@ -171,20 +164,12 @@ export default function AjustesScreen() {
   const [detalleId, setDetalleId] = useState<string | null>(null);
   const [anulando, setAnulando] = useState<Ajuste | null>(null);
 
+  // La búsqueda, el tipo y las fechas los filtra la base (de a páginas): acá llegan ya filtrados.
+  const busquedaConPausa = useDebouncedValue(busqueda, 300);
+  const { ajustes, isLoading, isError, hayMas, cargandoMas, verMas, buscando } = useAjustesQuery({ texto: busquedaConPausa, filtro, desde, hasta });
   const detalle = useMemo(() => (ajustes ?? []).find(a => a.id === detalleId) ?? null, [ajustes, detalleId]);
 
-  const filas = useMemo(() => (ajustes ?? []).filter(a => {
-    if (!coincide(a, busqueda)) return false;
-    const dia = fechaLocalDe(a.created_at);
-    if (desde && dia < desde) return false;
-    if (hasta && dia > hasta) return false;
-    if (filtro === 'anulados') return a.anulado;
-    if (filtro === 'cargas') return a.clase === 'carga';
-    if (filtro === 'ajustes') return a.clase === 'ajuste';
-    if (filtro === 'restas') return a.ajuste_items.some(l => l.tipo === 'resta');
-    if (filtro === 'sumas') return a.ajuste_items.some(l => l.tipo === 'suma');
-    return true;
-  }), [ajustes, busqueda, filtro, desde, hasta]);
+  const filas = ajustes;
 
   // Lo que importa del control: cuánto salió sin anotarse (restas vigentes) en lo que se está viendo.
   const resumen = useMemo(() => {
@@ -298,6 +283,7 @@ export default function AjustesScreen() {
 
       {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
       {isError && <p style={{ color: 'var(--danger)' }}>Error al cargar los ajustes.</p>}
+      {!isLoading && !isError && buscando && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}><Icono n="buscar" /> Buscando...</p>}
       {!isLoading && !isError && (
         <ResponsiveList
           columns={columns}
@@ -306,9 +292,10 @@ export default function AjustesScreen() {
           keyField={a => a.id}
           emptyIcon={<Icono n="balanza" />}
           emptyTitle="No hay movimientos"
-          emptyDescription={ajustes?.length ? 'Probá con otros filtros o con otra búsqueda.' : 'Todavía no se cargó ni se ajustó stock.'}
+          emptyDescription={busqueda.trim() || desde || hasta || filtro !== 'todos' ? 'Probá con otros filtros o con otra búsqueda.' : 'Todavía no se cargó ni se ajustó stock.'}
         />
       )}
+      {!isLoading && !isError && <BotonVerMas hayMas={hayMas} cargando={cargandoMas} mostrando={filas.length} onClick={verMas} />}
 
       <NuevoMovimientoModal open={nuevoOpen} onClose={() => setNuevoOpen(false)} />
       <DetalleAjuste ajuste={detalle} onClose={() => setDetalleId(null)} onAnular={a => { setDetalleId(null); setAnulando(a); }} puedeAnular={puedeAnular} />

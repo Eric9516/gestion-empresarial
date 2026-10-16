@@ -76,10 +76,33 @@ Medido en la base real (PostgreSQL) con las reglas de seguridad puestas, mediana
 
 El techo de diseño es de 500.000 repuestos; se mide con el doble. El presupuesto es de 150 ms por búsqueda y 400 ms por informe (la prueba falla si se pasa).
 
+### Las listas que crecen sin freno, de a páginas (2026-10-16)
+
+Historial de retiros, movimientos de stock, historial de cambios (auditoría), log de errores y sugerencias se piden **de a páginas de 50, las más nuevas primero**, y la página siguiente se pide
+desde el último elemento (fecha e id), no con "saltear N": la página 1.000 cuesta lo mismo que la primera. La búsqueda, el tipo, la persona y las fechas los filtra la base
+(`historial_de_retiros`, `lista_de_movimientos`; la auditoría con filtros por índices). Una prueba de pantalla falla si la aplicación vuelve a pedir lecturas completas de esas tablas.
+
+Truco para el texto: cada palabra se resuelve **una sola vez** contra el catálogo con los índices de texto (`repuestos_con_palabra`), pero solo si coincide con pocos repuestos (hasta 3.000);
+si la palabra es muy común ("7", "tipo") se compara fila por fila y se corta al llegar a la página. Un número de comprobante (`0001-00000777`) va directo por su índice.
+
+Medido en la base real con las reglas de seguridad puestas, mediana de 5 (`node scripts/pruebas/concurrencia/listas.mjs`), **1.000.000 de retiros (4 millones de líneas) y 500.000 movimientos**:
+
+| Consulta | Tiempo |
+|---|---|
+| Retiros: primera página, un día, una persona, página en la mitad del historial | 8 a 10 ms |
+| Retiros: texto (repuesto, sector) en 30 días | 31 a 87 ms |
+| Retiros: texto que no existe, en 30 días (el peor caso) | 35 ms (antes 3.098 ms) |
+| Movimientos: primera página, cargas, anulados, un comprobante, página profunda | 3 a 5 ms |
+| Movimientos: solo con restas | 181 ms |
+| Movimientos: texto (un repuesto) | 22 ms |
+
+Una persona común solo ve sus propios retiros y quien no puede ajustar no ve movimientos (lo impone la base, no la pantalla). El presupuesto es de 300 ms por consulta.
+
 ## Lo que falta (en orden de prioridad)
 
-1. **Paginar y filtrar en la base** todas las pantallas que hoy traen todo: historial de retiros, proveedores, ajustes, tareas, papelera, auditoría, errores, sugerencias, historial por repuesto,
-   informe de reposición. Algunas además **cortan en un número fijo** y lo que queda más atrás es inalcanzable (auditoría y errores: 200; envíos: 300; numeración: 5.000 por subfamilia).
+1. **Paginar y filtrar en la base** las pantallas que todavía traen todo: proveedores, comisionistas, envíos (rótulos), reparaciones, tareas, papelera y la numeración de repuestos
+   (envíos corta en 300 y numeración en 5.000 por subfamilia: lo que queda más atrás es inalcanzable). Ya están: historial de retiros, movimientos, auditoría, errores, sugerencias,
+   historial por repuesto e informe de reposición.
 2. ✅ **Catálogo sin bajarlo entero** (hecho, ver arriba). Queda: guardar en el teléfono lo último buscado (modo sin conexión).
 3. **Varios depósitos:** stock por (repuesto, depósito), índices con el depósito como primera columna, informes por depósito.
 4. **Particionar por fecha** las tablas que crecen sin parar (retiros, líneas, auditoría) y archivar lo viejo.
