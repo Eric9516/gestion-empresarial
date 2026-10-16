@@ -23,7 +23,9 @@ try {
   const [fam] = (await admin.query(`select id from public.familias order by codigo limit 1`)).rows;
   const [sub] = (await admin.query(`select id from public.subfamilias where familia_id = $1 order by codigo limit 1`, [fam.id])).rows;
   await admin.query(`reset role`);
+  await admin.query(`select set_config('app.mover_stock', 'on', false)`);
   await admin.query(`insert into public.items (codigo, numero, descripcion, detalles, familia_id, subfamilia_id, stock) values ('MZZPU00003', '00003', 'Repuesto especial único', 'compatible con la prensa hidráulica XJ-77', '${fam.id}', '${sub.id}', 1)`);
+  await admin.query(`select set_config('app.mover_stock', 'off', false)`);
   await admin.query(`analyze public.items`);
   await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
 

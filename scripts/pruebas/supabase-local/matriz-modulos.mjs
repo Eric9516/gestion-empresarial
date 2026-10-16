@@ -11,7 +11,7 @@ const TABLAS = {
   item_proveedores: ['deposito', 'proveedores'], reparacion_entregas: ['deposito', 'proveedores'], reparacion_items: ['deposito', 'proveedores'], reparaciones: ['deposito', 'proveedores'],
   rotulo_disenos: ['envios'], rotulos_bultos: ['envios'], rotulos_fotos: ['envios'], rotulos_generados: ['envios'],
   task_history: ['tareas'], tasks: ['tareas'],
-  ajustes_inventario: ['deposito'], ajuste_items: ['deposito'],
+  ajustes_inventario: ['deposito'], ajuste_items: ['deposito'], movimientos_stock: ['deposito'],
 };
 const FUNCIONES = {
   create_task: [['tareas'], { p_title: '', p_description: '', p_traffic_level: 'green' }],
@@ -24,6 +24,7 @@ const FUNCIONES = {
   eliminar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
   restaurar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
 };
+FUNCIONES.crear_movimiento_stock = [['deposito'], { p_clase: 'carga', p_fecha: null, p_motivo: null, p_referencia: null, p_observaciones: null, p_lineas: [] }];
 FUNCIONES.crear_ajuste_inventario = [['deposito'], { p_motivo: '', p_lineas: [] }];
 FUNCIONES.anular_ajuste_inventario = [['deposito'], { p_ajuste_id: randomUUID(), p_motivo: 'x' }];
 const BUCKETS = { items: ['deposito'], documentos: ['mantenimiento', 'deposito'], rotulos: ['envios'] };
@@ -36,7 +37,9 @@ const tok = await entrar('zz.ui.dueno@ensayo.invalid');
 const fam = (await sv('GET', '/rest/v1/familias?select=id&nombre=not.like.ZZ*&limit=1')).d[0].id;
 const sub = (await sv('GET', `/rest/v1/subfamilias?select=id&familia_id=eq.${fam}&limit=1`)).d[0].id;
 const prov = (await sv('GET', '/rest/v1/proveedores?select=id&nombre=not.like.ZZ*&limit=1')).d[0].id;
-const item = await mk('items', { codigo: 'ZZMOD' + Math.random().toString(36).slice(2, 7), numero: '1', descripcion: 'ZZ-mod', familia_id: fam, subfamilia_id: sub, stock: 50 });
+const item = await mk('items', { codigo: 'ZZMOD' + Math.random().toString(36).slice(2, 7), numero: '1', descripcion: 'ZZ-mod', familia_id: fam, subfamilia_id: sub });
+const carga0 = await http('POST', '/rest/v1/rpc/crear_movimiento_stock', { token: tok, cuerpo: { p_clase: 'carga', p_fecha: null, p_motivo: null, p_referencia: null, p_observaciones: 'ZZ-mod', p_lineas: [{ item_id: item, tipo: 'suma', cantidad: 50 }] } });
+if (carga0.s !== 200) throw new Error('No pude sembrar el stock: ' + msg(carga0));
 const sector = (await sv('GET', '/rest/v1/sectores?select=id&limit=1')).d[0].id;
 const ret = await mk('retiros', { usuario_id: dueno, sector_id: sector, observacion_general: 'ZZ-mod' });
 await mk('retiro_items', { retiro_id: ret, item_id: item, cantidad: 1 });
@@ -76,8 +79,8 @@ for (const c of combos) {
     const r = await http('POST', `/rest/v1/rpc/${f}`, { token: tok, cuerpo: args ?? { target_user_id: dueno } });
     chk(`función ${f}`, !act(ms), /no está activo/.test(msg(r)));
   }
-  const ha = await http('POST', '/rest/v1/rpc/historial_ajustes_por_item', { token: tok, cuerpo: { p_item_id: item } });
-  chk('función historial_ajustes_por_item', c.m.deposito, ha.s === 200 && Array.isArray(ha.d) && ha.d.length > 0);
+  const ha = await http('POST', '/rest/v1/rpc/ficha_de_stock', { token: tok, cuerpo: { p_item_id: item } });
+  chk('función ficha_de_stock', c.m.deposito, ha.s === 200 && Array.isArray(ha.d) && ha.d.length > 0);
   const h = await http('POST', '/rest/v1/rpc/historial_retiros_por_item', { token: tok, cuerpo: { p_item_id: item } });
   chk('función historial_retiros_por_item', c.m.deposito, h.s === 200 && Array.isArray(h.d) && h.d.length > 0);
   for (const [b, ms] of Object.entries(BUCKETS)) {

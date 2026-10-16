@@ -11,6 +11,7 @@ export async function sembrar(ejecutar, { items, retiros, auditoria, usuarios = 
   insert into public.subfamilias (familia_id, codigo, nombre) select f.id, 'A' || chr(64 + s), 'Subfamilia ' || s from public.familias f, generate_series(1, 12) s;
   insert into public.sectores (nombre) select 'Sector ' || i from generate_series(1, 40) i;`);
   await paso('repuestos', `
+  select set_config('app.mover_stock', 'on', true);
   insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido, ubicacion, detalles)
   select 'M' || f.codigo || s.codigo || lpad(n::text, 5, '0'), lpad(n::text, 5, '0'),
     (array['rodamiento','junta','tornillo','bomba','valvula','sensor','correa','filtro','motor','reten','acople','resorte'])[1 + (n % 12)] || ' tipo ' || (n % 97) || ' medida ' || (n % 53),

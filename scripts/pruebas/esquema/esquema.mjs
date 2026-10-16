@@ -72,12 +72,15 @@ ok('las fechas por defecto de las tareas usan el día de la empresa', /hoy_local
 
 // --- ajuste de inventario ---
 await db.exec("select set_config('request.jwt.claim.sub', '', false)"); // sin sesión: así preparo los datos como lo haría el servicio
+// El stock inicial de los datos de prueba se siembra habilitando el cambio directo solo en esta conexión (en la aplicación solo se cambia con mover_stock).
 await db.exec(`
+  select set_config('app.mover_stock', 'on', false);
   insert into public.familias (codigo, nombre) values ('ZZ', 'Fam');
   insert into public.subfamilias (familia_id, codigo, nombre) select id, 'ZZ', 'Sub' from public.familias where codigo = 'ZZ';
   insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock)
     select 'AJ1', '1', 'Repuesto', f.id, sf.id, 10 from public.familias f join public.subfamilias sf on sf.familia_id = f.id where f.codigo = 'ZZ';
   update public.usuarios_perfil set puede_ajustar_inventario = true where id = '${B}';
+  select set_config('app.mover_stock', 'off', false);
 `);
 const item = (await q(`select id from public.items where codigo = 'AJ1'`))[0].id;
 const aj = await como('authenticated', A, `select public.crear_ajuste_inventario('conteo', '[{"item_id":"${item}","tipo":"resta","cantidad":4}]'::jsonb) as id`);

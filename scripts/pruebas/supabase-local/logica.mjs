@@ -27,7 +27,12 @@ const duenoB = await crearUsuario('zz.duenob@ensayo.invalid', { es_owner: true, 
 const fam = R('familias', (await sv('POST', '/rest/v1/familias', { codigo: 'ZQ', nombre: 'ZZ-l fam' })).d[0].id);
 const sub = R('subfamilias', (await sv('POST', '/rest/v1/subfamilias', { familia_id: fam, codigo: 'ZQ', nombre: 'ZZ-l sub' })).d[0].id);
 const sector = R('sectores', (await sv('POST', '/rest/v1/sectores', { nombre: 'ZZ-l sector ' + sufijo() })).d[0].id);
-const nuevoItem = async (extra = {}) => R('items', (await sv('POST', '/rest/v1/items', { codigo: 'ZZL' + sufijo(), numero: '1', descripcion: 'ZZ-l repuesto', familia_id: fam, subfamilia_id: sub, stock: 100, stock_minimo: 0, punto_pedido: 0, ...extra })).d[0].id);
+// El stock entra con una carga (como en la aplicación): ni la clave de servicio puede escribirlo directo.
+const nuevoItem = async ({ stock = 100, ...extra } = {}) => {
+  const id = R('items', (await sv('POST', '/rest/v1/items', { codigo: 'ZZL' + sufijo(), numero: '1', descripcion: 'ZZ-l repuesto', familia_id: fam, subfamilia_id: sub, stock_minimo: 0, punto_pedido: 0, ...extra })).d[0].id);
+  if (stock) await fijarStock(id, stock);
+  return id;
+};
 const stockDe = async id => Number((await sv('GET', `/rest/v1/items?select=stock&id=eq.${id}`)).d[0].stock);
 const item = async id => (await sv('GET', `/rest/v1/items?select=*&id=eq.${id}`)).d[0];
 // El stock ya no se escribe a mano: para dejar un repuesto con un stock dado se hace un ajuste (como lo haría un dueño).
@@ -129,6 +134,14 @@ seccion('Reparaciones');
   ok('restaurarla la vuelve a activar', re.s < 300 && r2.activo === true && r2.eliminado_por === null, msg(re));
   const del = await P.adminDep.u('DELETE', `/rest/v1/reparacion_entregas?id=eq.${e1.d[0].id}`);
   ok('borrar la entrega que repuso stock lo descuenta de nuevo (99 → 97)', hecho(del) && await stockDe(it) === 97, msg(del) + ' stock=' + await stockDe(it));
+  // La ficha del repuesto recoge todo lo que movió la reparación (salida, regreso y borrado de la entrega; eliminar y restaurar no mueven stock porque todo ya se entregó) y los saldos cuadran con el stock.
+  const fichaRep = (await P.adminDep.u('POST', '/rest/v1/rpc/ficha_de_stock', { p_item_id: it, p_limite: 200 })).d;
+  let cuadra = Array.isArray(fichaRep) && fichaRep.length === 4 && Number(fichaRep[0].existencia) === 97 && fichaRep.every(m => m.tipo === 'reparacion' || m.tipo === 'ajuste');
+  for (let i = 0; Array.isArray(fichaRep) && i < fichaRep.length - 1; i++) {
+    if (fichaRep[i].existencia === null || fichaRep[i + 1].existencia === null) continue;
+    if (Number(fichaRep[i].existencia) - (Number(fichaRep[i].entrada) - Number(fichaRep[i].salida)) !== Number(fichaRep[i + 1].existencia)) cuadra = false;
+  }
+  ok('la ficha del repuesto recoge los movimientos de la reparación y los saldos cuadran con el stock (97)', cuadra, JSON.stringify((fichaRep || []).map?.(m => [m.tipo, m.detalle, m.entrada, m.salida, m.existencia])));
   const noAdm = await P.comunDep.u('POST', '/rest/v1/rpc/crear_reparacion', { p_proveedor_id: provId, p_motivo: 'x', p_fecha_salida: hoy(), p_envio_id: null, p_items: [{ item_id: it, cantidad: 1, descuenta_stock: true }] });
   ok('un usuario común no puede crear reparaciones', noAdm.s >= 400, msg(noAdm));
 }

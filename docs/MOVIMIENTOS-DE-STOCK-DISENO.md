@@ -89,3 +89,18 @@ Para las etapas siguientes, de más a menos cercana:
 8. **Alta rápida de varios artículos seguidos** ("próximo ítem") dentro de una misma carga.
 9. **Comprobantes con variables de impresión**: fecha de emisión, tipo de comprobante, punto y número, datos del destinatario, remito relacionado, transportista, destino y guía. Sirve de lista de campos para el remito de la etapa 2.
 10. **Pendiente de remitir**: mercadería reservada (señada) que no salió del stock todavía. Tema de ventas; se deja anotado.
+
+## El stock se cambia en un solo lugar (2026-10-16)
+
+**Regla:** el stock de un repuesto cambia únicamente con la función `mover_stock()`. Esa función suma o resta, y en la misma operación anota el movimiento en la lista `movimientos_stock`
+(cuánto entró o salió, cuánto quedó, de qué documento viene, el sector o el motivo y quién lo hizo). Todo lo demás (retiros, reparaciones, entregas, cargas, ajustes y sus anulaciones) la llama.
+Si alguien intenta cambiar el stock por otro camino, la base lo rechaza, también el dueño de la base y la clave de servicio.
+
+**Por qué:** antes había unos diez lugares que tocaban el stock, y cada uno tendría que acordarse de anotar el historial. Con un solo lugar, la ficha del repuesto nunca se desfasa del stock.
+
+**La ficha** (`ficha_de_stock`): fecha, documento, concepto, entrada, salida y existencia después de cada movimiento, las más nuevas primero, de a 50 y paginada por id (índice por repuesto): sigue siendo instantánea con millones de movimientos.
+Los movimientos anteriores a esta lista se pasaron al instalarla (cargas y ajustes con su saldo; retiros sin saldo). Si el primero de la ficha no parte de cero, la pantalla muestra "Saldo anterior".
+
+**Pruebas:** la prueba de concurrencia verifica que, con 40 personas a la vez, el último saldo de cada repuesto sea su stock y que no haya saltos entre un movimiento y el siguiente. Las pruebas de lógica e integración verifican la ficha de retiros, cargas, ajustes, anulaciones y reparaciones.
+
+**Pendiente para la etapa 2:** el número de documento de los retiros (hoy la columna Documento queda vacía en ellos), y origen y destino por depósito cuando haya varios depósitos.

@@ -65,7 +65,8 @@ for (let w = 0; w < TRABAJADORES; w++) {
   f.fam = await crear('familias', { codigo: 'Z' + LETRAS[w], nombre: 'ZZ-m familia' + w });
   f.sub = await crear('subfamilias', { familia_id: f.fam, codigo: 'Z' + LETRAS[w], nombre: 'ZZ-m sub' });
   f.sec = await crear('sectores', { nombre: `ZZ-m sec ${w} ${sufijo()}` });
-  f.item = await crear('items', { codigo: `ZZM${w}${sufijo()}`, numero: '1', descripcion: 'ZZ-m repuesto', familia_id: f.fam, subfamilia_id: f.sub, stock: 1000, stock_minimo: 0, punto_pedido: 0 });
+  // el repuesto de prueba se siembra con su stock por SQL (en la aplicación el stock solo cambia con movimientos)
+  f.item = rastrear('items', (await q(null, `select set_config('app.mover_stock', 'on', true); insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido) values ('ZZM${w}${sufijo()}', '1', 'ZZ-m repuesto', '${f.fam}', '${f.sub}', 1000, 0, 0) returning id`))[0].id);
   f.rot = await crear('rotulos_generados', { proveedor_id: f.prov, grupo_id: randomUUID(), numero_documento: 'ZZ-m', creado_por: otroId });
   f.bulto = await crear('rotulos_bultos', { rotulo_id: f.rot, numero: 1 });
   f.foto = await crear('rotulos_fotos', { grupo_id: randomUUID(), proveedor_id: f.prov, storage_path: 'zz-m/' + w + '.png' });

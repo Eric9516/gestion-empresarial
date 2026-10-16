@@ -1505,6 +1505,23 @@ export type Database = {
         Args: { p_clase: string; p_fecha: string; p_lineas: Json; p_motivo: string; p_observaciones: string; p_referencia: string }
         Returns: Json
       }
+      ficha_de_stock: {
+        Args: { p_antes?: number; p_item_id: string; p_limite?: number }
+        Returns: {
+          comprobante: string | null
+          created_at: string
+          detalle: string
+          entrada: number
+          existencia: number | null
+          id: number
+          motivo: string | null
+          referencia: string | null
+          salida: number
+          sector: string | null
+          tipo: string
+          usuario_id: string | null
+        }[]
+      }
       historial_ajustes_por_item: {
         Args: { p_item_id: string }
         Returns: {

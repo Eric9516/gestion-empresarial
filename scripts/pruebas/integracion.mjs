@@ -179,6 +179,12 @@ ok('…y el stock quedó como estaba (17)', it.datos?.[0]?.stock === 17, `stock=
 r = await http(`/rest/v1/retiro_items?id=eq.${riId}`, { metodo: 'PATCH', token: comun.token, cuerpo: { cantidad: 5 } });
 it = await http(`/rest/v1/items?id=eq.${itemId}&select=stock`, { token: deposito.token });
 ok('Corregir un retiro ajusta el stock solo (17 → 15)', it.datos?.[0]?.stock === 15, `stock=${it.datos?.[0]?.stock}`);
+{
+  const d = (await http('/rest/v1/rpc/ficha_de_stock', { metodo: 'POST', token: dueno.token, cuerpo: { p_item_id: itemId, p_limite: 200 } })).datos;
+  const filas = Array.isArray(d) ? d : [];
+  const retiros = filas.filter(m => m.tipo === 'retiro');
+  ok('Los retiros y su corrección quedan en la ficha del repuesto, con el sector, y el saldo final es el stock', retiros.length >= 2 && retiros.every(m => !!m.sector) && Number(filas[0].existencia) === 15, JSON.stringify(filas.map(m => [m.tipo, m.detalle, m.entrada, m.salida, m.existencia])).slice(0, 200));
+}
 ok('…y ese ajuste automático no se duplica en la auditoría de repuestos', (await http('/rest/v1/audit_log?select=id&tabla=eq.items', { token: dueno.token })).datos.length === antes + 1);
 ok('…pero la corrección del retiro sí queda registrada', (await http('/rest/v1/audit_log?select=id&tabla=eq.retiro_items', { token: dueno.token })).datos.length >= 1);
 r = await http('/rest/v1/audit_log?select=id', { token: comun.token });
@@ -359,7 +365,7 @@ await poner([]);
 ok('Y al ponerlos expresamente activos, todo vuelve', Object.values(await verTodas(dueno.token)).every(v => v === true));
 
 const reglas = sql(`select count(*)::int as n from pg_policies where policyname = 'bloqueo_modulo' and permissive = 'RESTRICTIVE'`);
-ok('Cada tabla de módulo tiene su regla de bloqueo (25 reglas)', /"n":\s*25/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
+ok('Cada tabla de módulo tiene su regla de bloqueo (26 reglas)', /"n":\s*26/.test(reglas), (reglas.match(/"n":\s*\d+/) || [''])[0]);
 const regStorage = sql(`select count(*)::int as n from pg_policies where tablename = 'objects' and policyname like 'bloqueo_modulo_%'`);
 ok('Cada carpeta de archivos tiene su regla (3 reglas)', /"n":\s*3/.test(regStorage));
 const audLic = await http('/rest/v1/audit_log?select=descripcion,usuario_nombre&tabla=eq.licencia&order=id.desc', { token: dueno.token });
@@ -432,8 +438,21 @@ ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length ==
 
 // ---------- 10b) ajuste de inventario ----------
 { // (en su propio bloque para no chocar con los nombres de las secciones anteriores)
-const nuevoItem = async stock => (await admin('/rest/v1/items', { metodo: 'POST', cuerpo: { codigo: 'AJ' + randomBytes(3).toString('hex').toUpperCase(), numero: 1, descripcion: 'Repuesto de ajuste', familia_id: familiaId, subfamilia_id: subId, stock } })).datos?.[0]?.id;
+const nuevoItem = async () => (await admin('/rest/v1/items', { metodo: 'POST', cuerpo: { codigo: 'AJ' + randomBytes(3).toString('hex').toUpperCase(), numero: 1, descripcion: 'Repuesto de ajuste', familia_id: familiaId, subfamilia_id: subId } })).datos?.[0]?.id;
+// El stock entra con una carga, como en la aplicación (ni el dueño de la base puede escribirlo directo).
+const cargarStock = (id, cantidad) => http('/rest/v1/rpc/crear_movimiento_stock', { metodo: 'POST', token: dueno.token, cuerpo: { p_clase: 'carga', p_fecha: null, p_motivo: null, p_referencia: null, p_observaciones: 'preparar la prueba', p_lineas: [{ item_id: id, tipo: 'suma', cantidad }] } });
 const stockDe = async id => Number((await admin(`/rest/v1/items?select=stock&id=eq.${id}`)).datos?.[0]?.stock);
+// La ficha de un repuesto (de más nueva a más vieja) y su control: cada saldo es el anterior más lo que entró y menos lo que salió, y el último es el stock actual.
+const ficha = async (token, id) => { const d = (await http('/rest/v1/rpc/ficha_de_stock', { metodo: 'POST', token, cuerpo: { p_item_id: id, p_limite: 200 } })).datos; return Array.isArray(d) ? d : []; };
+const fichaCuadra = async (token, id) => {
+  const filas = await ficha(token, id);
+  if (!filas.length) return false;
+  for (let i = 0; i < filas.length - 1; i++) {
+    if (filas[i].existencia === null || filas[i + 1].existencia === null) continue;
+    if (Number(filas[i].existencia) - (Number(filas[i].entrada) - Number(filas[i].salida)) !== Number(filas[i + 1].existencia)) return false;
+  }
+  return Number(filas[0].existencia) === (await stockDe(id));
+};
 const ajustar = (token, motivo, lineas) => http('/rest/v1/rpc/crear_ajuste_inventario', { metodo: 'POST', token, cuerpo: { p_motivo: motivo, p_lineas: lineas } });
 const anular = (token, id, motivo) => http('/rest/v1/rpc/anular_ajuste_inventario', { metodo: 'POST', token, cuerpo: { p_ajuste_id: id, p_motivo: motivo } });
 const maxAudit = async () => Number((await admin('/rest/v1/audit_log?select=id&order=id.desc&limit=1')).datos?.[0]?.id ?? 0);
@@ -441,7 +460,8 @@ const ajustador = { email: 'ajustador@prueba-plantilla.com', nombre: 'Admin con 
 const idAjustador = (await admin('/auth/v1/admin/users', { metodo: 'POST', cuerpo: { email: ajustador.email, password: ajustador.clave, email_confirm: true, user_metadata: { full_name: ajustador.nombre } } })).datos?.id;
 ajustador.id = idAjustador;
 ajustador.token = await ingresar(ajustador.email, ajustador.clave);
-const itemA = await nuevoItem(100), itemB = await nuevoItem(10);
+const itemA = await nuevoItem(), itemB = await nuevoItem();
+await cargarStock(itemA, 100); await cargarStock(itemB, 10);
 
 r = await ajustar(comun.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
 ok('Un usuario común del Depósito no puede ajustar el inventario', r.estado >= 400);
@@ -475,8 +495,13 @@ for (const [nombre, motivo, lineas] of [['sin motivo', '  ', [{ item_id: itemA, 
 const sinPermisoLista = await http('/rest/v1/ajustes_inventario?select=id', { token: comun.token });
 const conPermisoLista = await http('/rest/v1/ajustes_inventario?select=id', { token: ajustador.token });
 ok('La lista de ajustes la ve quien puede ajustar, y nadie más', !(Array.isArray(sinPermisoLista.datos) && sinPermisoLista.datos.length) && conPermisoLista.datos?.length >= 1);
-const hist = await http('/rest/v1/rpc/historial_ajustes_por_item', { metodo: 'POST', token: comun.token, cuerpo: { p_item_id: itemB } });
-ok('Cualquiera del Depósito ve los ajustes en el historial del repuesto', hist.estado === 200 && hist.datos?.length === 1 && hist.datos[0].tipo === 'resta' && Number(hist.datos[0].stock_despues) === 6);
+const fichaB = await ficha(comun.token, itemB);
+ok('Cualquiera del Depósito ve la ficha del repuesto, con la carga y el ajuste y el saldo de cada uno',
+  fichaB.length === 2 && fichaB[0].tipo === 'ajuste' && Number(fichaB[0].salida) === 4 && Number(fichaB[0].existencia) === 6 && /^AJU 0001-\d{8}$/.test(fichaB[0].comprobante)
+  && fichaB[1].tipo === 'carga' && Number(fichaB[1].entrada) === 10 && Number(fichaB[1].existencia) === 10 && /^CAR 0001-\d{8}$/.test(fichaB[1].comprobante), JSON.stringify(fichaB.map(m => [m.tipo, m.entrada, m.salida, m.existencia, m.comprobante])));
+ok('La ficha de una persona sin acceso al Depósito no devuelve nada', (await ficha(null, itemB)).length === 0);
+const directo = await admin(`/rest/v1/items?id=eq.${itemB}`, { metodo: 'PATCH', cuerpo: { stock: 999 } });
+ok('Ni la clave de servicio puede escribir el stock directo: solo cambia con un movimiento', directo.estado >= 400 && (await stockDe(itemB)) === 6, JSON.stringify(directo.datos).slice(0, 90));
 
 for (const [quien, token] of [['El dueño', dueno.token], ['El administrador con permiso', ajustador.token]]) {
   const intentos = [
@@ -501,6 +526,8 @@ auditoriaAntes = await maxAudit();
 r = await anular(dueno.token, ajusteId, 'cargué mal las cantidades');
 ok('El dueño anula el ajuste', r.estado < 300, msg(r));
 ok('El stock volvió a como estaba (100 y 10)', (await stockDe(itemA)) === 100 && (await stockDe(itemB)) === 10);
+const fichaB2 = await ficha(dueno.token, itemB);
+ok('La anulación queda en la ficha (entrada de 4, con el número del comprobante anulado) y los saldos cuadran', /^Anulación de AJU/.test(fichaB2[0]?.detalle ?? '') && Number(fichaB2[0].entrada) === 4 && Number(fichaB2[0].existencia) === 10 && (await fichaCuadra(dueno.token, itemA)) && (await fichaCuadra(dueno.token, itemB)));
 const anulado = (await admin(`/rest/v1/ajustes_inventario?select=anulado,anulado_por,motivo_anulacion&id=eq.${ajusteId}`)).datos?.[0];
 ok('El ajuste sigue en la lista, marcado como anulado, con quién y por qué', anulado?.anulado === true && anulado.anulado_por === dueno.id && anulado.motivo_anulacion === 'cargué mal las cantidades');
 aud = (await admin(`/rest/v1/audit_log?select=tabla,descripcion,usuario_email&id=gt.${auditoriaAntes}&order=id.asc`)).datos ?? [];

@@ -44,7 +44,10 @@ for (const [clave, c] of Object.entries(CLIENTES)) {
     await sv('POST', '/rest/v1/contactos', { proveedor_id: prov, nombre: 'Contacto de ejemplo', email: 'contacto@ejemplo.test' });
     await sv('POST', '/rest/v1/comisionistas', { nombre: 'Comisionista de ejemplo' });
     const sector = (await sv('POST', '/rest/v1/sectores', { nombre: 'Planta de ejemplo' }))[0].id;
-    const item = (await sv('POST', '/rest/v1/items', { codigo: 'AA00001', numero: '1', descripcion: 'Rodamiento de ejemplo', familia_id: fam, subfamilia_id: sub, stock: 25, stock_minimo: 5, punto_pedido: 8 }))[0].id;
+    // El stock inicial del repuesto de ejemplo se siembra directo en la base (en la aplicación el stock solo cambia con movimientos).
+    await p.db.exec("select set_config('app.mover_stock', 'on', false)");
+    const item = (await p.db.query('insert into public.items (codigo, numero, descripcion, familia_id, subfamilia_id, stock, stock_minimo, punto_pedido) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id', ['AA00001', '1', 'Rodamiento de ejemplo', fam, sub, 25, 5, 8])).rows[0].id;
+    await p.db.exec("select set_config('app.mover_stock', 'off', false)");
     const ret = (await sv('POST', '/rest/v1/retiros', { usuario_id: dueno, sector_id: sector, observacion_general: 'Retiro de ejemplo' }))[0].id;
     await sv('POST', '/rest/v1/retiro_items', { retiro_id: ret, item_id: item, cantidad: 2 });
     await sv('POST', '/rest/v1/rotulos_generados', { proveedor_id: prov, grupo_id: randomUUID(), numero_documento: 'R-0001' });
