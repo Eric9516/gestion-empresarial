@@ -1,0 +1,18 @@
+# Cabeceras que pone Netlify al publicar la app.
+
+# Los archivos de /assets llevan un código en el nombre que cambia cada vez que cambia su contenido: se pueden guardar un año sin preguntar nada
+# al servidor. Así, volver a abrir la app no vuelve a consultar ni a descargar nada de lo que no cambió. (index.html NO está acá: siempre se pide fresco,
+# y es el que apunta a los archivos nuevos.)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Seguridad básica para todas las páginas:
+#  - nosniff: el navegador no adivina el tipo de un archivo.
+#  - la app no se puede incrustar dentro de otra página (evita el "clickjacking").
+#  - al salir hacia otro sitio solo se manda el dominio, no la dirección completa.
+#  - la cámara queda permitida solo para la app (la usa el lector de QR); micrófono, ubicación y pagos, apagados.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=()

@@ -1,17 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import type { Json } from '../../lib/database.types';
 import type { CampoCustom } from './useCamposCustom';
 
+// Se define aparte para poder pedirla apenas hay sesión, sin esperar a que se dibuje la pantalla (ver AuthContext).
+export const opcionesConfiguracion = queryOptions({
+  queryKey: ['configuracion'],
+  queryFn: async () => {
+    const { data, error } = await supabase.from('configuracion').select('*').eq('id', 1).single();
+    if (error) throw error;
+    return data;
+  },
+});
+
 export function useConfiguracionQuery() {
-  return useQuery({
-    queryKey: ['configuracion'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('configuracion').select('*').eq('id', 1).single();
-      if (error) throw error;
-      return data;
-    },
-  });
+  return useQuery(opcionesConfiguracion);
 }
 
 export function useSaveConfiguracion() {

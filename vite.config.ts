@@ -16,6 +16,19 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      // Le avisa al navegador, desde el primer instante, con qué servidor de datos va a hablar: abre la conexión (DNS + TLS) mientras todavía descarga la app,
+      // en vez de recién cuando hace el primer pedido. Cada cliente tiene su propio servidor, por eso se arma al compilar con la dirección de ese cliente.
+      {
+        name: 'preconectar-servidor-de-datos',
+        transformIndexHtml() {
+          try {
+            const origen = new URL(env.VITE_SUPABASE_URL).origin
+            return [{ tag: 'link', attrs: { rel: 'preconnect', href: origen, crossorigin: '' }, injectTo: 'head-prepend' as const }]
+          } catch {
+            return []
+          }
+        },
+      },
       subirMapas && sentryVitePlugin({
         org: env.SENTRY_ORG,
         project: env.SENTRY_PROJECT,

@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../auth/AuthContext';
 import { compressImage } from '../../lib/compressImage';
 import { publicUrl } from '../../lib/storage';
 import type { Database } from '../../lib/database.types';
-import type { Familia, Subfamilia } from '../familias/useFamilias';
+import { opcionesFamilias, opcionesSubfamilias, type Familia, type Subfamilia } from '../familias/useFamilias';
 import type { EstadoReposicion } from './reposicion';
 
 // Columnas que la lista de repuestos NO trae: datos de auditoría (quién y cuándo subió la foto o borró el repuesto) que solo hacen falta en la papelera y en
@@ -93,10 +93,10 @@ const QUERY_KEY = ['items'] as const;
 
 const PAGE_SIZE = 1000;
 
-export function useItemsQuery() {
-  return useQuery({
+// Se define aparte para poder pedir los repuestos apenas hay sesión, sin esperar a que se dibuje la pantalla (ver AuthContext).
+export const opcionesItems = queryOptions({
     queryKey: QUERY_KEY,
-    queryFn: async () => {
+    queryFn: async ({ client }) => {
       // La primera tanda trae además el total; las que faltan se piden todas a la vez (antes se pedían de a una, esperando cada respuesta).
       const pedirTanda = (desde: number) => supabase
         .from('items')
@@ -104,14 +104,13 @@ export function useItemsQuery() {
         .eq('activo', true)
         .order('codigo', { ascending: true })
         .range(desde, desde + PAGE_SIZE - 1);
+      // Las familias y subfamilias salen de la memoria si ya están (casi siempre: las pide la propia pantalla) y, si no, se piden a la vez que la primera tanda.
       const [primera, familias, subfamilias] = await Promise.all([
         pedirTanda(0),
-        supabase.from('familias').select('id,codigo,nombre'),
-        supabase.from('subfamilias').select('id,codigo,nombre'),
+        client.ensureQueryData({ ...opcionesFamilias, revalidateIfStale: true }),
+        client.ensureQueryData({ ...opcionesSubfamilias, revalidateIfStale: true }),
       ]);
       if (primera.error) throw primera.error;
-      if (familias.error) throw familias.error;
-      if (subfamilias.error) throw subfamilias.error;
       const total = primera.count ?? primera.data.length;
       const desdes: number[] = [];
       for (let d = PAGE_SIZE; d < total; d += PAGE_SIZE) desdes.push(d);
@@ -122,11 +121,14 @@ export function useItemsQuery() {
         filas.push(...(r.data as unknown as RepuestoSinNombres[]));
       }
       // Cada repuesto apunta al mismo objeto de su familia y subfamilia (no una copia por repuesto): menos memoria y las comparaciones por identidad siguen andando.
-      const porFamilia = new Map(familias.data.map(x => [x.id, x]));
-      const porSubfamilia = new Map(subfamilias.data.map(x => [x.id, x]));
+      const porFamilia = new Map(familias.map(x => [x.id, x]));
+      const porSubfamilia = new Map(subfamilias.map(x => [x.id, x]));
       return filas.map((r): Item => ({ ...r, familias: porFamilia.get(r.familia_id) ?? null, subfamilias: porSubfamilia.get(r.subfamilia_id) ?? null }));
     },
-  });
+});
+
+export function useItemsQuery() {
+  return useQuery(opcionesItems);
 }
 
 export function useSaveItem() {

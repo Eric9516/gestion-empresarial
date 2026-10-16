@@ -1,6 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
+import { opcionesLicencia } from '../features/config/useModulos';
+import { opcionesConfiguracion } from '../features/config/useConfiguracion';
+import { opcionesItems } from '../features/items/useItems';
 import type { Profile } from '../lib/types';
 import { installErrorLogging, setErrorLoggingUser } from '../lib/errorLogging';
 
@@ -34,7 +38,20 @@ async function fetchProfile(userId: string): Promise<Profile> {
   throw lastError instanceof Error ? lastError : new Error('No se pudo cargar el perfil');
 }
 
+// Al abrir la app, la sesión se avisa por dos caminos a la vez (leerla y el aviso de que cambió) y cada uno pedía el perfil por su lado: tres pedidos iguales.
+// Mientras uno está en camino, los demás esperan ese mismo.
+const perfilesEnCamino = new Map<string, Promise<Profile>>();
+function cargarPerfil(userId: string): Promise<Profile> {
+  let promesa = perfilesEnCamino.get(userId);
+  if (!promesa) {
+    promesa = fetchProfile(userId).finally(() => perfilesEnCamino.delete(userId));
+    perfilesEnCamino.set(userId, promesa);
+  }
+  return promesa;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,8 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (mounted) { setUser(null); setProfile(null); setLoading(false); }
         return;
       }
+      // Se piden ya la licencia y la configuración, a la vez que el perfil: antes esperaban a que el perfil llegara y la pantalla se dibujara.
+      void queryClient.prefetchQuery(opcionesLicencia);
+      void queryClient.prefetchQuery(opcionesConfiguracion);
+      // Si se abrió directo el Depósito (lo más común: la app instalada o un favorito), los repuestos también se piden ya, que es lo más pesado de esa pantalla.
+      if (window.location.pathname.startsWith('/mantenimiento')) void queryClient.prefetchQuery(opcionesItems);
       try {
-        const prof = await fetchProfile(nextUser.id);
+        const prof = await cargarPerfil(nextUser.id);
         if (mounted) { setUser(nextUser); setProfile(prof); setAuthError(null); }
       } catch (e) {
         // Perfil bloqueado o ilegible: no dejamos una sesión "a medias" — pero,
@@ -75,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     installErrorLogging();
 
     return () => { mounted = false; sub.subscription.unsubscribe(); };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     setErrorLoggingUser(user?.id ?? null, user?.email ?? null);
