@@ -7,7 +7,7 @@ import ResponsiveList, { type Column } from '../../components/ResponsiveList';
 import { useDebouncedValue } from '../../lib/useDebouncedValue';
 import { useFamiliasQuery, useSubfamiliasQuery } from '../familias/useFamilias';
 import { useRetiroCart } from '../retiros/RetiroCartContext';
-import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery, type Item } from './useItems';
+import { LIMITE_DE_BUSQUEDA, useBuscarRepuestos, useHayRepuestos, useRepuestoPorId, type Item, type RepuestoDeLista } from './useItems';
 import ItemForm from './ItemForm';
 import ItemDetail from './ItemDetail';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Icono } from '@/components/Icono';
 
-// Con miles de repuestos, una búsqueda amplia puede matchear cientos: dibujarlos todos juntos se vuelve pesado. Se muestran los más relevantes
-// de a tandas (el botón "Ver más" suma otra) y se avisa el total. Cada tanda solo agrega filas: no vuelve a calcular la búsqueda.
+// La búsqueda se hace en la base (el catálogo nunca se descarga entero) y trae de a tandas: el botón "Ver más" pide otra tanda, hasta el tope de la base.
+// Con más resultados que eso, se afina la búsqueda (texto, familia o subfamilia).
 const TANDA = 100;
 
-// Botón "Retirar" de cada fila. Está afuera de la lista (no adentro) para que no se rehaga entero cada vez que cambia el carrito.
+// Botón "Retirar" de cada fila. Está afuera de la lista (no adentro) para que no se rehaga entera cada vez que cambia el carrito.
 function RetirarBtn({ enCarrito, onRetirar }: { enCarrito: boolean; onRetirar: () => void }) {
   return (
     <Button variant="primary" size="sm" onClick={onRetirar}>
@@ -29,34 +29,30 @@ function RetirarBtn({ enCarrito, onRetirar }: { enCarrito: boolean; onRetirar: (
 }
 
 export default function ItemsList() {
-  const { data: items, isLoading, isError } = useItemsQuery();
   const { data: familias } = useFamiliasQuery();
   const { data: subfamilias } = useSubfamiliasQuery();
+  const { data: hayRepuestos } = useHayRepuestos();
   const { cart, addItem } = useRetiroCart();
   const toast = useToast();
 
   const [search, setSearch] = useState('');
-  // El catálogo tiene miles de repuestos: recalcular el puntaje de búsqueda
-  // en cada tecla se sentía trabado. El cuadro de texto se actualiza al
-  // instante; el filtrado pesado espera a que la persona haga una pausa.
+  // El cuadro de texto se actualiza al instante; la búsqueda en la base espera a que la persona haga una pausa.
   const searchDebounced = useDebouncedValue(search, 250);
   const buscando = search.trim() !== searchDebounced.trim();
   const [familiaId, setFamiliaId] = useState('');
   const [subfamiliaId, setSubfamiliaId] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
-  // Se guarda solo el id, no el objeto Item completo — así, si una mutación
-  // (p.ej. cambiar la miniatura) invalida la lista y trae datos frescos, el
-  // modal abierto los refleja solo sin tener que cerrarlo y volver a abrirlo.
+  // Se guarda solo el id: el detalle se pide a la base y, si algo cambia (una foto, una edición), se renueva solo con datos frescos.
   const [viewingId, setViewingId] = useState<string | null>(null);
-  const viewing = viewingId ? (items ?? []).find(it => it.id === viewingId) ?? null : null;
+  const { data: viewing } = useRepuestoPorId(viewingId);
   const [mostrarStock, setMostrarStock] = useState(false);
   // Cuántos resultados se piden, y para qué búsqueda: si la búsqueda o un filtro cambian, la cuenta vuelve a la primera tanda (se ajusta al dibujar,
   // sin efectos, y también si más tarde se vuelve a la misma búsqueda).
   const claveDeBusqueda = `${searchDebounced}|${familiaId}|${subfamiliaId}`;
   const [pedido, setPedido] = useState({ clave: claveDeBusqueda, cantidad: TANDA });
   if (pedido.clave !== claveDeBusqueda) setPedido({ clave: claveDeBusqueda, cantidad: TANDA });
-  const visibles = pedido.clave === claveDeBusqueda ? pedido.cantidad : TANDA;
+  const pedidos = pedido.clave === claveDeBusqueda ? pedido.cantidad : TANDA;
 
   // El botón "Stock" es puntual a la tanda de resultados actual: si cambia la
   // búsqueda o los filtros (incluido borrarlos), la columna se oculta y hay
@@ -72,39 +68,23 @@ export default function ItemsList() {
   );
 
   const sinFiltro = !search.trim() && !familiaId && !subfamiliaId;
+  const { data: encontrados, isLoading, isError, isFetching } = useBuscarRepuestos({ texto: searchDebounced, familiaId, subfamiliaId, limite: pedidos });
+  const filtrados = useMemo(() => (sinFiltro ? [] : (encontrados ?? [])), [encontrados, sinFiltro]);
+  // Si vinieron tantos como se pidieron, puede haber más: se ofrece otra tanda hasta el tope; en el tope, se pide afinar.
+  const puedeHaberMas = filtrados.length >= pedidos;
+  const hayOtraTanda = puedeHaberMas && pedidos < LIMITE_DE_BUSQUEDA;
+  const enElTope = puedeHaberMas && pedidos >= LIMITE_DE_BUSQUEDA;
 
-  // Se interpreta la búsqueda (separar palabras, sacar conectoras, calcular
-  // versión sin ceros) UNA sola vez acá, no una vez por cada uno de los
-  // miles de repuestos — eso era lo que volvía pesado el filtrado.
-  const busquedaPreparada = useMemo(() => prepararBusqueda(searchDebounced), [searchDebounced]);
-
-  const coincidencias = useMemo(() => {
-    if (sinFiltro) return [] as Item[];
-    return (items ?? [])
-      .map(it => ({ it, puntaje: puntajeConBusquedaPreparada(it, busquedaPreparada) }))
-      .filter(({ it, puntaje }) => {
-        const matchFamilia = !familiaId || it.familia_id === familiaId;
-        const matchSub = !subfamiliaId || it.subfamilia_id === subfamiliaId;
-        return puntaje > 0 && matchFamilia && matchSub;
-      })
-      .sort((a, b) => b.puntaje - a.puntaje)
-      .map(({ it }) => it);
-  }, [items, busquedaPreparada, familiaId, subfamiliaId, sinFiltro]);
-  // Pedir otra tanda solo recorta la lista ya calculada: no vuelve a puntuar los miles de repuestos.
-  const filtrados = useMemo(() => coincidencias.slice(0, visibles), [coincidencias, visibles]);
-  const totalCoincidencias = coincidencias.length;
-  const restantes = totalCoincidencias - filtrados.length;
-
-  function handleRetirar(item: Item) {
+  function handleRetirar(item: RepuestoDeLista) {
     addItem(item);
     toast(`${item.codigo} agregado al carrito`, 'success');
   }
 
   // El estado "Agregado" se lee directo del carrito: se mantiene mientras el ítem siga ahí, y solo desaparece cuando se saca del carrito o se confirma
   // el retiro (que lo vacía).
-  const botonRetirar = (item: Item) => <RetirarBtn enCarrito={idsEnCarrito.has(item.id)} onRetirar={() => handleRetirar(item)} />;
+  const botonRetirar = (item: RepuestoDeLista) => <RetirarBtn enCarrito={idsEnCarrito.has(item.id)} onRetirar={() => handleRetirar(item)} />;
 
-  const columns: Column<Item>[] = [
+  const columns: Column<RepuestoDeLista>[] = [
     {
       header: 'Código', render: it => (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer' }} {...clicConTeclado(() => setViewingId(it.id))}>
@@ -114,11 +94,11 @@ export default function ItemsList() {
       ),
     },
     { header: 'Descripción', render: it => <span style={{ cursor: 'pointer' }} onClick={() => setViewingId(it.id)}>{it.descripcion}</span> },
-    ...(mostrarStock ? [{ header: 'Stock', render: (it: Item) => <span>{it.stock ?? '-'}</span> } as Column<Item>] : []),
+    ...(mostrarStock ? [{ header: 'Stock', render: (it: RepuestoDeLista) => <span>{it.stock ?? '-'}</span> } as Column<RepuestoDeLista>] : []),
     { header: '', render: it => <div className="td-actions" style={{ flexWrap: 'nowrap' }}>{botonRetirar(it)}</div> },
   ];
 
-  function renderCard(it: Item) {
+  function renderCard(it: RepuestoDeLista) {
     return (
       <div className="prov-card">
         <div className="prov-card-header" {...clicConTeclado(() => setViewingId(it.id))} style={{ cursor: 'pointer' }}>
@@ -137,6 +117,8 @@ export default function ItemsList() {
       </div>
     );
   }
+
+  const catalogoVacio = hayRepuestos === false;
 
   return (
     <div>
@@ -158,22 +140,20 @@ export default function ItemsList() {
         </Select>
         {!sinFiltro && (
           <Button variant="ghost" size="sm" onClick={() => setMostrarStock(v => !v)}>
-            
             <Icono n="paquete" /> {mostrarStock ? 'Ocultar stock' : 'Stock'}
           </Button>
         )}
       </div>
 
-      {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
-      {isError && <p style={{ color: 'var(--danger)' }}>Error al cargar el catálogo.</p>}
-      {!isLoading && !isError && buscando && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}><Icono n="buscar" /> Buscando...</p>}
-      {!isLoading && !isError && !buscando && restantes > 0 && (
+      {isError && <p style={{ color: 'var(--danger)' }}>Error al buscar en el catálogo.</p>}
+      {!sinFiltro && !isError && (buscando || isFetching) && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}><Icono n="buscar" /> Buscando...</p>}
+      {!sinFiltro && !isError && !buscando && !isFetching && enElTope && (
         <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-          Mostrando los {filtrados.length} más relevantes de {totalCoincidencias} — afiná la búsqueda para ver menos, o usá "Ver más" al final.
+          Se muestran los primeros {LIMITE_DE_BUSQUEDA}: afiná la búsqueda (más palabras, familia o subfamilia) para llegar a lo que buscás.
         </p>
       )}
 
-      {!isLoading && !isError && sinFiltro && items?.length !== 0 && (
+      {sinFiltro && !catalogoVacio && (
         <div className="empty-state">
           <div className="empty-icon"><Icono n="buscar" /></div>
           <h2>Buscá un repuesto</h2>
@@ -181,24 +161,25 @@ export default function ItemsList() {
         </div>
       )}
 
-      {!isLoading && !isError && (!sinFiltro || items?.length === 0) && (
+      {(!sinFiltro || catalogoVacio) && !isLoading && !isError && (
         <ResponsiveList
           columns={columns}
           data={filtrados}
           renderCard={renderCard}
           keyField={it => it.id}
           emptyIcon={<Icono n="herramienta" />}
-          emptyTitle={items?.length === 0 ? 'Todavía no hay repuestos cargados' : 'Sin resultados'}
-          emptyDescription={items?.length === 0 ? 'Cargá el primer repuesto del depósito.' : 'Probá con otro código, número o filtro.'}
+          emptyTitle={catalogoVacio ? 'Todavía no hay repuestos cargados' : 'Sin resultados'}
+          emptyDescription={catalogoVacio ? 'Cargá el primer repuesto del depósito.' : 'Probá con otro código, número o filtro.'}
         />
       )}
+      {!sinFiltro && isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
 
-      {!isLoading && !isError && !buscando && restantes > 0 && (
+      {!sinFiltro && !buscando && !isFetching && hayOtraTanda && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, margin: '16px 0 8px' }}>
-          <Button variant="ghost" onClick={() => setPedido({ clave: claveDeBusqueda, cantidad: visibles + TANDA })}>
-            <Icono n="abajo" /> Ver {Math.min(TANDA, restantes)} más
+          <Button variant="ghost" onClick={() => setPedido({ clave: claveDeBusqueda, cantidad: Math.min(pedidos + TANDA, LIMITE_DE_BUSQUEDA) })}>
+            <Icono n="abajo" /> Ver {TANDA} más
           </Button>
-          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Mostrando {filtrados.length} de {totalCoincidencias} · quedan {restantes}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Mostrando {filtrados.length} · puede haber más</span>
         </div>
       )}
       <BotonSubir />

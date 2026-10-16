@@ -9,22 +9,22 @@ import { generarTablaPdf, type ColumnaPdf, type SeccionPdf } from '../../lib/tab
 import { useDebouncedValue } from '../../lib/useDebouncedValue';
 import { useConfiguracionQuery } from '../config/useConfiguracion';
 import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
-import { useFamiliasQuery } from '../familias/useFamilias';
+import { useFamiliasQuery, useSubfamiliasQuery } from '../familias/useFamilias';
 import PedidoModal from './PedidoModal';
-import { cantidadAComprar, estadoDe, ETIQUETA_ESTADO, necesitaReposicion, type EstadoReposicion } from './reposicion';
-import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery, useMarcarEstadoReposicion, type Item } from './useItems';
+import { cantidadAComprar, estadoDe, ETIQUETA_ESTADO, type EstadoReposicion } from './reposicion';
+import { LIMITE_DEL_INFORME_PDF, repuestosAReponer, useMarcarEstadoReposicion, useRepuestosAReponer, type RepuestoAReponer } from './useItems';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
 
-const stockDe = (it: Item) => it.stock ?? 0;
+const stockDe = (it: RepuestoAReponer) => it.stock ?? 0;
 
 // Agrupa sin alterar el orden en que vienen los repuestos dentro de cada grupo
 // (los sin stock primero); los grupos se ordenan por nombre.
-function agrupar(items: Item[], clave: (it: Item) => string, nombre: (it: Item) => string) {
-  const mapa = new Map<string, { id: string; nombre: string; items: Item[] }>();
+function agrupar(items: RepuestoAReponer[], clave: (it: RepuestoAReponer) => string, nombre: (it: RepuestoAReponer) => string) {
+  const mapa = new Map<string, { id: string; nombre: string; items: RepuestoAReponer[] }>();
   for (const it of items) {
     const id = clave(it);
     const grupo = mapa.get(id) ?? { id, nombre: nombre(it), items: [] };
@@ -34,8 +34,8 @@ function agrupar(items: Item[], clave: (it: Item) => string, nombre: (it: Item) 
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
-// Los sin stock primero, después los de mayor cantidad a comprar.
-const porUrgencia = (a: Item, b: Item) => {
+// Los sin stock primero, después los de mayor cantidad a comprar (el mismo orden con el que los trae la base).
+const porUrgencia = (a: RepuestoAReponer, b: RepuestoAReponer) => {
   const cero = Number(stockDe(a) > 0) - Number(stockDe(b) > 0);
   return cero || cantidadAComprar(b) - cantidadAComprar(a) || a.codigo.localeCompare(b.codigo);
 };
@@ -73,7 +73,7 @@ const ESTILO_ESTADO: Record<EstadoReposicion, { color: string }> = {
 
 // El estado de cada repuesto se cambia ahí mismo, con una lista en su fila (no hace falta tildarlo y subir a la barra de arriba). El borde de color
 // dice de un vistazo en qué está: sin color = todavía no se pidió. Está afuera de la pantalla para que no se rehaga entero con cada cambio.
-function EstadoSelect({ it, guardando, onCambiar }: { it: Item; guardando: boolean; onCambiar: (id: string, estado: EstadoReposicion | null) => void }) {
+function EstadoSelect({ it, guardando, onCambiar }: { it: RepuestoAReponer; guardando: boolean; onCambiar: (id: string, estado: EstadoReposicion | null) => void }) {
   const estado = estadoDe(it);
   return (
     <Select
@@ -92,12 +92,11 @@ function EstadoSelect({ it, guardando, onCambiar }: { it: Item; guardando: boole
 
 type FiltroEstado = '' | 'sin' | EstadoReposicion;
 
-// Lo que hay que comprar: repuestos con stock_minimo cargado cuyo stock llegó
-// al punto de pedido (o bajó de él). Se calcula sobre la misma lista que usa
-// Buscar (ya está en caché), sin pedir nada nuevo a la base.
+// Lo que hay que comprar: repuestos con stock_minimo cargado cuyo stock llegó al punto de pedido (o bajó de él). La base los filtra, los ordena por urgencia
+// y trae los primeros (con el total y cuántos están sin stock): la pantalla nunca descarga el catálogo.
 export default function InformeReposicion() {
-  const { data: items, isLoading, isError } = useItemsQuery();
   const { data: familias } = useFamiliasQuery();
+  const { data: subfamilias } = useSubfamiliasQuery();
   const { data: config } = useConfiguracionQuery();
   const toast = useToast();
   const confirmar = useConfirm();
@@ -109,40 +108,38 @@ export default function InformeReposicion() {
   const [guardandoIds, setGuardandoIds] = useState<Set<string>>(() => new Set());
   const [porFamilia, setPorFamilia] = useState(false);
   const [porSubfamilia, setPorSubfamilia] = useState(false);
-  const [seleccion, setSeleccion] = useState<Set<string>>(() => new Set());
+  // La selección guarda los repuestos mismos (no solo su id): se mantiene aunque cambien la búsqueda o los filtros, y el pedido lleva todo lo seleccionado.
+  const [seleccion, setSeleccion] = useState<Map<string, RepuestoAReponer>>(() => new Map());
   const [pedidoAbierto, setPedidoAbierto] = useState(false);
   const busquedaDebounced = useDebouncedValue(busqueda);
 
-  const aReponer = useMemo(() => (items ?? []).filter(necesitaReposicion), [items]);
+  const { data: informe, isLoading, isError } = useRepuestosAReponer({ texto: busquedaDebounced, familiaId, estado: filtroEstado });
+  const filas = useMemo(() => informe?.filas ?? [], [informe]);
+  const total = informe?.total ?? 0;
+  const sinStock = informe?.totalSinStock ?? 0;
 
-  const filas = useMemo(() => {
-    const terminos = prepararBusqueda(busquedaDebounced);
-    return aReponer
-      .filter(it => (!familiaId || it.familia_id === familiaId)
-        && (!filtroEstado || (filtroEstado === 'sin' ? !it.estado_reposicion : it.estado_reposicion === filtroEstado))
-        && (!busquedaDebounced.trim() || puntajeConBusquedaPreparada(it, terminos) > 0))
-      .sort(porUrgencia);
-  }, [aReponer, busquedaDebounced, familiaId, filtroEstado]);
+  const familiaPorId = useMemo(() => new Map((familias ?? []).map(f => [f.id, f.nombre])), [familias]);
+  const subfamiliaPorId = useMemo(() => new Map((subfamilias ?? []).map(s => [s.id, s.nombre])), [subfamilias]);
+  const nombreFamilia = (it: RepuestoAReponer) => familiaPorId.get(it.familia_id) ?? 'Sin familia';
+  const nombreSubfamilia = (it: RepuestoAReponer) => subfamiliaPorId.get(it.subfamilia_id) ?? 'Sin subfamilia';
 
-  // La selección se mantiene aunque cambien la búsqueda o los filtros; el
-  // pedido lleva todo lo seleccionado, se vea o no en pantalla en ese momento.
-  const seleccionados = useMemo(() => aReponer.filter(it => seleccion.has(it.id)).sort(porUrgencia), [aReponer, seleccion]);
+  const seleccionados = useMemo(() => [...seleccion.values()].sort(porUrgencia), [seleccion]);
 
-  function toggleUno(id: string) {
+  function toggleUno(it: RepuestoAReponer) {
     setSeleccion(prev => {
-      const s = new Set(prev);
-      if (!s.delete(id)) s.add(id);
+      const s = new Map(prev);
+      if (!s.delete(it.id)) s.set(it.id, it);
       return s;
     });
   }
 
-  const todosMarcados = (lista: Item[]) => lista.length > 0 && lista.every(it => seleccion.has(it.id));
+  const todosMarcados = (lista: RepuestoAReponer[]) => lista.length > 0 && lista.every(it => seleccion.has(it.id));
 
-  function toggleVarios(lista: Item[]) {
+  function toggleVarios(lista: RepuestoAReponer[]) {
     setSeleccion(prev => {
-      const s = new Set(prev);
+      const s = new Map(prev);
       if (todosMarcados(lista)) lista.forEach(it => s.delete(it.id));
-      else lista.forEach(it => s.add(it.id));
+      else lista.forEach(it => s.set(it.id, it));
       return s;
     });
   }
@@ -166,34 +163,36 @@ export default function InformeReposicion() {
 
   async function marcarSeleccionados(estado: EstadoReposicion | null) {
     await marcarEstado(seleccionados.map(it => it.id), estado);
-    setSeleccion(new Set());
+    setSeleccion(new Map());
   }
 
   // Al bajar un pedido se ofrece marcarlo como pendiente de presupuesto; solo los
   // que todavía no tienen estado (uno que ya pasó a compras no vuelve atrás).
   async function handlePedidoDescargado(ids: string[]) {
     const enElPedido = new Set(ids);
-    const sinMarcar = aReponer.filter(it => enElPedido.has(it.id) && !it.estado_reposicion).map(it => it.id);
+    const sinMarcar = seleccionados.filter(it => enElPedido.has(it.id) && !it.estado_reposicion).map(it => it.id);
     if (!sinMarcar.length) return;
     const cuales = sinMarcar.length === 1 ? 'este artículo' : `estos ${sinMarcar.length} artículos`;
     if (!(await confirmar(`¿Marcar ${cuales} como "${ETIQUETA_ESTADO.presupuesto}"?`, { textoConfirmar: 'Marcar' }))) return;
     await marcarEstado(sinMarcar, 'presupuesto');
   }
 
-  const sinStock = useMemo(() => aReponer.filter(it => stockDe(it) === 0).length, [aReponer]);
-
   // Separar por subfamilia se apoya en separar por familia (es "además"): si se
   // destilda la familia, también se quita la subfamilia.
-  const grupos = useMemo(() => {
+  const armarGrupos = (lista: RepuestoAReponer[]) => {
     if (!porFamilia) return null;
-    const porFam = agrupar(filas, it => it.familia_id, it => it.familias?.nombre ?? 'Sin familia');
-    return porFam.map(g => ({ ...g, subgrupos: porSubfamilia ? agrupar(g.items, it => it.subfamilia_id, it => it.subfamilias?.nombre ?? 'Sin subfamilia') : null }));
-  }, [filas, porFamilia, porSubfamilia]);
+    const porFam = agrupar(lista, it => it.familia_id, nombreFamilia);
+    return porFam.map(g => ({ ...g, subgrupos: porSubfamilia ? agrupar(g.items, it => it.subfamilia_id, nombreSubfamilia) : null }));
+  };
+  const grupos = armarGrupos(filas); // como mucho 500 filas: se arma en el momento
 
-  // El PDF sale con lo que se ve en pantalla: mismos filtros, mismo orden y,
-  // si están tildados los checks, separado por familia y subfamilia.
+  // El PDF sale con lo que se ve en pantalla (mismos filtros, mismo orden y, si están tildados los checks, separado por familia y subfamilia), pero con TODO lo que
+  // cumple, no solo con las primeras filas de la pantalla (hasta el tope del PDF).
   async function handleExportarPdf() {
     try {
+      const completo = await repuestosAReponer({ texto: busquedaDebounced, familiaId, estado: filtroEstado, limite: LIMITE_DEL_INFORME_PDF });
+      const todas = completo.filas;
+      const gruposPdf = armarGrupos(todas);
       const columnasPdf: ColumnaPdf[] = [
         { header: 'CÓDIGO', ancho: 27 },
         { header: 'DESCRIPCIÓN' },
@@ -202,11 +201,11 @@ export default function InformeReposicion() {
         { header: 'MÍN.', ancho: 15, align: 'right' },
         { header: 'COMPRAR', ancho: 19, align: 'right' },
       ];
-      const filaPdf = (it: Item) => [it.codigo, it.descripcion, String(stockDe(it)), String(it.punto_pedido), String(it.stock_minimo), String(cantidadAComprar(it))];
+      const filaPdf = (it: RepuestoAReponer) => [it.codigo, it.descripcion, String(stockDe(it)), String(it.punto_pedido), String(it.stock_minimo), String(cantidadAComprar(it))];
 
-      const secciones: SeccionPdf[] = !grupos
-        ? [{ filas: filas.map(filaPdf) }]
-        : grupos.flatMap(g => {
+      const secciones: SeccionPdf[] = !gruposPdf
+        ? [{ filas: todas.map(filaPdf) }]
+        : gruposPdf.flatMap(g => {
           const tituloFamilia = { texto: `${g.nombre} (${g.items.length})`, nivel: 1 as const };
           if (!g.subgrupos) return [{ titulos: [tituloFamilia], filas: g.items.map(filaPdf) }];
           return g.subgrupos.map((s, i) => ({
@@ -221,8 +220,8 @@ export default function InformeReposicion() {
         filtroEstado && `Estado: ${filtroEstado === 'sin' ? 'sin marcar' : ETIQUETA_ESTADO[filtroEstado].toLowerCase()}`,
         busquedaDebounced.trim() && `Búsqueda: "${busquedaDebounced.trim()}"`,
         porFamilia && (porSubfamilia ? 'Separado por familia y subfamilia' : 'Separado por familia'),
+        completo.total > todas.length && `Se incluyen los primeros ${todas.length} de ${completo.total}`,
       ].filter(Boolean).join(' · ');
-      const sinStockVisibles = filas.filter(it => stockDe(it) === 0).length;
 
       const blob = await generarTablaPdf({
         empresa: config?.empresa_nombre || NOMBRE_EMPRESA_POR_DEFECTO,
@@ -231,7 +230,7 @@ export default function InformeReposicion() {
         fecha: fechaHoyISO(),
         datos: [
           { etiqueta: 'Filtros', texto: filtros || 'ninguno (todos los artículos a reponer)' },
-          { etiqueta: 'Artículos', texto: `${filas.length}${sinStockVisibles > 0 ? ` (${sinStockVisibles} sin stock)` : ''}` },
+          { etiqueta: 'Artículos', texto: `${todas.length}${completo.totalSinStock > 0 ? ` (${completo.totalSinStock} sin stock)` : ''}` },
         ],
         columnas: columnasPdf,
         secciones,
@@ -243,11 +242,11 @@ export default function InformeReposicion() {
     }
   }
 
-  const columns: Column<Item>[] = [
-    { header: '', render: it => <input type="checkbox" aria-label={`Seleccionar ${it.codigo}`} checked={seleccion.has(it.id)} onChange={() => toggleUno(it.id)} /> },
+  const columns: Column<RepuestoAReponer>[] = [
+    { header: '', render: it => <input type="checkbox" aria-label={`Seleccionar ${it.codigo}`} checked={seleccion.has(it.id)} onChange={() => toggleUno(it)} /> },
     { header: 'Código', render: it => <strong>{it.codigo}</strong> },
     { header: 'Descripción', render: it => it.descripcion },
-    ...(porFamilia ? [] : [{ header: 'Familia', render: (it: Item) => it.familias?.nombre ?? '—' }]),
+    ...(porFamilia ? [] : [{ header: 'Familia', render: (it: RepuestoAReponer) => familiaPorId.get(it.familia_id) ?? '—' }]),
     { header: 'Stock', render: it => (stockDe(it) === 0 ? <ChipSinStock /> : <span>{stockDe(it)}</span>) },
     { header: 'Pto. pedido', render: it => <span>{it.punto_pedido}</span> },
     { header: 'Stock mín.', render: it => <span>{it.stock_minimo}</span> },
@@ -255,13 +254,13 @@ export default function InformeReposicion() {
     { header: 'Estado', render: it => <EstadoSelect it={it} guardando={guardandoIds.has(it.id)} onCambiar={(id, e) => void cambiarEstadoDeUno(id, e)} /> },
   ];
 
-  function renderCard(it: Item) {
+  function renderCard(it: RepuestoAReponer) {
     return (
       <div className="prov-card">
         <div className="prov-card-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" checked={seleccion.has(it.id)} onChange={() => toggleUno(it.id)} />
+              <input type="checkbox" checked={seleccion.has(it.id)} onChange={() => toggleUno(it)} />
               <span className="prov-card-name">{it.codigo}</span>
             </label>
             {stockDe(it) === 0 && <ChipSinStock />}
@@ -277,15 +276,16 @@ export default function InformeReposicion() {
     );
   }
 
-  const lista = (data: Item[]) => (
+  const hayFiltros = !!(busquedaDebounced.trim() || familiaId || filtroEstado);
+  const lista = (data: RepuestoAReponer[]) => (
     <ResponsiveList
       columns={columns}
       data={data}
       renderCard={renderCard}
       keyField={it => it.id}
       emptyIcon={<Icono n="exito" />}
-      emptyTitle={aReponer.length === 0 ? 'No hay nada para reponer' : 'Sin resultados'}
-      emptyDescription={aReponer.length === 0 ? 'Ningún repuesto llegó a su punto de pedido.' : 'Probá con otra búsqueda o familia.'}
+      emptyTitle={!hayFiltros ? 'No hay nada para reponer' : 'Sin resultados'}
+      emptyDescription={!hayFiltros ? 'Ningún repuesto llegó a su punto de pedido.' : 'Probá con otra búsqueda, familia o estado.'}
     />
   );
 
@@ -296,7 +296,8 @@ export default function InformeReposicion() {
       </div>
       <p style={{ fontSize: 13, color: 'var(--text-mid)', marginBottom: 12 }}>
         Repuestos cuyo stock llegó al punto de pedido. Se compra hasta volver al stock mínimo.
-        {!isLoading && !isError && <> <strong>{aReponer.length}</strong> a reponer{sinStock > 0 && <>, {sinStock} sin stock</>}.</>}
+        {!isLoading && !isError && <> <strong>{total}</strong> a reponer{sinStock > 0 && <>, {sinStock} sin stock</>}.</>}
+        {!isLoading && !isError && total > filas.length && <> Se muestran los {filas.length} más urgentes: filtrá por familia, estado o búsqueda para ver el resto (el PDF incluye todos).</>}
       </p>
 
       <div className="toolbar">
@@ -329,7 +330,7 @@ export default function InformeReposicion() {
         </Button>
         {seleccionados.length > 0 && (
           <>
-            <Button variant="ghost" size="sm" onClick={() => setSeleccion(new Set())}>Limpiar selección</Button>
+            <Button variant="ghost" size="sm" onClick={() => setSeleccion(new Map())}>Limpiar selección</Button>
             <Select
               className="filter-select"
               aria-label="Marcar los seleccionados como"
@@ -345,11 +346,9 @@ export default function InformeReposicion() {
           </>
         )}
         <Button variant="primary" size="sm" disabled={seleccionados.length === 0} onClick={() => setPedidoAbierto(true)}>
-          
           <Icono n="documento" /> Armar solicitud de presupuesto ({seleccionados.length})
         </Button>
         <Button variant="ghost" size="sm" disabled={filas.length === 0} onClick={() => void handleExportarPdf()}>
-          
           <Icono n="exportar" /> Exportar informe PDF
         </Button>
       </div>

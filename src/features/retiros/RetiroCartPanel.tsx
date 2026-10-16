@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useSectoresQuery } from '../sectores/useSectores';
-import { useItemsQuery } from '../items/useItems';
+import { useStockDeRepuestos } from '../items/useItems';
 import { useRetiroCart, type RetiroCartLine } from './RetiroCartContext';
 import { stockQueFalta, useConfirmarRetiro } from './useRetiros';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,12 @@ import { Icono } from '@/components/Icono';
 export default function RetiroCartPanel() {
   const { cart, updateCantidad, updateObservacion, removeItem, clear } = useRetiroCart();
   const { data: sectores } = useSectoresQuery();
-  const { data: items } = useItemsQuery();
   const confirmarRetiro = useConfirmarRetiro();
   const toast = useToast();
 
-  const stockPorId = useMemo(() => new Map((items ?? []).map(it => [it.id, it.stock])), [items]);
+  // El stock de cada línea se pide a la base solo para lo que hay en el carrito (no para todo el catálogo).
+  const { data: stockPedido } = useStockDeRepuestos(cart.map(c => c.item_id));
+  const stockPorId = useMemo(() => stockPedido ?? new Map<string, number | null>(), [stockPedido]);
 
   const [sectorId, setSectorId] = useState('');
   const [observacionGeneral, setObservacionGeneral] = useState('');

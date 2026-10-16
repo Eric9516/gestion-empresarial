@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabaseClient';
 import { opcionesLicencia } from '../features/config/useModulos';
 import { opcionesConfiguracion } from '../features/config/useConfiguracion';
-import { opcionesItems } from '../features/items/useItems';
 import type { Profile } from '../lib/types';
 import { installErrorLogging, setErrorLoggingUser } from '../lib/errorLogging';
 
@@ -68,8 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Se piden ya la licencia y la configuración, a la vez que el perfil: antes esperaban a que el perfil llegara y la pantalla se dibujara.
       void queryClient.prefetchQuery(opcionesLicencia);
       void queryClient.prefetchQuery(opcionesConfiguracion);
-      // Si se abrió directo el Depósito (lo más común: la app instalada o un favorito), los repuestos también se piden ya, que es lo más pesado de esa pantalla.
-      if (window.location.pathname.startsWith('/mantenimiento')) void queryClient.prefetchQuery(opcionesItems);
       try {
         const prof = await cargarPerfil(nextUser.id);
         if (mounted) { setUser(nextUser); setProfile(prof); setAuthError(null); }

@@ -3,6 +3,9 @@ import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useAuth } from '../../auth/AuthContext';
 import type { Item } from '../items/useItems';
 
+// De cada repuesto el carrito solo necesita estos tres datos (así sirve tanto con un resultado de búsqueda como con el repuesto completo).
+export type RepuestoParaElCarrito = Pick<Item, 'id' | 'codigo' | 'descripcion'>;
+
 export interface RetiroCartLine {
   item_id: string;
   codigo: string;
@@ -13,7 +16,7 @@ export interface RetiroCartLine {
 
 interface CartState {
   cart: RetiroCartLine[];
-  addItem: (item: Item) => void;
+  addItem: (item: RepuestoParaElCarrito) => void;
   updateCantidad: (itemId: string, cantidad: number) => void;
   updateObservacion: (itemId: string, observacion: string) => void;
   removeItem: (itemId: string) => void;
@@ -46,7 +49,7 @@ export function RetiroCartProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(cartKey(user?.id), JSON.stringify(cart)); } catch { /* noop */ }
   }, [cart, user?.id]);
 
-  function addItem(item: Item) {
+  function addItem(item: RepuestoParaElCarrito) {
     setCart(prev => {
       const existing = prev.find(c => c.item_id === item.id);
       if (existing) {

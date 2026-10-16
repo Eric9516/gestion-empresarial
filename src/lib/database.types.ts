@@ -1505,6 +1505,42 @@ export type Database = {
         Args: { p_clase: string; p_fecha: string; p_lineas: Json; p_motivo: string; p_observaciones: string; p_referencia: string }
         Returns: Json
       }
+      repuestos_a_reponer: {
+        Args: { p_texto?: string; p_familia_id?: string; p_estado?: string; p_limite?: number }
+        Returns: {
+          id: string
+          codigo: string
+          numero: string
+          descripcion: string
+          detalles: string | null
+          stock: number | null
+          stock_minimo: number
+          punto_pedido: number
+          familia_id: string
+          subfamilia_id: string
+          estado_reposicion: string | null
+          total: number
+          total_sin_stock: number
+        }[]
+      }
+      buscar_repuestos: {
+        Args: { p_texto: string; p_limite?: number; p_familia_id?: string; p_subfamilia_id?: string }
+        Returns: {
+          id: string
+          codigo: string
+          numero: string
+          descripcion: string
+          detalles: string | null
+          ubicacion: string | null
+          stock: number | null
+          stock_minimo: number
+          punto_pedido: number
+          familia_id: string
+          subfamilia_id: string
+          foto_url: string | null
+          puntaje: number
+        }[]
+      }
       ficha_de_stock: {
         Args: { p_antes?: number; p_item_id: string; p_limite?: number }
         Returns: {

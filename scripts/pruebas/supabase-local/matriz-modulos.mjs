@@ -24,6 +24,8 @@ const FUNCIONES = {
   eliminar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
   restaurar_reparacion: [['deposito', 'proveedores'], { p_reparacion_id: randomUUID() }],
 };
+FUNCIONES.buscar_repuestos = [['deposito'], { p_texto: 'x' }];
+FUNCIONES.repuestos_a_reponer = [['deposito'], {}];
 FUNCIONES.crear_movimiento_stock = [['deposito'], { p_clase: 'carga', p_fecha: null, p_motivo: null, p_referencia: null, p_observaciones: null, p_lineas: [] }];
 FUNCIONES.crear_ajuste_inventario = [['deposito'], { p_motivo: '', p_lineas: [] }];
 FUNCIONES.anular_ajuste_inventario = [['deposito'], { p_ajuste_id: randomUUID(), p_motivo: 'x' }];

@@ -62,12 +62,25 @@ una búsqueda `ILIKE` directa sobre la tabla **no puede usar el índice de texto
 
 Lo que más tarda ahora son las listas que traen todo sin paginar: el historial de retiros (1,5 s) y los proveedores con contactos (1,3 s).
 
+### El catálogo ya no se descarga (2026-10-16)
+
+La aplicación **no baja el catálogo**: la lista de búsqueda, los selectores de repuestos (movimientos, reparaciones, QR, pedidos), el escáner de QR, el carrito de retiro y el informe de reposición piden a la base solo lo que muestran
+(`buscar_repuestos`, `repuestos_a_reponer`, consultas por id o por código). Una prueba de pantalla (`e2e/catalogo-en-el-servidor.spec.ts`) falla si la aplicación vuelve a pedir lecturas grandes de la tabla de repuestos.
+
+Medido en la base real (PostgreSQL) con las reglas de seguridad puestas, mediana de 5 consultas (`node scripts/pruebas/concurrencia/busqueda.mjs --items N`):
+
+| Repuestos | Búsqueda (función) | Búsqueda directa (antes) | Informe de reposición (500 filas + total) |
+|---|---|---|---|
+| 200.000 | 3 a 11 ms | 85 a 152 ms | 10 a 130 ms (16.927 a reponer) |
+| **1.000.000** | **3 a 16 ms** | 434 a 831 ms | 99 a 301 ms (85.178 a reponer) |
+
+El techo de diseño es de 500.000 repuestos; se mide con el doble. El presupuesto es de 150 ms por búsqueda y 400 ms por informe (la prueba falla si se pasa).
+
 ## Lo que falta (en orden de prioridad)
 
 1. **Paginar y filtrar en la base** todas las pantallas que hoy traen todo: historial de retiros, proveedores, ajustes, tareas, papelera, auditoría, errores, sugerencias, historial por repuesto,
    informe de reposición. Algunas además **cortan en un número fijo** y lo que queda más atrás es inalcanzable (auditoría y errores: 200; envíos: 300; numeración: 5.000 por subfamilia).
-2. **Catálogo sin bajarlo entero:** usar `buscar_repuestos` y listas por clave en las pantallas de repuestos (hoy el catálogo se baja completo: ≈25 MB con 50.000, inviable con 200.000), más
-   sincronizar solo lo que cambió y guardarlo en el teléfono (modo sin conexión).
+2. ✅ **Catálogo sin bajarlo entero** (hecho, ver arriba). Queda: guardar en el teléfono lo último buscado (modo sin conexión).
 3. **Varios depósitos:** stock por (repuesto, depósito), índices con el depósito como primera columna, informes por depósito.
 4. **Particionar por fecha** las tablas que crecen sin parar (retiros, líneas, auditoría) y archivar lo viejo.
 5. **Avisos en vivo** (Realtime) para que las pantallas se actualicen cuando otra persona cambia algo, y control de versión también en reparaciones y envíos.

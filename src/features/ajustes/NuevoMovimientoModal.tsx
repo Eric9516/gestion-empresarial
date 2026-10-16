@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
@@ -9,7 +9,8 @@ import {
   formatoCantidad, leerCantidad, MOTIVOS, NOMBRE_DE_LA_CLASE, problemaDelMovimiento, resumenDelAjuste, stockResultante,
   type ClaseMovimiento, type TipoAjuste,
 } from '../../lib/ajustes';
-import { prepararBusqueda, puntajeConBusquedaPreparada, useItemsQuery } from '../items/useItems';
+import { useRepuestosParaElegir } from '../items/useItems';
+import { supabase } from '../../lib/supabaseClient';
 import { useCrearMovimiento } from './useAjustes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,6 @@ const OTRO = 'Otro';
 // Una carga de stock (entra mercadería: solo suma) o un ajuste (corrige el stock: cada artículo suma o resta), de varios artículos a la vez. Es un documento con su
 // número correlativo; cada línea muestra cuánto había y cuánto va a quedar.
 export default function NuevoMovimientoModal({ open, onClose, claseInicial = 'carga', repuestoInicial = null }: Props) {
-  const { data: items } = useItemsQuery();
   const crear = useCrearMovimiento();
   const toast = useToast();
   const confirmar = useConfirm();
@@ -77,11 +77,7 @@ export default function NuevoMovimientoModal({ open, onClose, claseInicial = 'ca
 
   const motivo = motivoElegido === OTRO ? motivoPropio : motivoElegido;
 
-  const resultados = useMemo(() => {
-    if (!busqueda.trim() || !items) return [];
-    const terminos = prepararBusqueda(busqueda);
-    return items.filter(it => puntajeConBusquedaPreparada(it, terminos) > 0).slice(0, 15);
-  }, [items, busqueda]);
+  const resultados = useRepuestosParaElegir(busqueda);
 
   const datos = lineas.map(l => ({ tipo: l.tipo, cantidad: leerCantidad(l.texto), stock: l.stock }));
   const problema = problemaDelMovimiento(clase, datos, motivo);
@@ -90,9 +86,12 @@ export default function NuevoMovimientoModal({ open, onClose, claseInicial = 'ca
 
   function handleClose() { onClose(); }
 
-  function agregar(it: RepuestoParaMovimiento) {
+  // Al agregar se pide el repuesto tal como está AHORA (stock y unidad de medida): lo que se ve en la línea es lo real, no lo de una lista vieja.
+  async function agregar(it: { id: string; codigo: string; descripcion: string }) {
     if (lineas.some(l => l.item_id === it.id)) { toast('Ese artículo ya está en la lista', 'error'); return; }
-    setLineas(prev => [...prev, linea(it, clase === 'carga' ? 'suma' : 'resta')]);
+    const { data, error } = await supabase.from('items').select('stock, unidad').eq('id', it.id).single();
+    if (error) { toast('No se pudo leer el repuesto: ' + mensajeDeError(error), 'error'); return; }
+    setLineas(prev => (prev.some(l => l.item_id === it.id) ? prev : [...prev, linea({ ...it, stock: data.stock, unidad: data.unidad }, clase === 'carga' ? 'suma' : 'resta')]));
     setBusqueda('');
   }
 
@@ -185,9 +184,9 @@ export default function NuevoMovimientoModal({ open, onClose, claseInicial = 'ca
           {resultados.length ? resultados.map(it => (
             <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 8px', background: 'var(--surface2)', borderRadius: 'var(--radius-sm)' }}>
               <span style={{ fontSize: 13, minWidth: 0 }}>
-                <strong>{it.codigo}</strong> — {it.descripcion} <span style={{ color: 'var(--text-muted)' }}>(stock {formatoCantidad(it.stock ?? 0)} {it.unidad})</span>
+                <strong>{it.codigo}</strong> — {it.descripcion} <span style={{ color: 'var(--text-muted)' }}>(stock {formatoCantidad(it.stock ?? 0)})</span>
               </span>
-              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => agregar(it)}><Icono n="mas" /> Agregar</Button>
+              <Button variant="primary" size="sm" style={{ flexShrink: 0 }} onClick={() => void agregar(it)}><Icono n="mas" /> Agregar</Button>
             </div>
           )) : <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sin resultados</p>}
         </div>
