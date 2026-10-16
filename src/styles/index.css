@@ -7,6 +7,7 @@
 @import "./components.css" layer(legacy);
 @import "./admin.css" layer(legacy);
 @import "./mobile.css" layer(legacy);
+@import "./iconos.css" layer(legacy);
 @import "./tareas.css" layer(legacy);
 @import "./tailwind.css";
 /* Sin capa a propósito: gana sobre las variables de Tailwind (ver variables.css). */

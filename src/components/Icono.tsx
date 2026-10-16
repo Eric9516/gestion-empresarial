@@ -39,7 +39,7 @@ interface Props {
 
 export function Icono({ n, tam = '1.1em', trazo = 2, className, style }: Props) {
   const Componente = ICONOS[n];
-  return <Componente size={tam} strokeWidth={trazo} className={className} aria-hidden="true" focusable="false" style={{ verticalAlign: '-0.18em', flexShrink: 0, ...style }} />;
+  return <Componente size={tam} strokeWidth={trazo} className={className} aria-hidden="true" focusable="false" data-icono={n} style={{ verticalAlign: '-0.18em', flexShrink: 0, ...style }} />;
 }
 
 /** Un punto de color (por ejemplo, el semáforo de las tareas o un estado). Hereda el color del texto si no se indica otro; `hueco` lo dibuja como un aro. */
