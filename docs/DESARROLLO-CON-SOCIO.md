@@ -35,4 +35,5 @@ git fetch pantallas
 git switch -c mantenimiento-ui-importado
 git checkout pantallas/main -- src/features/mantenimiento src/pages/MantenimientoPage.tsx
 ```
+La pantalla del módulo es `src/pages/MantenimientoPage.tsx` (nueva; el Depósito es `DepositoPage.tsx` desde el 2026-10-17). Si enganchó la ruta `/mantenimiento` en `src/App.tsx` (que hasta entonces redirige al Depósito) y el menú de áreas, esos cambios se traen a mano.
 Se revisa con `git diff`, se corren `pnpm test`, `pnpm lint` y `pnpm build`, y se lee `NOTAS-PARA-ERIC.md` de la carpeta (dice qué datos necesita cada pantalla). Después se arma la parte de base de datos como migración nueva en `supabase/componentes/mantenimiento/` (ver [NUEVO-MODULO.md](NUEVO-MODULO.md)) y se reemplazan los datos de ejemplo por consultas reales.
