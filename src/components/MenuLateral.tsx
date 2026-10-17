@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { FocusEvent, ReactNode } from 'react';
 import { Icono } from '@/components/Icono';
+import { textoDeAviso } from '../features/avisos/useAvisos';
 
 export interface ItemMenu {
   clave: string;
@@ -30,7 +31,7 @@ function Item({ item, alElegir }: { item: ItemMenu; alElegir: () => void }) {
     <button type="button" className={`menu-lateral-item${item.activo ? ' activo' : ''}`} aria-current={item.activo ? 'page' : undefined} onClick={() => { item.onClick(); alElegir(); }}>
       <span className="menu-lateral-icono">{item.icono}</span>
       <span className="menu-lateral-texto">{item.titulo}</span>
-      {!!item.cantidad && <span className="menu-lateral-cant">{item.cantidad}</span>}
+      {!!item.cantidad && <span className="menu-lateral-cant">{textoDeAviso(item.cantidad)}</span>}
     </button>
   );
 }

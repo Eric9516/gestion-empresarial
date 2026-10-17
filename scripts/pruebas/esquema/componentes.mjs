@@ -9,7 +9,7 @@
 export const COMPONENTE = {
   // Base: usuarios, permisos, configuración, historial y Tareas
   usuarios_perfil: 'base', configuracion: 'base', licencia: 'base', audit_log: 'base', error_logs: 'base', sugerencias: 'base',
-  tasks: 'base', task_history: 'base', migraciones_aplicadas: 'base', preferencias_modulos: 'base',
+  tasks: 'base', task_history: 'base', migraciones_aplicadas: 'base', preferencias_modulos: 'base', avisos_vistos: 'base',
   // Abastecimiento: proveedores, comisionistas, envíos, depósitos (repuestos, stock, retiros, ajustes), sus destinos (sectores) y las reparaciones
   // (lo que se manda a reparar afuera: un proveedor, repuestos del depósito y un envío; no dependen de los equipos)
   proveedores: 'abastecimiento', contactos: 'abastecimiento', comisionistas: 'abastecimiento',

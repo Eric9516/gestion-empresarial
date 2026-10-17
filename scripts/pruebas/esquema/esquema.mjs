@@ -155,6 +155,22 @@ if ((await q(`select to_regclass('public.depositos') is not null as hay`))[0].ha
 }
 
 
+// --- Avisos del menú: qué vio cada persona por última vez (solo en la instalación por componentes: la cadena original no lo tiene) ---
+if ((await q(`select to_regclass('public.avisos_vistos') is not null as hay`))[0].hay) {
+  const marcar = clave => como('authenticated', A, `select public.marcar_aviso_visto('${clave}') as t`);
+  const primera = await marcar('sugerencias');
+  ok('"ya lo vi" deja la hora de la base y crea la fila de quien la usa', !primera.error && primera[0]?.t !== null && filas(await como('authenticated', A, `select * from public.avisos_vistos where usuario_id = '${A}' and clave = 'sugerencias'`)) === 1, JSON.stringify(primera).slice(0, 120));
+  await db.exec(`select pg_sleep(0.05)`);
+  const segunda = await marcar('sugerencias');
+  ok('marcar de nuevo actualiza la misma fila (no la duplica) y la hora avanza', !segunda.error && new Date(segunda[0].t) > new Date(primera[0].t) && filas(await como('authenticated', A, `select * from public.avisos_vistos where usuario_id = '${A}'`)) === 1);
+  ok('solo hay avisos de "retiros" y "sugerencias"', !!(await marcar('cualquier-cosa')).error);
+  ok('cada persona ve solo lo suyo: un usuario no puede escribir la fila de otro', !!(await como('authenticated', A, `insert into public.avisos_vistos (usuario_id, clave) values ('${B}', 'retiros')`)).error);
+  ok('un usuario bloqueado no usa los avisos', !!(await como('authenticated', B, `select public.marcar_aviso_visto('retiros')`)).error || filas(await como('authenticated', B, 'select * from public.avisos_vistos')) === 0);
+  ok('sin sesión no se ven ni se marcan avisos', !!(await como('anon', null, 'select * from public.avisos_vistos')).error && !!(await como('anon', null, `select public.marcar_aviso_visto('retiros')`)).error);
+  ok('nadie borra avisos desde la aplicación', !!(await como('authenticated', A, 'delete from public.avisos_vistos')).error);
+}
+
+
 // --- Componentes (E1): ninguna tabla sin dueño y ninguna dependencia en la dirección equivocada ---
 const comp = n => COMPONENTE[String(n).replace(/"/g, '').replace(/^public\./, '')];
 const tablasBD = (await q("select relname from pg_class where relnamespace='public'::regnamespace and relkind in ('r','p')")).map(x => x.relname);

@@ -6,7 +6,9 @@ import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import MenuLateral from '../components/MenuLateral';
 import type { SeccionMenu } from '../components/MenuLateral';
+import BotonHamburguesa from '../components/BotonHamburguesa';
 import { useMenuFijo } from '../lib/useMenuFijo';
+import { useAvisos } from '../features/avisos/useAvisos';
 import SinModulos from '../components/SinModulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { useModulos } from '../features/config/useModulos';
@@ -35,6 +37,7 @@ function DirectorioContent() {
   const [tabElegida, setTabElegida] = useState<Tab>('proveedores');
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuFijo, alternarMenuFijo] = useMenuFijo();
+  const { sugerencias: sugerenciasNuevas, total: avisosTotal } = useAvisos();
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
 
@@ -60,7 +63,7 @@ function DirectorioContent() {
     { titulo: 'Directorio', items: pestañas.filter(p => p.id !== 'tareas').map(itemDe) },
     { titulo: 'Gestión', items: pestañas.filter(p => p.id === 'tareas').map(itemDe) },
   ].filter(s => s.items.length > 0);
-  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', onClick: () => navigate('/admin') }] : [];
+  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   const navItems = [
     ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
@@ -82,11 +85,7 @@ function DirectorioContent() {
             <Link to="/mantenimiento" className="btn-mantenimiento" title="Depósito de mantenimiento" style={{ display: 'flex' }}><Icono n="herramienta" /> <span className="hide-mobile">Depósito</span></Link>
           )}
           <UserMenu />
-          <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
+          <BotonHamburguesa onClick={() => setMenuOpen(true)} aviso={avisosTotal > 0} />
         </div>
       </header>
 

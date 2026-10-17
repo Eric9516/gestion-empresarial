@@ -5,7 +5,9 @@ import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, 
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import MenuLateral from '../components/MenuLateral';
+import BotonHamburguesa from '../components/BotonHamburguesa';
 import { useMenuFijo } from '../lib/useMenuFijo';
+import { useAvisos } from '../features/avisos/useAvisos';
 import type { SeccionMenu } from '../components/MenuLateral';
 import SinModulos from '../components/SinModulos';
 import { hayModulosDeDirectorio } from '../lib/modulos';
@@ -34,6 +36,7 @@ function MantenimientoContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [menuFijo, alternarMenuFijo] = useMenuFijo();
+  const { retiros: retirosNuevos, sugerencias: sugerenciasNuevas, total: avisosTotal, marcarVisto } = useAvisos();
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
   useEffect(() => { document.title = `Depósito — ${nombreEmpresa}`; }, [nombreEmpresa]);
@@ -55,7 +58,7 @@ function MantenimientoContent() {
     { titulo: 'Día a día', items: [
       { clave: 'buscar', icono: <Icono n="buscar" />, titulo: 'Buscar', onClick: ir('buscar'), activo: tab === 'buscar' },
       { clave: 'carrito', icono: <Icono n="carrito" />, titulo: 'A retirar', cantidad: cart.length, onClick: ir('carrito'), activo: tab === 'carrito' },
-      { clave: 'retiros', icono: <Icono n="lista" />, titulo: 'Retiros', onClick: ir('retiros'), activo: tab === 'retiros' },
+      { clave: 'retiros', icono: <Icono n="lista" />, titulo: 'Retiros', cantidad: retirosNuevos, onClick: ir('retiros'), activo: tab === 'retiros' },
     ] },
     { titulo: 'Stock', items: [
       ...(verAjustes ? [{ clave: 'ajustes', icono: <Icono n="balanza" />, titulo: 'Movimientos', onClick: ir('ajustes'), activo: tab === 'ajustes' }] : []),
@@ -66,13 +69,16 @@ function MantenimientoContent() {
       ...(modulos.tareas ? [{ clave: 'tareas', icono: <Icono n="exito" />, titulo: 'Tareas', onClick: ir('tareas'), activo: tab === 'tareas' }] : []),
     ] },
   ].filter(s => s.items.length > 0);
-  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', onClick: () => navigate('/admin') }] : [];
+  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   // El menú de la hamburguesa (celular) usa las mismas secciones, en una sola lista.
   const navItems = [
-    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.cantidad ? `${i.titulo} (${i.cantidad})` : i.titulo, onClick: i.onClick, active: i.activo })),
+    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.titulo, cantidad: i.cantidad, onClick: i.onClick, active: i.activo })),
     ...(canExit ? [{ icon: <><Icono n="volver" /> </>, label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
+
+  // Al estar mirando los retiros, lo que llegue ya está visto.
+  useEffect(() => { if (tab === 'retiros' && retirosNuevos > 0) marcarVisto('retiros'); }, [tab, retirosNuevos, marcarVisto]);
 
   return (
     <div className={`mantenimiento-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
@@ -89,11 +95,7 @@ function MantenimientoContent() {
             <Link to="/" className="btn-volver-directorio" style={{ display: 'flex' }}><Icono n="volver" /> <span className="hide-mobile">Directorio</span></Link>
           )}
           <UserMenu />
-          <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
+          <BotonHamburguesa onClick={() => setMenuOpen(true)} aviso={cart.length + avisosTotal > 0} />
         </div>
       </header>
 

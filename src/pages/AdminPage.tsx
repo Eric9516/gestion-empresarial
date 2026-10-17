@@ -25,7 +25,9 @@ import { Icono } from '@/components/Icono';
 import type { NombreIcono } from '@/components/Icono';
 import MenuLateral from '../components/MenuLateral';
 import type { SeccionMenu } from '../components/MenuLateral';
+import BotonHamburguesa from '../components/BotonHamburguesa';
 import { useMenuFijo } from '../lib/useMenuFijo';
+import { useAvisos } from '../features/avisos/useAvisos';
 
 
 type Grupo = 'directorio' | 'mantenimiento' | 'general';
@@ -76,6 +78,7 @@ function AdminContent() {
   const { data: config } = useConfiguracionQuery();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuFijo, alternarMenuFijo] = useMenuFijo();
+  const { sugerencias: sugerenciasNuevas, total: avisosTotal, marcarVisto } = useAvisos();
 
   const { modulos, listo } = useModulos();
 
@@ -97,12 +100,16 @@ function AdminContent() {
 
   // El menú lateral muestra cada grupo con sus pestañas; la hamburguesa del celular, lo mismo en una sola lista.
   const secciones: SeccionMenu[] = GRUPOS
-    .map(g => ({ titulo: g.label, items: visibles.filter(t => t.group === g.id).map(t => ({ clave: t.id, icono: <Icono n={t.icono} />, titulo: t.label, onClick: () => setTabId(t.id), activo: tabActual?.id === t.id })) }))
+    .map(g => ({ titulo: g.label, items: visibles.filter(t => t.group === g.id).map(t => ({ clave: t.id, icono: <Icono n={t.icono} />, titulo: t.label, cantidad: t.id === 'sugerencias' ? sugerenciasNuevas : undefined, onClick: () => setTabId(t.id), activo: tabActual?.id === t.id })) }))
     .filter(s => s.items.length > 0);
   const navItems = [
-    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.titulo, onClick: i.onClick, active: i.activo })),
+    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.titulo, cantidad: i.cantidad, onClick: i.onClick, active: i.activo })),
     { icon: <><Icono n="volver" /> </>, label: 'Volver', onClick: () => navigate(-1) },
   ];
+
+  // Al estar mirando las sugerencias, lo que llegue ya está visto.
+  const mirandoSugerencias = tabActual?.id === 'sugerencias';
+  useEffect(() => { if (mirandoSugerencias && sugerenciasNuevas > 0) marcarVisto('sugerencias'); }, [mirandoSugerencias, sugerenciasNuevas, marcarVisto]);
 
   if (!listo) return <div className="loading-screen">Cargando...</div>;
   if (!tabActual) return null;
@@ -120,11 +127,7 @@ function AdminContent() {
         <div className="header-right">
           <button onClick={() => navigate(-1)} className="btn-volver-directorio" style={{ display: 'flex' }}><Icono n="volver" /> <span className="hide-mobile">Volver</span></button>
           <UserMenu />
-          <button className="hamburger-btn" onClick={() => setMenuOpen(true)} aria-label="Menú">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
+          <BotonHamburguesa onClick={() => setMenuOpen(true)} aviso={avisosTotal > 0} />
         </div>
       </header>
 

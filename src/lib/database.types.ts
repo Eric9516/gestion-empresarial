@@ -14,6 +14,20 @@ export type Database = {
   }
   public: {
     Tables: {
+      avisos_vistos: {
+        Row: { usuario_id: string; clave: string; visto_at: string }
+        Insert: { usuario_id: string; clave: string; visto_at?: string }
+        Update: { usuario_id?: string; clave?: string; visto_at?: string }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_vistos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_perfil"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ajuste_items: {
         Row: {
           ajuste_id: string
@@ -1425,6 +1439,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      marcar_aviso_visto: { Args: { p_clave: string }; Returns: string }
       _aud_actor: { Args: never; Returns: Record<string, unknown> }
       _aud_cambio: {
         Args: { anterior: string; etiqueta: string; nuevo: string }

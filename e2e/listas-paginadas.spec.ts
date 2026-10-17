@@ -21,7 +21,8 @@ test.describe('Listas paginadas', () => {
     await expect(page.getByText('Planta de ejemplo').first()).toBeVisible();
     expect(pedidos.some(p => /rpc\/historial_de_retiros/.test(p) && /"p_limite":50/.test(p))).toBe(true);
     // ninguna lectura directa y completa de la tabla de retiros
-    expect(pedidos.filter(p => /\/rest\/v1\/retiros\?/.test(p))).toEqual([]);
+    // (salvo el aviso del menú: solo lo nuevo desde la última vez que se miró, de a 100 como mucho)
+    expect(pedidos.filter(p => /\/rest\/v1\/retiros\?/.test(p) && !/created_at=gt\./.test(p))).toEqual([]);
 
     const buscador = page.getByPlaceholder('Buscar por repuesto, sector u operario...');
     // por un repuesto y por un sector (lo resuelve la base)
