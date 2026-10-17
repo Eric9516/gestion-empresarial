@@ -15,7 +15,7 @@ test.describe('Listas paginadas', () => {
 
   test('historial de retiros: lo arma la base de a páginas y la búsqueda se hace en la base', async ({ page }) => {
     const pedidos = registrarPedidos(page);
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('button', { name: 'Retiros', exact: true }).first().click();
     // el retiro de ejemplo (2 unidades del repuesto de ejemplo, sector "Planta de ejemplo")
     await expect(page.getByText('Planta de ejemplo').first()).toBeVisible();
@@ -37,7 +37,7 @@ test.describe('Listas paginadas', () => {
 
   test('movimientos de stock: se piden de a páginas y se buscan en la base', async ({ page }) => {
     const pedidos = registrarPedidos(page);
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('button', { name: /Movimientos/ }).first().click();
     await expect(page.getByText('Movimientos de stock').first()).toBeVisible();
     expect(pedidos.some(p => /rpc\/lista_de_movimientos/.test(p) && /"p_limite":50/.test(p))).toBe(true);

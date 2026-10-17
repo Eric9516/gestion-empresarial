@@ -6,7 +6,7 @@ test.describe('Reparaciones: recibir lo que vuelve del taller', () => {
   test.beforeEach(async ({ page }) => { await entrar(page); });
 
   test('se abre la reparación, no deja recibir más de lo pendiente y registra la entrega con su remito', async ({ page }) => {
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('button', { name: 'Reparaciones', exact: true }).first().click();
     await expect(page.getByText('Reparación de ejemplo').first()).toBeVisible();
     await page.getByRole('row', { name: /Reparación de ejemplo/ }).getByRole('button', { name: 'Ver', exact: true }).click();

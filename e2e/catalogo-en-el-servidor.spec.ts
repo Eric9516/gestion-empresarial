@@ -11,7 +11,7 @@ test.describe('Catálogo en el servidor', () => {
     const pedidos: string[] = [];
     page.on('request', r => { if (r.url().includes('/rest/v1/')) pedidos.push(`${r.method()} ${decodeURIComponent(r.url())} ${r.postData() ?? ''}`); });
 
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByPlaceholder('Código, número o descripción...').fill('rodamiento');
     await expect(page.getByText('Rodamiento de ejemplo').first()).toBeVisible();
 
@@ -26,7 +26,7 @@ test.describe('Catálogo en el servidor', () => {
   test('sin escribir nada no se pide nada del catálogo', async ({ page }) => {
     const pedidos: string[] = [];
     page.on('request', r => { if (/\/rest\/v1\/(items|rpc\/buscar_repuestos)/.test(r.url())) pedidos.push(r.url()); });
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await expect(page.getByText('Buscá un repuesto')).toBeVisible();
     // el único pedido permitido es el de "¿hay algún repuesto?" (trae una fila como mucho)
     expect(pedidos.filter(u => /rpc\/buscar_repuestos/.test(u) || !/limit=1\b/.test(decodeURIComponent(u)))).toEqual([]);
@@ -35,7 +35,7 @@ test.describe('Catálogo en el servidor', () => {
   test('el informe de reposición lo arma la base: pide solo lo que hay que reponer, con tope', async ({ page }) => {
     const pedidos: string[] = [];
     page.on('request', r => { if (r.url().includes('/rest/v1/')) pedidos.push(`${r.method()} ${decodeURIComponent(r.url())} ${r.postData() ?? ''}`); });
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('button', { name: /Informe/ }).first().click();
     await expect(page.getByText('No hay nada para reponer').first()).toBeVisible();
     expect(pedidos.some(p => /rpc\/repuestos_a_reponer/.test(p) && /"p_limite":500/.test(p))).toBe(true);
@@ -43,9 +43,9 @@ test.describe('Catálogo en el servidor', () => {
   });
 
   test('informe de reposición: aparece lo que llegó al punto de pedido, se marca su estado y se arma la solicitud', async ({ page }) => {
-    const irAlInforme = async () => { await page.goto('/mantenimiento'); await page.getByRole('button', { name: /Informe/ }).first().click(); };
+    const irAlInforme = async () => { await page.goto('/deposito'); await page.getByRole('button', { name: /Informe/ }).first().click(); };
     const editarRepuesto = async (minimo: string, puntoDePedido: string) => {
-      await page.goto('/mantenimiento');
+      await page.goto('/deposito');
       await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
       await page.getByText('Rodamiento de ejemplo').first().click();
       await page.getByRole('button', { name: /Editar/ }).first().click();

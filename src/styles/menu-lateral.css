@@ -4,7 +4,7 @@
    Toma el color de cada módulo (--menu-acento) y deja los íconos de colores, como las pestañas de antes.
    En el celular no existe: ahí navega el menú de la hamburguesa (mobile.css). */
 .app-screen { --menu-acento: var(--blue); }
-.mantenimiento-screen { --menu-acento: var(--mant); }
+.deposito-screen { --menu-acento: var(--deposito); }
 .admin-screen { --menu-acento: #374151; }
 
 .menu-lateral { display: none; }

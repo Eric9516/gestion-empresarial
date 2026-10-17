@@ -6,7 +6,7 @@ import { entrar, DUENO } from './ayudas';
 test.describe('Menú del nombre', () => {
   test('muestra nombre, correo y rol, y solo lo propio de la cuenta', async ({ page }) => {
     await entrar(page);
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.locator('.user-badge button').first().click();
     const menu = page.locator('.user-dropdown.open');
     await expect(menu).toContainText(DUENO.email);
@@ -21,14 +21,14 @@ test.describe('Menú del nombre', () => {
 
   test('el menú lateral lleva de un área a otra', async ({ page }) => {
     await entrar(page);
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     const lateral = page.getByRole('navigation', { name: 'Secciones' });
     await lateral.getByRole('button', { name: 'Directorio', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText('Proveedor de ejemplo')).toBeVisible();
     await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Depósito de mantenimiento' }).click();
-    await expect(page).toHaveURL(/\/mantenimiento/);
+    await expect(page).toHaveURL(/\/deposito/);
     // ya no hay botón de "volver" arriba
-    await expect(page.locator('.app-header .btn-volver-directorio, .app-header .btn-mantenimiento')).toHaveCount(0);
+    await expect(page.locator('.app-header .btn-volver-directorio, .app-header .btn-deposito')).toHaveCount(0);
   });
 });

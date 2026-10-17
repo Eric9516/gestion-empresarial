@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioDesactivado, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioDesactivado, tieneAccesoAdmin, tieneAccesoDeposito } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import MenuLateral from '../components/MenuLateral';
@@ -25,7 +25,7 @@ type Tab = 'proveedores' | 'comisionistas' | 'rotulos' | 'tareas';
 // esta pantalla en absoluto.
 export default function DirectorioPage() {
   const { profile } = useAuth();
-  if (isDirectorioDesactivado(profile)) return <Navigate to="/mantenimiento" replace />;
+  if (isDirectorioDesactivado(profile)) return <Navigate to="/deposito" replace />;
   return <DirectorioContent />;
 }
 
@@ -53,10 +53,10 @@ function DirectorioContent() {
     ...(modulos.tareas ? [{ id: 'tareas' as const, icon: <Icono n="exito" />, label: 'Tareas' }] : []),
   ];
   const tab = pestañas.some(p => p.id === tabElegida) ? tabElegida : pestañas[0]?.id;
-  const puedeIrAlDeposito = modulos.deposito && tieneAccesoMantenimiento(profile);
+  const puedeIrAlDeposito = modulos.deposito && tieneAccesoDeposito(profile);
 
   if (!listo) return <div className="loading-screen">Cargando...</div>;
-  if (!tab) return puedeIrAlDeposito ? <Navigate to="/mantenimiento" replace /> : <SinModulos />;
+  if (!tab) return puedeIrAlDeposito ? <Navigate to="/deposito" replace /> : <SinModulos />;
 
   const itemDe = (p: (typeof pestañas)[number]) => ({ clave: p.id, icono: p.icon, titulo: p.label, onClick: () => setTabElegida(p.id), activo: tab === p.id });
   const secciones: SeccionMenu[] = [
@@ -66,13 +66,13 @@ function DirectorioContent() {
   // Las áreas a las que puede ir esta persona (si tiene una sola, no hace falta mostrarlas).
   const areas: SeccionMenu[] = puedeIrAlDeposito ? [{ titulo: 'Áreas', items: [
     { clave: 'area-directorio', icono: <Icono n="directorio" />, titulo: 'Directorio', onClick: () => setTabElegida(pestañas[0].id), activo: true },
-    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: () => navigate('/mantenimiento') },
+    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: () => navigate('/deposito') },
   ] }] : [];
   const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   const navItems = [
     ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
-    ...(puedeIrAlDeposito ? [{ icon: <Icono n="herramienta" />, label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
+    ...(puedeIrAlDeposito ? [{ icon: <Icono n="herramienta" />, label: 'Depósito', onClick: () => navigate('/deposito') }] : []),
   ];
 
   return (

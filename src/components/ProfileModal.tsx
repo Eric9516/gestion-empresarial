@@ -3,7 +3,7 @@ import { useAlCambiar } from '../lib/useAlCambiar';
 import Modal from './Modal';
 import { useToast } from './ToastProvider';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioAdmin, isDirectorioDesactivado, isMantenimientoAdmin, isOwner, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioAdmin, isDirectorioDesactivado, isDepositoAdmin, isOwner, tieneAccesoDeposito } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useModulos } from '../features/config/useModulos';
@@ -42,9 +42,9 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
   }
 
   const rolDirectorio = isDirectorioDesactivado(profile) ? 'Sin acceso' : isDirectorioAdmin(profile) ? 'Administrador' : 'Usuario';
-  const rolMantenimiento = !tieneAccesoMantenimiento(profile) ? 'Sin acceso' : isMantenimientoAdmin(profile) ? 'Administrador' : 'Usuario';
+  const rolDeposito = !tieneAccesoDeposito(profile) ? 'Sin acceso' : isDepositoAdmin(profile) ? 'Administrador' : 'Usuario';
   const permisos = permisosDe({ profile, deposito: modulos.deposito });
-  const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [['Depósito de mantenimiento', rolMantenimiento]] : [])];
+  const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [['Depósito de mantenimiento', rolDeposito]] : [])];
 
   return (
     <Modal

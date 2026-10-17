@@ -31,7 +31,7 @@ test.describe('Accesibilidad', () => {
     });
 
     test('Depósito: búsqueda de repuestos', async ({ page }) => {
-      await page.goto('/mantenimiento');
+      await page.goto('/deposito');
       await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
       await expect(page.getByText('Rodamiento de ejemplo').first()).toBeVisible();
       expect(await problemas(page)).toEqual([]);
@@ -40,7 +40,7 @@ test.describe('Accesibilidad', () => {
     // Cada pestaña de cada sección, una por una.
     for (const [ruta, pestanas] of [
       ['/', ['Comisionistas', 'Envíos', 'Tareas']],
-      ['/mantenimiento', ['A retirar', 'Retiros', 'Tareas', 'Reparaciones', 'Informe', 'Movimientos']],
+      ['/deposito', ['A retirar', 'Retiros', 'Tareas', 'Reparaciones', 'Informe', 'Movimientos']],
     ] as const) {
       for (const pestana of pestanas) {
         test(`${ruta === '/' ? 'Directorio' : 'Depósito'}: pestaña ${pestana}`, async ({ page }) => {

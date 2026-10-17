@@ -12,7 +12,7 @@ test.describe('Entrar a la app', () => {
   });
 
   test('sin haber entrado, cualquier pantalla lleva al login', async ({ page }) => {
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -20,6 +20,13 @@ test.describe('Entrar a la app', () => {
     await entrar(page);
     await expect(page).toHaveTitle(/Cliente Plan 2/);
     await expect(page.getByText('Proveedor de ejemplo')).toBeVisible();
+  });
+
+  test('la dirección vieja del Depósito (/mantenimiento) sigue funcionando y lleva a /deposito', async ({ page }) => {
+    await entrar(page);
+    await page.goto('/mantenimiento');
+    await expect(page).toHaveURL(/\/deposito$/);
+    await expect(page.getByRole('heading', { name: 'Depósito de mantenimiento' })).toBeVisible();
   });
 
   test('si ya entró, /login lo manda de nuevo a la pantalla principal', async ({ page }) => {

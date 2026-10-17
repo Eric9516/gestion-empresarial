@@ -5,7 +5,7 @@ import { entrar } from './ayudas';
 
 // Lo que pasa cuando varias personas trabajan sobre lo mismo a la vez (la prueba de carga con una base real está en scripts/pruebas/concurrencia).
 async function abrirEdicion(page: Page) {
-  await page.goto('/mantenimiento');
+  await page.goto('/deposito');
   await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
   await page.getByText('AA00001').first().click();
   await page.getByRole('button', { name: 'Editar', exact: true }).click();

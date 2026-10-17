@@ -4,7 +4,7 @@ import { entrar } from './ayudas';
 // El stock inicial del repuesto de ejemplo no es un número fijo (el retiro de ejemplo ya descontó unidades): cada prueba lo lee al empezar,
 // compara contra eso y deja todo como estaba.
 async function buscarElRepuesto(page: Page) {
-  await page.goto('/mantenimiento');
+  await page.goto('/deposito');
   await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
   await expect(page.getByText('Rodamiento de ejemplo').first()).toBeVisible();
 }
@@ -23,7 +23,7 @@ test.describe('Depósito: buscar y retirar un repuesto', () => {
   test.beforeEach(async ({ page }) => { await entrar(page); });
 
   test('buscar por código encuentra el repuesto y por un texto raro no encuentra nada', async ({ page }) => {
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     const buscador = page.getByPlaceholder('Código, número o descripción...');
     await buscador.fill('AA00001');
     await expect(page.getByText('Rodamiento de ejemplo').first()).toBeVisible();

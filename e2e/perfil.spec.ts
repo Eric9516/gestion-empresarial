@@ -4,7 +4,7 @@ import { entrar, DUENO } from './ayudas';
 const COMUN = { email: 'comun@plan2.test', clave: DUENO.clave };
 
 async function abrirMiPerfil(page: Page) {
-  await page.goto('/mantenimiento');
+  await page.goto('/deposito');
   await page.locator('.user-badge button').first().click();
   await page.getByRole('menuitem', { name: /Mi perfil/ }).click();
   const perfil = page.getByRole('dialog', { name: /Mi perfil/ });

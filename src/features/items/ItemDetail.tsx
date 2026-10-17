@@ -5,7 +5,7 @@ import Modal from '../../components/Modal';
 import { useToast } from '../../components/ToastProvider';
 import { useConfirm } from '../../components/ConfirmProvider';
 import { useAuth } from '../../auth/AuthContext';
-import { isMantenimientoAdmin, tieneAccesoMantenimiento } from '../../lib/types';
+import { isDepositoAdmin, tieneAccesoDeposito } from '../../lib/types';
 import { useMenu } from '../../lib/useMenu';
 import DescargarQrModal from './DescargarQrModal';
 import HistorialStockModal from './HistorialStockModal';
@@ -186,8 +186,8 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
   const { integ } = useModulos();
 
   if (!item) return null;
-  const admin = isMantenimientoAdmin(profile);
-  const puedeSubir = tieneAccesoMantenimiento(profile);
+  const admin = isDepositoAdmin(profile);
+  const puedeSubir = tieneAccesoDeposito(profile);
   const totalEnReparacion = lineasEnReparacion.reduce((acc, l) => acc + l.pendiente, 0);
 
   async function handleDelete() {

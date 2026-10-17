@@ -28,7 +28,7 @@ test.describe('Avisos en el menú', () => {
 
   test('una sugerencia nueva se ve en el menú (con número) y se apaga al abrirla', async ({ page, browser }) => {
     // El dueño ya está mirando: la primera visita deja marcado "visto hasta ahora".
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.waitForLoadState('networkidle');
     const menu = page.getByRole('navigation', { name: 'Secciones' });
     await expect(menu.locator('.menu-lateral-cant')).toHaveCount(0);
@@ -57,7 +57,7 @@ test.describe('Avisos en el menú', () => {
   });
 
   test('@celular el aviso aparece en el botón del menú y como número en Configuración', async ({ page, browser }) => {
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('button', { name: 'Menú', exact: true })).not.toHaveAttribute('title', 'Hay novedades');
 

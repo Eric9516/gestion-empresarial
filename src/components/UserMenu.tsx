@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioAdmin, isMantenimientoAdmin, isOwner } from '../lib/types';
+import { isDirectorioAdmin, isDepositoAdmin, isOwner } from '../lib/types';
 import { useMenu } from '../lib/useMenu';
 import ProfileModal from './ProfileModal';
 import SugerenciaModal from './SugerenciaModal';
@@ -16,7 +16,7 @@ export default function UserMenu() {
 
   const nombre = profile?.nombre || profile?.email?.split('@')[0] || 'Usuario';
   const inicial = (nombre[0] || 'U').toUpperCase();
-  const rol = isOwner(profile) ? 'Dueño' : isDirectorioAdmin(profile) || isMantenimientoAdmin(profile) ? 'Admin' : 'Usuario';
+  const rol = isOwner(profile) ? 'Dueño' : isDirectorioAdmin(profile) || isDepositoAdmin(profile) ? 'Admin' : 'Usuario';
 
   return (
     <>

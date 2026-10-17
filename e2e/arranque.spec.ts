@@ -3,7 +3,7 @@ import { entrar } from './ayudas';
 
 // Cuida que la app no pida lo mismo dos veces al abrir una pantalla (antes el perfil se pedía tres veces y los datos de la lista esperaban en fila).
 test.describe('Arranque', () => {
-  for (const ruta of ['/', '/mantenimiento']) {
+  for (const ruta of ['/', '/deposito']) {
     test(`al abrir ${ruta} cada dato se pide una sola vez`, async ({ page }) => {
       await entrar(page);
       const pedidos: string[] = [];

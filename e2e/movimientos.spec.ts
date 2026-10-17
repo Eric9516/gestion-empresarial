@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { entrar } from './ayudas';
 
 async function abrirMovimientos(page: Page) {
-  await page.goto('/mantenimiento');
+  await page.goto('/deposito');
   await page.getByRole('button', { name: /Movimientos/ }).first().click();
   await expect(page.getByText('Movimientos de stock').first()).toBeVisible();
 }
@@ -46,7 +46,7 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
     await expect(page.getByText(/Ajuste de inventario registrada: AJU 0001-\d{8}/)).toBeVisible();
 
     // el historial del repuesto distingue la carga del ajuste y muestra el número de cada comprobante
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
     await page.getByText('Rodamiento de ejemplo').first().click();
     await page.getByTitle(/Ver historial de movimientos/).click();
@@ -67,7 +67,7 @@ test.describe('Movimientos de stock: cargas y ajustes con comprobante', () => {
   });
 
   test('en la ficha del repuesto el stock no se escribe: se cambia con "Cambiar stock…"', async ({ page }) => {
-    await page.goto('/mantenimiento');
+    await page.goto('/deposito');
     await page.getByRole('combobox').first().selectOption({ label: 'Familia de ejemplo (AA)' });
     await page.getByText('Rodamiento de ejemplo').first().click();
     await page.getByRole('button', { name: /Editar/ }).first().click();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioDesactivado, isDepositoAdmin, puedeAjustarInventario, tieneAccesoAdmin, tieneAccesoDeposito } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import MenuLateral from '../components/MenuLateral';
@@ -42,7 +42,7 @@ function MantenimientoContent() {
   useEffect(() => { document.title = `Depósito — ${nombreEmpresa}`; }, [nombreEmpresa]);
   // Reparaciones toca stock igual que retiros/edición de repuestos — se
   // reserva a admin de Mantenimiento, no satura la navegación del común.
-  const esAdmin = isMantenimientoAdmin(profile);
+  const esAdmin = isDepositoAdmin(profile);
   const verReparaciones = esAdmin && integ.reparaciones;
   // Ajuste de inventario: solo quien tiene el permiso (la base lo impone igual).
   const verAjustes = puedeAjustarInventario(profile);
@@ -86,7 +86,7 @@ function MantenimientoContent() {
   useEffect(() => { if (tab === 'retiros' && retirosNuevos > 0) marcarVisto('retiros'); }, [tab, retirosNuevos, marcarVisto]);
 
   return (
-    <div className={`mantenimiento-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
+    <div className={`deposito-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
       <header className="app-header">
         <div className="header-logo">
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
@@ -126,13 +126,13 @@ function MantenimientoContent() {
   );
 }
 
-export default function MantenimientoPage() {
+export default function DepositoPage() {
   const { profile } = useAuth();
   const { modulos, listo } = useModulos();
   if (!listo) return <div className="loading-screen">Cargando...</div>;
   // Con Directorio desactivado, esta pantalla es la única a la que puede
   // entrar, tenga o no un rol de Mantenimiento propio asignado.
-  if (!tieneAccesoMantenimiento(profile) && !isDirectorioDesactivado(profile)) return <Navigate to="/" replace />;
+  if (!tieneAccesoDeposito(profile) && !isDirectorioDesactivado(profile)) return <Navigate to="/" replace />;
   // Si la empresa no usa el Depósito, no hay pantalla: se vuelve al Directorio, salvo que la
   // persona no pueda entrar allí (entonces se le explica en vez de rebotarla en círculo).
   if (!modulos.deposito) return isDirectorioDesactivado(profile) ? <SinModulos /> : <Navigate to="/" replace />;
