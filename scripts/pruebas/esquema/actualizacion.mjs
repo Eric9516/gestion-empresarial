@@ -23,6 +23,7 @@ await cremac.exec(`
   insert into public.familias (codigo, nombre) values ('AA','Fam');
   insert into public.sectores (nombre) values ('Quesería');
   insert into public.equipos (sector, nombre) values ('Quesería','Prensa');
+  update public.configuracion set color_deposito = '#7a2a8a' where id = 1;
 `);
 const antes = (await cremac.query(`select modulos from public.licencia`)).rows[0].modulos;
 ok('Cremac antes: licencia con los 5 módulos de siempre, sin "mantenimiento"', antes.deposito === true && antes.mantenimiento === undefined);
@@ -31,6 +32,8 @@ const lic = (await cremac.query(`select modulos, componentes from public.licenci
 ok('Después: "mantenimiento" prendido (heredó el depósito)', lic.modulos.mantenimiento === true);
 ok('Después: componentes = abastecimiento, base, mantenimiento', JSON.stringify(lic.componentes) === '["abastecimiento","base","mantenimiento"]', JSON.stringify(lic.componentes));
 const datos = (await cremac.query(`select (select count(*)::int from public.proveedores) p, (select count(*)::int from public.equipos) e, (select count(*)::int from public.sectores) s, (select count(*)::int from public.usuarios_perfil) u`)).rows[0];
+ok('El color que la empresa había elegido para el depósito pasó al depósito principal', (await cremac.query(`select color, icono, nombre from public.depositos where es_principal`)).rows[0].color === '#7a2a8a');
+await cremac.exec(`update public.configuracion set color_deposito = null where id = 1; update public.depositos set color = null;`); // el color era un dato de la prueba: se quita para comparar solo el esquema
 ok('Los datos que ya tenía siguen ahí', datos.p === 1 && datos.e === 1 && datos.s === 1 && datos.u === 1, JSON.stringify(datos));
 
 // 2) mismo esquema que una instalación nueva por componentes

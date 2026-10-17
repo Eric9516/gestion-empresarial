@@ -12,6 +12,7 @@ import { useAvisos } from '../features/avisos/useAvisos';
 import SinModulos from '../components/SinModulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { useModulos } from '../features/config/useModulos';
+import { useDepositoVisible } from '../features/depositos/useDepositos';
 import ProveedoresList from '../features/proveedores/ProveedoresList';
 import ComisionistasList from '../features/comisionistas/ComisionistasList';
 import RotulosScreen from '../features/rotulos/RotulosScreen';
@@ -34,6 +35,7 @@ function DirectorioContent() {
   const navigate = useNavigate();
   const { data: config } = useConfiguracionQuery();
   const { modulos, listo } = useModulos();
+  const depositoVisible = useDepositoVisible();
   const [tabElegida, setTabElegida] = useState<Tab>('proveedores');
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuFijo, alternarMenuFijo] = useMenuFijo();
@@ -66,13 +68,13 @@ function DirectorioContent() {
   // Las áreas a las que puede ir esta persona (si tiene una sola, no hace falta mostrarlas).
   const areas: SeccionMenu[] = puedeIrAlDeposito ? [{ titulo: 'Áreas', items: [
     { clave: 'area-directorio', icono: <Icono n="directorio" />, titulo: 'Directorio', onClick: () => setTabElegida(pestañas[0].id), activo: true },
-    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: () => navigate('/deposito') },
+    { clave: 'area-deposito', icono: <Icono n={depositoVisible.icono} />, titulo: depositoVisible.nombre, onClick: () => navigate('/deposito') },
   ] }] : [];
   const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   const navItems = [
     ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
-    ...(puedeIrAlDeposito ? [{ icon: <Icono n="herramienta" />, label: 'Depósito', onClick: () => navigate('/deposito') }] : []),
+    ...(puedeIrAlDeposito ? [{ icon: <Icono n={depositoVisible.icono} />, label: depositoVisible.nombre, onClick: () => navigate('/deposito') }] : []),
   ];
 
   return (

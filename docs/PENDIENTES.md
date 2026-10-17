@@ -24,8 +24,8 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
 1. **Formatos de código propios de la primera instalación.** Las familias y subfamilias exigen **exactamente 2 letras
    mayúsculas** (restricción de la base), y el importador de familias y de stock espera la planilla de esa empresa.
    Hay que volverlos configurables o genéricos.
-2. **Nombres fijos en pantalla.** "Directorio" y "Depósito de mantenimiento" están escritos en el código. Si otra empresa
-   usa otras palabras, hay que sacarlos a la configuración.
+2. **Nombres fijos en pantalla.** "Directorio" está escrito en el código. Si otra empresa usa otra palabra, hay que sacarla a la configuración.
+   (El nombre del Depósito ya no es fijo: lo pone el dueño en Configuración → Depósito → Depósitos, junto con su color e ícono.)
 3. **Formatos argentinos.** Fechas en `es-AR` (33 lugares), ejemplos con Córdoba y un solo idioma. Alcanza para Argentina y
    Latinoamérica; para vender afuera habría que abrirlo.
 4. **Comisionistas y rótulos de envío** responden a cómo trabaja la primera empresa. Para otras puede no tener sentido

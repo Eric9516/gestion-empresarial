@@ -172,7 +172,7 @@ Se retira **solo del propio depósito**: quien es de Mantenimiento retira de Man
 **Quién define los depósitos:** al crear el cliente desde el panel (cantidad, nombres y letras; por defecto uno solo) y después el dueño los edita desde Configuración. Con un solo depósito la app se ve como siempre (sin selectores).
 
 **Lo que falta, en orden:**
-1. Separar lo que ve cada depósito (reglas de seguridad), elegir depósito en las pantallas de quien tiene varios, y crear y editar depósitos y asignar personas (Configuración y panel).
+1. ✅ **Hecho (2026-10-17): depósitos que el dueño crea y edita** (nombre, color, ícono y letra), con el tope de la licencia (`licencia.max_depositos`, 1 por defecto) y las funciones `crear_deposito` / `editar_deposito` (solo el dueño; nunca se borran, se desactivan; la letra se fija con el primer repuesto). Pantalla: Configuración → Depósito → Depósitos. Falta: asignar personas a depósitos, elegir depósito en las pantallas de quien tiene varios, separar lo que ve cada depósito (reglas de seguridad) y la cantidad/nombres al crear un cliente desde el panel (además del tope por plan).
 2. Mínimos y punto de pedido siguen siendo del repuesto (no hace falta por depósito); el informe de reposición se arma por depósito.
 3. Pedidos entre depósitos y requerimientos (etapa de Compras).
 4. Numeración de los comprobantes con el punto de venta del depósito.

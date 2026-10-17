@@ -7,6 +7,7 @@ import { isDirectorioAdmin, isDirectorioDesactivado, isDepositoAdmin, isOwner, t
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useModulos } from '../features/config/useModulos';
+import { useDepositoVisible } from '../features/depositos/useDepositos';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
 import { permisosDe } from '../features/perfil/permisos';
@@ -16,6 +17,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
   const { profile, user, updateOwnProfile } = useAuth();
   const toast = useToast();
   const { modulos } = useModulos();
+  const depositoVisible = useDepositoVisible();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [saving, setSaving] = useState(false);
@@ -44,7 +46,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
   const rolDirectorio = isDirectorioDesactivado(profile) ? 'Sin acceso' : isDirectorioAdmin(profile) ? 'Administrador' : 'Usuario';
   const rolDeposito = !tieneAccesoDeposito(profile) ? 'Sin acceso' : isDepositoAdmin(profile) ? 'Administrador' : 'Usuario';
   const permisos = permisosDe({ profile, deposito: modulos.deposito });
-  const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [['Depósito de mantenimiento', rolDeposito]] : [])];
+  const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [[depositoVisible.nombre, rolDeposito]] : [])];
 
   return (
     <Modal

@@ -30,7 +30,7 @@ const tablas = async (p) => (await q(p, `select relname from pg_class where reln
 const licencia = async (p) => (await q(p, 'select modulos, componentes from public.licencia'))[0];
 const registro = async (p) => (await q(p, 'select nombre from public.migraciones_aplicadas order by nombre')).map((r) => r.nombre);
 
-const TABLAS_BASE = ['audit_log', 'configuracion', 'error_logs', 'licencia', 'migraciones_aplicadas', 'preferencias_modulos', 'sugerencias', 'task_history', 'tasks', 'usuarios_perfil'];
+const TABLAS_BASE = ['audit_log', 'avisos_vistos', 'configuracion', 'error_logs', 'licencia', 'migraciones_aplicadas', 'preferencias_modulos', 'sugerencias', 'task_history', 'tasks', 'usuarios_perfil'];
 
 // ---- 1) un cliente que solo contrata Tareas ----
 let r = await cliente('nuevo', '--nombre', 'Local Solo Tareas', '--email', 'dueno@solotareas.com', '--modulos', 'tareas');

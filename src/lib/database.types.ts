@@ -324,6 +324,45 @@ export type Database = {
         }
         Relationships: []
       }
+      depositos: {
+        Row: {
+          activo: boolean
+          codigo: string
+          color: string | null
+          created_at: string
+          es_principal: boolean
+          icono: string
+          id: string
+          nombre: string
+          prefijo: string
+          punto_venta: number
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          color?: string | null
+          created_at?: string
+          es_principal?: boolean
+          icono?: string
+          id?: string
+          nombre: string
+          prefijo: string
+          punto_venta?: number
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          color?: string | null
+          created_at?: string
+          es_principal?: boolean
+          icono?: string
+          id?: string
+          nombre?: string
+          prefijo?: string
+          punto_venta?: number
+        }
+        Relationships: []
+      }
       error_logs: {
         Row: {
           created_at: string
@@ -575,18 +614,21 @@ export type Database = {
           actualizada_at: string
           componentes: string[]
           id: number
+          max_depositos: number
           modulos: Json
         }
         Insert: {
           actualizada_at?: string
           componentes?: string[]
           id?: number
+          max_depositos?: number
           modulos?: Json
         }
         Update: {
           actualizada_at?: string
           componentes?: string[]
           id?: number
+          max_depositos?: number
           modulos?: Json
         }
         Relationships: []
@@ -1455,6 +1497,27 @@ export type Database = {
       confirmar_retiro: {
         Args: { p_lineas: Json; p_observacion: string; p_sector_id: string }
         Returns: string
+      }
+      crear_deposito: {
+        Args: {
+          p_color?: string | null
+          p_icono?: string
+          p_nombre: string
+          p_prefijo: string
+        }
+        Returns: Database['public']['Tables']['depositos']['Row']
+      }
+      depositos_del_usuario: { Args: never; Returns: string[] }
+      editar_deposito: {
+        Args: {
+          p_activo: boolean
+          p_color: string | null
+          p_icono: string
+          p_id: string
+          p_nombre: string
+          p_prefijo?: string | null
+        }
+        Returns: Database['public']['Tables']['depositos']['Row']
       }
       crear_repuesto: {
         Args: {

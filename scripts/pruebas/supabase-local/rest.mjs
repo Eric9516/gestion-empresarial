@@ -382,5 +382,7 @@ async function rpc(proyecto, esq, nombre, { metodo, query, cuerpo, enTx }) {
   const filas = await enTx(async (tx) => (await tx.query(`select to_jsonb(f) as r from (select * from public.${q(nombre)}(${llamada})) f`, params)).rows.map((x) => x.r));
   if (meta.ret === 'void') return { estado: 204, cabeceras: {}, cuerpo: undefined };
   if (escalar) return { estado: 200, cabeceras: {}, cuerpo: filas[0]?.[nombre] ?? null };
+  // Una función que devuelve una lista de valores simples (setof uuid, setof integer…) sale, como en PostgREST, como lista de valores y no como lista de objetos.
+  if (meta.retset && meta.typtype !== 'c' && meta.ret !== 'record') return { estado: 200, cabeceras: {}, cuerpo: filas.map((x) => x[nombre]) };
   return { estado: 200, cabeceras: {}, cuerpo: meta.retset ? filas : filas[0] ?? null };
 }

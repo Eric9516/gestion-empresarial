@@ -13,6 +13,7 @@ import SinModulos from '../components/SinModulos';
 import { hayModulosDeDirectorio } from '../lib/modulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { useModulos } from '../features/config/useModulos';
+import { useDepositoVisible } from '../features/depositos/useDepositos';
 import { RetiroCartProvider, useRetiroCart } from '../features/retiros/RetiroCartContext';
 import ItemsList from '../features/items/ItemsList';
 import InformeReposicion from '../features/items/InformeReposicion';
@@ -31,6 +32,7 @@ function MantenimientoContent() {
   const { cart } = useRetiroCart();
   const { data: config } = useConfiguracionQuery();
   const { modulos, integ } = useModulos();
+  const depositoVisible = useDepositoVisible();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('buscar');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,7 +74,7 @@ function MantenimientoContent() {
   // Las áreas a las que puede ir esta persona (si tiene una sola, no hace falta mostrarlas).
   const areas: SeccionMenu[] = canExit ? [{ titulo: 'Áreas', items: [
     { clave: 'area-directorio', icono: <Icono n="directorio" />, titulo: 'Directorio', onClick: () => navigate('/') },
-    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: ir('buscar'), activo: true },
+    { clave: 'area-deposito', icono: <Icono n={depositoVisible.icono} />, titulo: depositoVisible.nombre, onClick: ir('buscar'), activo: true },
   ] }] : [];
   const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
@@ -92,7 +94,7 @@ function MantenimientoContent() {
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
           <div>
             <div className="header-logo-fallback">{nombreEmpresa}</div>
-            <h1 className="header-title">Depósito de mantenimiento</h1>
+            <h1 className="header-title">{depositoVisible.nombre}</h1>
           </div>
         </div>
         <div className="header-right">

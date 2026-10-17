@@ -26,7 +26,7 @@ test.describe('Menú del nombre', () => {
     await lateral.getByRole('button', { name: 'Directorio', exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByText('Proveedor de ejemplo')).toBeVisible();
-    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Depósito de mantenimiento' }).click();
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Depósito principal' }).click();
     await expect(page).toHaveURL(/\/deposito/);
     // ya no hay botón de "volver" arriba
     await expect(page.locator('.app-header .btn-volver-directorio, .app-header .btn-deposito')).toHaveCount(0);

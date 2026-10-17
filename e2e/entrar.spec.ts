@@ -26,7 +26,7 @@ test.describe('Entrar a la app', () => {
     await entrar(page);
     await page.goto('/mantenimiento');
     await expect(page).toHaveURL(/\/deposito$/);
-    await expect(page.getByRole('heading', { name: 'Depósito de mantenimiento' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Depósito principal' })).toBeVisible();
   });
 
   test('si ya entró, /login lo manda de nuevo a la pantalla principal', async ({ page }) => {

@@ -3,37 +3,14 @@ import { useAlCambiar } from '../../lib/useAlCambiar';
 import { useToast } from '../../components/ToastProvider';
 import { useConfiguracionQuery, useSaveConfiguracion } from '../config/useConfiguracion';
 import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
-import { COLOR_DEPOSITO_ORIGINAL, COLOR_PRIMARIO_ORIGINAL, esColorValido, textoLegibleConBlanco } from '../../lib/marca';
+import { COLOR_PRIMARIO_ORIGINAL, esColorValido, textoLegibleConBlanco } from '../../lib/marca';
+import ColorMarca from '../../components/ColorMarca';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ZONAS_HORARIAS, ZONA_HORARIA_POR_DEFECTO } from '../../lib/zonasHorarias';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
-
-// Selector de un color de marca. Vacío ('') significa "el color original de la app".
-function ColorMarca({ etiqueta, valor, original, onChange }: { etiqueta: string; valor: string; original: string; onChange: (v: string) => void }) {
-  const efectivo = valor || original;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-      <input
-        type="color"
-        aria-label={etiqueta}
-        value={efectivo}
-        onChange={e => onChange(e.target.value)}
-        style={{ width: 44, height: 34, padding: 2, border: '1.5px solid var(--border)', borderRadius: 6, background: 'var(--white)', cursor: 'pointer' }}
-      />
-      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{etiqueta}</span>
-      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{valor ? efectivo : 'original'}</span>
-      {valor && <Button type="button" variant="ghost" size="sm" onClick={() => onChange('')}>Volver al original</Button>}
-      {!textoLegibleConBlanco(efectivo) && (
-        <span style={{ width: '100%', fontSize: 12, color: 'var(--danger)' }}>
-          Es muy claro: el texto blanco de los encabezados y botones no se leería bien. Elegí uno más oscuro.
-        </span>
-      )}
-    </div>
-  );
-}
 
 export default function EmpresaPane() {
   const { data: config } = useConfiguracionQuery();
@@ -50,14 +27,12 @@ export default function EmpresaPane() {
   const [web, setWeb] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
   const [colorPrimario, setColorPrimario] = useState('');
-  const [colorDeposito, setColorDeposito] = useState('');
   const [zonaHoraria, setZonaHoraria] = useState(ZONA_HORARIA_POR_DEFECTO);
   const [saving, setSaving] = useState(false);
 
   useAlCambiar([config], () => {
     if (!config) return;
     setColorPrimario(esColorValido(config.color_primario) ? config.color_primario : '');
-    setColorDeposito(esColorValido(config.color_deposito) ? config.color_deposito : '');
     setZonaHoraria(config.zona_horaria || ZONA_HORARIA_POR_DEFECTO);
     setNombre(config.empresa_nombre ?? '');
     setDireccion(config.empresa_direccion ?? '');
@@ -82,8 +57,8 @@ export default function EmpresaPane() {
   }
 
   async function handleSave() {
-    if (!textoLegibleConBlanco(colorPrimario || COLOR_PRIMARIO_ORIGINAL) || !textoLegibleConBlanco(colorDeposito || COLOR_DEPOSITO_ORIGINAL)) {
-      toast('Uno de los colores es demasiado claro para el texto blanco. Elegí uno más oscuro.', 'error');
+    if (!textoLegibleConBlanco(colorPrimario || COLOR_PRIMARIO_ORIGINAL)) {
+      toast('El color es demasiado claro para el texto blanco. Elegí uno más oscuro.', 'error');
       return;
     }
     setSaving(true);
@@ -98,7 +73,6 @@ export default function EmpresaPane() {
         empresa_web: web.trim(),
         logo_base64: logoBase64,
         color_primario: colorPrimario || null,
-        color_deposito: colorDeposito || null,
         zona_horaria: zonaHoraria,
       });
       toast('Configuración guardada', 'success');
@@ -148,9 +122,8 @@ export default function EmpresaPane() {
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Define qué día es "hoy" para las tareas y para corregir retiros del mismo día.</p>
         </div>
         <div className="form-group">
-          <label>Colores de la marca</label>
+          <label>Color de la marca</label>
           <ColorMarca etiqueta="Color principal" valor={colorPrimario} original={COLOR_PRIMARIO_ORIGINAL} onChange={setColorPrimario} />
-          <ColorMarca etiqueta="Color del Depósito" valor={colorDeposito} original={COLOR_DEPOSITO_ORIGINAL} onChange={setColorDeposito} />
         </div>
         <Button variant="primary" size="sm" style={{ width: '100%', justifyContent: 'center' }} onClick={() => void handleSave()} disabled={saving}>Guardar configuración</Button>
       </div>

@@ -281,6 +281,63 @@ if (porComponentes) {
   await db.exec(`update public.licencia set componentes = array['base','abastecimiento']`);
   ok('un cambio de componentes de la licencia queda en el historial', (await q(`select 1 from public.audit_log where tabla = 'licencia' and descripcion like '%componentes: base, abastecimiento%'`)).length === 1);
   await db.exec(`update public.licencia set componentes = array['abastecimiento','base','mantenimiento']`);
+
+  // --- Depósitos que el dueño crea y edita: nombre, color, ícono, letra y el tope de la licencia ---
+  const sinDueno = '00000000-0000-0000-0000-0000000000d1'; // activo y con acceso al depósito, pero no es dueño ni administrador
+  await db.exec(`insert into auth.users (id, email) values ('${sinDueno}', 'operario@x.com'); update public.usuarios_perfil set rol = 'user', mantenimiento_rol = 'comun' where id = '${sinDueno}';`);
+  const principalId = (await q(`select id from public.depositos where es_principal`))[0].id;
+  const insumosId = (await q(`select id from public.depositos where nombre = 'Insumos'`))[0].id;
+  const q1 = (r) => Array.isArray(r) ? r[0] : null;
+  const msj = (r) => r?.error ?? '';
+  const crearDep = (uid, nombre, letra, color = null, icono = 'deposito') =>
+    como('authenticated', uid, `select * from public.crear_deposito('${nombre}', '${letra}', ${color ? `'${color}'` : 'null'}, '${icono}')`);
+  const editarDep = (uid, id, nombre, color, icono, activo, letra = null) =>
+    como('authenticated', uid, `select * from public.editar_deposito('${id}', '${nombre}', ${color ? `'${color}'` : 'null'}, '${icono}', ${activo}, ${letra ? `'${letra}'` : 'null'})`);
+  const tope = (n) => db.exec(`update public.licencia set max_depositos = ${n}`);
+
+  ok('el depósito principal nace con el ícono de depósito y sin color propio', (await q(`select icono, color from public.depositos where es_principal`))[0].icono === 'deposito');
+  await tope(2); // ya hay dos (el principal e Insumos)
+  ok('con el tope lleno no se puede crear otro depósito, y el aviso dice cuántos permite', /permite hasta 2/.test(msj(await crearDep(A, 'Producción', 'p'))));
+  await tope(5);
+  const prod = q1(await crearDep(A, 'Producción', 'p', '#2a6f97', 'fabrica'));
+  ok('el dueño crea un depósito: la letra se pone en mayúscula, se numera solo y guarda su color e ícono', !!prod && prod.prefijo === 'P' && prod.codigo === '03' && prod.color === '#2a6f97' && prod.icono === 'fabrica' && prod.activo === true, JSON.stringify(prod));
+  ok('el depósito nuevo tiene su propio punto de venta (el siguiente)', !!prod && prod.punto_venta === 2, String(prod?.punto_venta));
+  ok('un administrador del depósito (no dueño) no puede crear depósitos', /Solo el dueño/.test(msj(await crearDep(C, 'Taller', 't'))));
+  ok('un operario no puede crear depósitos', /Solo el dueño/.test(msj(await crearDep(sinDueno, 'Taller', 't'))));
+  ok('sin sesión no se pueden crear depósitos', !!(await como('anon', null, `select * from public.crear_deposito('Taller', 'T', null, 'deposito')`)).error);
+  ok('el nombre no se puede repetir (ni cambiando mayúsculas)', /Ya hay un depósito con ese nombre/.test(msj(await crearDep(A, 'producción', 't'))));
+  ok('la letra no se puede repetir', /letra ya la usa/.test(msj(await crearDep(A, 'Otro', 'p'))));
+  ok('la letra tiene que ser una sola letra', /una sola letra/.test(msj(await crearDep(A, 'Otro', '1'))) && /una sola letra/.test(msj(await crearDep(A, 'Otro', 'ab'))));
+  ok('el color tiene que ser un código de color', /color/.test(msj(await crearDep(A, 'Otro', 'o', 'rojo'))));
+  ok('el nombre no puede estar vacío', /nombre/.test(msj(await crearDep(A, '   ', 'o'))));
+  ok('el ícono tiene que ser una palabra simple', /ícono/.test(msj(await crearDep(A, 'Otro', 'o', null, 'Mal icono!'))));
+  ok('crear un depósito no deja nada a medias cuando falla (sigue habiendo 3)', (await q(`select count(*)::int as n from public.depositos`))[0].n === 3);
+
+  const ed = q1(await editarDep(A, prod.id, 'Producción 2', '#aa3300', 'cajas', true));
+  ok('el dueño edita nombre, color e ícono', !!ed && ed.nombre === 'Producción 2' && ed.color === '#aa3300' && ed.icono === 'cajas', JSON.stringify(ed));
+  ok('quitar el color (volver al de la marca) funciona', q1(await editarDep(A, prod.id, 'Producción 2', null, 'cajas', true))?.color === null);
+  ok('un administrador del depósito (no dueño) no puede editar depósitos', /Solo el dueño/.test(msj(await editarDep(C, prod.id, 'X', null, 'deposito', true))));
+  ok('editar no deja repetir el nombre de otro depósito', /Ya hay un depósito con ese nombre/.test(msj(await editarDep(A, prod.id, 'insumos', null, 'cajas', true))));
+  ok('la letra se puede cambiar mientras el depósito no tiene repuestos', q1(await editarDep(A, prod.id, 'Producción 2', null, 'cajas', true, 'q'))?.prefijo === 'Q');
+  ok('la letra ya no se puede cambiar cuando hay repuestos', /ya no se puede cambiar/.test(msj(await editarDep(A, insumosId, 'Insumos', null, 'deposito', true, 'Z'))));
+  ok('el depósito principal no se puede desactivar', /principal no se puede desactivar/.test(msj(await editarDep(A, principalId, 'Principal', null, 'deposito', false))));
+  ok('editar un depósito que no existe avisa', /No existe/.test(msj(await editarDep(A, '00000000-0000-0000-0000-0000000000ff', 'X', null, 'deposito', true))));
+  ok('nadie escribe la tabla de depósitos directamente (ni el dueño)', !!(await como('authenticated', A, `update public.depositos set nombre = 'Hackeado' where id = '${prod.id}'`)).error
+    || (await q(`select nombre from public.depositos where id = '${prod.id}'`))[0].nombre === 'Producción 2');
+
+  // desactivar libera un lugar del tope; reactivar lo vuelve a ocupar (y respeta el tope)
+  ok('el dueño desactiva un depósito', q1(await editarDep(A, prod.id, 'Producción 2', null, 'cajas', false))?.activo === false);
+  await tope(2); // principal + Insumos
+  ok('no se puede reactivar un depósito si el tope ya está lleno', /permite hasta 2/.test(msj(await editarDep(A, prod.id, 'Producción 2', null, 'cajas', true))));
+  await tope(3);
+  ok('con lugar en el tope se reactiva', q1(await editarDep(A, prod.id, 'Producción 2', null, 'cajas', true))?.activo === true);
+  ok('desactivado o no, el depósito conserva su número y no se borra', (await q(`select count(*)::int as n from public.depositos where codigo = '03'`))[0].n === 1);
+
+  // el tope es solo de quien vende: el dueño no puede subirlo
+  const subir = await como('authenticated', A, `update public.licencia set max_depositos = 50 returning id`);
+  ok('el dueño no puede cambiar el tope de depósitos', (Array.isArray(subir) ? subir.length === 0 : !!subir.error) && (await q(`select max_depositos from public.licencia`))[0].max_depositos === 3);
+  ok('el tope tiene que estar entre 1 y 100', await db.exec(`update public.licencia set max_depositos = 0`).then(() => false, () => true) && await db.exec(`update public.licencia set max_depositos = 101`).then(() => false, () => true));
+  await tope(1);
 }
 
 console.log(fallas ? `\n${fallas} FALLAS` : '\nTODO BIEN en la instalación desde cero');

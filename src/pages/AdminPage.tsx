@@ -16,6 +16,7 @@ import ComisionistasCamposPane from '../features/admin/ComisionistasCamposPane';
 import RepuestosPane from '../features/admin/RepuestosPane';
 import SectoresPanel from '../features/sectores/SectoresPanel';
 import FamiliasPane from '../features/admin/FamiliasPane';
+import DepositosPane from '../features/depositos/DepositosPane';
 import UsuariosPane from '../features/admin/UsuariosPane';
 import HistorialPane from '../features/admin/HistorialPane';
 import ErroresPane from '../features/admin/ErroresPane';
@@ -52,6 +53,7 @@ const ADMIN_TABS: AdminTab[] = [
   { id: 'sectores', group: 'deposito', label: <><Icono n="fabrica" /> Sectores</>, check: isDepositoAdmin, modulo: 'deposito', Pane: SectoresPanel },
   { id: 'fotos-pendientes', group: 'deposito', label: <><Icono n="camara" /> Fotos pendientes</>, check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
   { id: 'familias', group: 'deposito', label: <><Icono n="etiqueta" /> Familias</>, check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
+  { id: 'depositos', group: 'deposito', label: <><Icono n="deposito" /> Depósitos</>, check: isOwner, modulo: 'deposito', Pane: DepositosPane },
   // Solo el dueño: apaga o prende, dentro de su plan, los módulos que usa (lo que el plan incluye lo define quien vende).
   { id: 'modulos', group: 'general', label: <><Icono n="modulos" /> Módulos</>, check: isOwner, Pane: ModulosPane },
   { id: 'usuarios', group: 'general', label: <><Icono n="usuarios" /> Usuarios</>, check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
