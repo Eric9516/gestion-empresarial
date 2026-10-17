@@ -9,6 +9,9 @@
 
 .menu-lateral { display: none; }
 
+/* El encabezado dice en qué se está (el área o el nombre del depósito), debajo del nombre de la empresa, también en el celular. */
+.con-menu-lateral .header-title { position: static; width: auto; height: auto; overflow: visible; clip: auto; display: block; }
+
 @media (min-width: 769px) {
   .menu-lateral {
     display: flex; flex-direction: column;
@@ -55,9 +58,6 @@
   /* Fijo: se queda abierto y el contenido se corre para no quedar tapado. */
   .menu-lateral.fijo { width: 250px; }
   .con-menu-lateral.menu-fijo .app-main { padding-left: 270px; max-width: 1560px; }
-
-  /* El menú ya dice en qué área se está (la resaltada): el rótulo del encabezado queda solo para quien usa lector de pantalla. */
-  .con-menu-lateral .header-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* En pantallas que no tienen margen libre a los costados, el contenido deja lugar para que la franja no tape el borde. */
   .con-menu-lateral:not(.menu-fijo) .app-main { padding-left: 62px; }
