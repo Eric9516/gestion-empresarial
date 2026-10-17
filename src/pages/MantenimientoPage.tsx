@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
+import MenuLateral from '../components/MenuLateral';
+import { useMenuFijo } from '../lib/useMenuFijo';
+import type { SeccionMenu } from '../components/MenuLateral';
 import SinModulos from '../components/SinModulos';
 import { hayModulosDeDirectorio } from '../lib/modulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
@@ -30,6 +33,7 @@ function MantenimientoContent() {
   const [tab, setTab] = useState<Tab>('buscar');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [menuFijo, alternarMenuFijo] = useMenuFijo();
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
   useEffect(() => { document.title = `Depósito — ${nombreEmpresa}`; }, [nombreEmpresa]);
@@ -45,19 +49,33 @@ function MantenimientoContent() {
   // (o si la empresa no usa ningún módulo del Directorio: no hay a dónde volver).
   const canExit = !isDirectorioDesactivado(profile) && hayModulosDeDirectorio(modulos);
 
+  // Las secciones se agrupan por para qué se usan. Cuando haya más áreas (Compras, etc.) se suman acá como grupos nuevos.
+  const ir = (t: Tab) => () => setTab(t);
+  const secciones: SeccionMenu[] = [
+    { titulo: 'Día a día', items: [
+      { clave: 'buscar', icono: <Icono n="buscar" />, titulo: 'Buscar', onClick: ir('buscar'), activo: tab === 'buscar' },
+      { clave: 'carrito', icono: <Icono n="carrito" />, titulo: 'A retirar', cantidad: cart.length, onClick: ir('carrito'), activo: tab === 'carrito' },
+      { clave: 'retiros', icono: <Icono n="lista" />, titulo: 'Retiros', onClick: ir('retiros'), activo: tab === 'retiros' },
+    ] },
+    { titulo: 'Stock', items: [
+      ...(verAjustes ? [{ clave: 'ajustes', icono: <Icono n="balanza" />, titulo: 'Movimientos', onClick: ir('ajustes'), activo: tab === 'ajustes' }] : []),
+      ...(esAdmin ? [{ clave: 'informe', icono: <Icono n="informe" />, titulo: 'Informe', onClick: ir('informe'), activo: tab === 'informe' }] : []),
+      ...(verReparaciones ? [{ clave: 'reparaciones', icono: <Icono n="herramienta" />, titulo: 'Reparaciones', onClick: ir('reparaciones'), activo: tab === 'reparaciones' }] : []),
+    ] },
+    { titulo: 'Gestión', items: [
+      ...(modulos.tareas ? [{ clave: 'tareas', icono: <Icono n="exito" />, titulo: 'Tareas', onClick: ir('tareas'), activo: tab === 'tareas' }] : []),
+    ] },
+  ].filter(s => s.items.length > 0);
+  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', onClick: () => navigate('/admin') }] : [];
+
+  // El menú de la hamburguesa (celular) usa las mismas secciones, en una sola lista.
   const navItems = [
-    { icon: <Icono n="buscar" />, label: 'Buscar', onClick: () => setTab('buscar'), active: tab === 'buscar' },
-    { icon: <Icono n="carrito" />, label: `A retirar${cart.length ? ` (${cart.length})` : ''}`, onClick: () => setTab('carrito'), active: tab === 'carrito' },
-    { icon: <Icono n="lista" />, label: 'Retiros', onClick: () => setTab('retiros'), active: tab === 'retiros' },
-    ...(verReparaciones ? [{ icon: <Icono n="herramienta" />, label: 'Reparaciones', onClick: () => setTab('reparaciones'), active: tab === 'reparaciones' }] : []),
-    ...(modulos.tareas ? [{ icon: <Icono n="exito" />, label: 'Tareas', onClick: () => setTab('tareas'), active: tab === 'tareas' }] : []),
-    ...(esAdmin ? [{ icon: <Icono n="informe" />, label: 'Informe', onClick: () => setTab('informe'), active: tab === 'informe' }] : []),
-    ...(verAjustes ? [{ icon: <Icono n="balanza" />, label: 'Movimientos', onClick: () => setTab('ajustes'), active: tab === 'ajustes' }] : []),
+    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.cantidad ? `${i.titulo} (${i.cantidad})` : i.titulo, onClick: i.onClick, active: i.activo })),
     ...(canExit ? [{ icon: <><Icono n="volver" /> </>, label: 'Volver a Directorio', onClick: () => navigate('/') }] : []),
   ];
 
   return (
-    <div className="mantenimiento-screen">
+    <div className={`mantenimiento-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
       <header className="app-header">
         <div className="header-logo">
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
@@ -79,26 +97,7 @@ function MantenimientoContent() {
         </div>
       </header>
 
-      <nav className="app-nav" aria-label="Secciones">
-        <button className={`nav-tab${tab === 'buscar' ? ' active' : ''}`} onClick={() => setTab('buscar')}><Icono n="buscar" /> Buscar</button>
-        <button className={`nav-tab${tab === 'carrito' ? ' active' : ''}`} onClick={() => setTab('carrito')}>
-          
-          <Icono n="carrito" /> A retirar {cart.length > 0 && <span className="badge badge-rubro">{cart.length}</span>}
-        </button>
-        <button className={`nav-tab${tab === 'retiros' ? ' active' : ''}`} onClick={() => setTab('retiros')}><Icono n="lista" /> Retiros</button>
-        {modulos.tareas && (
-          <button className={`nav-tab${tab === 'tareas' ? ' active' : ''}`} onClick={() => setTab('tareas')}><Icono n="exito" /> Tareas</button>
-        )}
-        {verReparaciones && (
-          <button className={`nav-tab${tab === 'reparaciones' ? ' active' : ''}`} onClick={() => setTab('reparaciones')}><Icono n="herramienta" /> Reparaciones</button>
-        )}
-        {esAdmin && (
-          <button className={`nav-tab${tab === 'informe' ? ' active' : ''}`} onClick={() => setTab('informe')}><Icono n="informe" /> Informe</button>
-        )}
-        {verAjustes && (
-          <button className={`nav-tab${tab === 'ajustes' ? ' active' : ''}`} onClick={() => setTab('ajustes')}><Icono n="balanza" /> Movimientos</button>
-        )}
-      </nav>
+      <MenuLateral secciones={secciones} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
 
       <main className="app-main">
         {tab === 'buscar' && (

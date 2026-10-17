@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioDesactivado, tieneAccesoMantenimiento } from '../lib/types';
+import { isDirectorioDesactivado, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
+import MenuLateral from '../components/MenuLateral';
+import type { SeccionMenu } from '../components/MenuLateral';
+import { useMenuFijo } from '../lib/useMenuFijo';
 import SinModulos from '../components/SinModulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
 import { useModulos } from '../features/config/useModulos';
@@ -31,6 +34,7 @@ function DirectorioContent() {
   const { modulos, listo } = useModulos();
   const [tabElegida, setTabElegida] = useState<Tab>('proveedores');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuFijo, alternarMenuFijo] = useMenuFijo();
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
 
@@ -51,13 +55,20 @@ function DirectorioContent() {
   if (!listo) return <div className="loading-screen">Cargando...</div>;
   if (!tab) return puedeIrAlDeposito ? <Navigate to="/mantenimiento" replace /> : <SinModulos />;
 
+  const itemDe = (p: (typeof pestañas)[number]) => ({ clave: p.id, icono: p.icon, titulo: p.label, onClick: () => setTabElegida(p.id), activo: tab === p.id });
+  const secciones: SeccionMenu[] = [
+    { titulo: 'Directorio', items: pestañas.filter(p => p.id !== 'tareas').map(itemDe) },
+    { titulo: 'Gestión', items: pestañas.filter(p => p.id === 'tareas').map(itemDe) },
+  ].filter(s => s.items.length > 0);
+  const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', onClick: () => navigate('/admin') }] : [];
+
   const navItems = [
     ...pestañas.map(p => ({ icon: p.icon, label: p.label, onClick: () => setTabElegida(p.id), active: tab === p.id })),
     ...(puedeIrAlDeposito ? [{ icon: <Icono n="herramienta" />, label: 'Depósito', onClick: () => navigate('/mantenimiento') }] : []),
   ];
 
   return (
-    <div className="app-screen">
+    <div className={`app-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
       <header className="app-header">
         <div className="header-logo">
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
@@ -79,11 +90,7 @@ function DirectorioContent() {
         </div>
       </header>
 
-      <nav className="app-nav" aria-label="Secciones">
-        {pestañas.map(p => (
-          <button key={p.id} className={`nav-tab${tab === p.id ? ' active' : ''}`} onClick={() => setTabElegida(p.id)}>{p.icon} {p.label}</button>
-        ))}
-      </nav>
+      <MenuLateral secciones={secciones} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
 
       <main className="app-main">
         {tab === 'proveedores' && <ProveedoresList />}

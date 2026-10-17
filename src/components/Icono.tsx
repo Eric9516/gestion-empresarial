@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import {
   ArrowLeft, Bug, Building2, Calendar, CalendarDays, Camera, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, CircleCheck, CircleX, Clock, Crown, Download,
   Eye, Factory, FileSpreadsheet, FileText, Folder, FolderOpen, Handshake, Hourglass, House, Image, KeyRound, Lightbulb, Lock, LockOpen, LogOut, Mail, MapPin, MessageSquare,
-  Minus, NotebookPen, Package, PackageMinus, Palette, Pencil, Phone, Plus, Printer, Puzzle, RectangleHorizontal, RefreshCw, Rocket, Ruler, Save, Scale, ScrollText, Search,
+  Minus, NotebookPen, Package, PackageMinus, Palette, Pencil, Phone, Pin, Plus, Printer, Puzzle, RectangleHorizontal, RefreshCw, Rocket, Ruler, Save, Scale, ScrollText, Search,
   Settings, ShoppingCart, Smartphone, Sparkles, Square, SquareDashed, Star, Table, Tag, Target, Trash2, TrafficCone, TriangleAlert, Undo2, Upload, User, Users, Wrench, X,
   ClipboardList, EllipsisVertical, LayoutGrid, List,
 } from 'lucide-react';
@@ -22,7 +22,7 @@ const ICONOS = {
   telefono: Phone, celular: Smartphone, correo: Mail, lugar: MapPin, mensaje: MessageSquare, idea: Lightbulb,
   config: Settings, modulos: Puzzle, error: Bug, semaforo: TrafficCone, inicio: House, salir: LogOut, cohete: Rocket, nuevo: Sparkles, objetivo: Target,
   camara: Camera, imagen: Image, carpeta: Folder, carpetaAbierta: FolderOpen, paleta: Palette, regla: Ruler, marco: SquareDashed, vacio: Square, ancho: RectangleHorizontal,
-  balanza: Scale, estrella: Star, carrito: ShoppingCart, vistaLista: List, vistaGrilla: LayoutGrid, masAcciones: EllipsisVertical,
+  fijar: Pin, balanza: Scale, estrella: Star, carrito: ShoppingCart, vistaLista: List, vistaGrilla: LayoutGrid, masAcciones: EllipsisVertical,
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;

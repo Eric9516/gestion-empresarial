@@ -22,14 +22,19 @@ import FotosPendientesPane from '../features/admin/FotosPendientesPane';
 import SugerenciasPane from '../features/admin/SugerenciasPane';
 import ModulosPane from '../features/admin/ModulosPane';
 import { Icono } from '@/components/Icono';
-import type { ReactNode } from 'react';
+import type { NombreIcono } from '@/components/Icono';
+import MenuLateral from '../components/MenuLateral';
+import type { SeccionMenu } from '../components/MenuLateral';
+import { useMenuFijo } from '../lib/useMenuFijo';
+
 
 type Grupo = 'directorio' | 'mantenimiento' | 'general';
 
 interface AdminTab {
   id: string;
   group: Grupo;
-  label: ReactNode;
+  icono: NombreIcono;
+  label: string;
   check: (profile: Profile | null) => boolean;
   // Si el módulo está desactivado, la pestaña no aparece (la configuración de algo que no se usa no sirve).
   modulo?: ModuloId;
@@ -41,28 +46,28 @@ interface AdminTab {
 const ADMIN_TABS: AdminTab[] = [
   // El asistente se abre solo la primera vez que entra el dueño (ver PuertaConfiguracionInicial) y
   // queda siempre acá para retomarlo.
-  { id: 'inicial', group: 'general', label: <><Icono n="cohete" /> Configuración inicial</>, check: isOwner, Pane: ConfiguracionInicial },
+  { id: 'inicial', group: 'general', icono: 'cohete', label: 'Configuración inicial', check: isOwner, Pane: ConfiguracionInicial },
   // Empresa sirve a toda la aplicación, por eso está en General.
-  { id: 'empresa', group: 'general', label: <><Icono n="empresa" /> Empresa</>, check: isDirectorioAdmin, Pane: EmpresaPane },
-  { id: 'rotulo', group: 'directorio', label: <><Icono n="etiqueta" /> Rótulo</>, check: isDirectorioAdmin, modulo: 'envios', Pane: RotuloDesignPane },
-  { id: 'comisionistas', group: 'directorio', label: <><Icono n="acuerdo" /> Comisionistas</>, check: isDirectorioAdmin, modulo: 'comisionistas', Pane: ComisionistasCamposPane },
-  { id: 'repuestos', group: 'mantenimiento', label: <><Icono n="herramienta" /> Repuestos</>, check: isMantenimientoAdmin, modulo: 'deposito', Pane: RepuestosPane },
-  { id: 'sectores', group: 'mantenimiento', label: <><Icono n="fabrica" /> Sectores</>, check: isMantenimientoAdmin, modulo: 'deposito', Pane: SectoresPanel },
-  { id: 'fotos-pendientes', group: 'mantenimiento', label: <><Icono n="camara" /> Fotos pendientes</>, check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
-  { id: 'familias', group: 'mantenimiento', label: <><Icono n="etiqueta" /> Familias</>, check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
+  { id: 'empresa', group: 'general', icono: 'empresa', label: 'Empresa', check: isDirectorioAdmin, Pane: EmpresaPane },
+  { id: 'rotulo', group: 'directorio', icono: 'etiqueta', label: 'Rótulo', check: isDirectorioAdmin, modulo: 'envios', Pane: RotuloDesignPane },
+  { id: 'comisionistas', group: 'directorio', icono: 'acuerdo', label: 'Comisionistas', check: isDirectorioAdmin, modulo: 'comisionistas', Pane: ComisionistasCamposPane },
+  { id: 'repuestos', group: 'mantenimiento', icono: 'herramienta', label: 'Repuestos', check: isMantenimientoAdmin, modulo: 'deposito', Pane: RepuestosPane },
+  { id: 'sectores', group: 'mantenimiento', icono: 'fabrica', label: 'Sectores', check: isMantenimientoAdmin, modulo: 'deposito', Pane: SectoresPanel },
+  { id: 'fotos-pendientes', group: 'mantenimiento', icono: 'camara', label: 'Fotos pendientes', check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
+  { id: 'familias', group: 'mantenimiento', icono: 'etiqueta', label: 'Familias', check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
   // Solo el dueño: apaga o prende, dentro de su plan, los módulos que usa (lo que el plan incluye lo define quien vende).
-  { id: 'modulos', group: 'general', label: <><Icono n="modulos" /> Módulos</>, check: isOwner, Pane: ModulosPane },
-  { id: 'usuarios', group: 'general', label: <><Icono n="usuarios" /> Usuarios</>, check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
-  { id: 'historial', group: 'general', label: <><Icono n="historial" /> Historial</>, check: isOwner, Pane: HistorialPane },
-  { id: 'errores', group: 'general', label: <><Icono n="error" /> Errores</>, check: puedeVerErrores, Pane: ErroresPane },
-  { id: 'papelera', group: 'general', label: <><Icono n="borrar" /> Papelera</>, check: isOwner, Pane: PapeleraPane },
-  { id: 'sugerencias', group: 'general', label: <><Icono n="mensaje" /> Sugerencias</>, check: puedeVerSugerencias, Pane: SugerenciasPane },
+  { id: 'modulos', group: 'general', icono: 'modulos', label: 'Módulos', check: isOwner, Pane: ModulosPane },
+  { id: 'usuarios', group: 'general', icono: 'usuarios', label: 'Usuarios', check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },
+  { id: 'historial', group: 'general', icono: 'historial', label: 'Historial', check: isOwner, Pane: HistorialPane },
+  { id: 'errores', group: 'general', icono: 'error', label: 'Errores', check: puedeVerErrores, Pane: ErroresPane },
+  { id: 'papelera', group: 'general', icono: 'borrar', label: 'Papelera', check: isOwner, Pane: PapeleraPane },
+  { id: 'sugerencias', group: 'general', icono: 'mensaje', label: 'Sugerencias', check: puedeVerSugerencias, Pane: SugerenciasPane },
 ];
 
-const GRUPOS: { id: Grupo; icon: ReactNode; label: string }[] = [
-  { id: 'directorio', icon: <Icono n="tabla" />, label: 'Directorio' },
-  { id: 'mantenimiento', icon: <Icono n="herramienta" />, label: 'Depósito' },
-  { id: 'general', icon: <Icono n="config" />, label: 'General' },
+const GRUPOS: { id: Grupo; label: string }[] = [
+  { id: 'directorio', label: 'Directorio' },
+  { id: 'mantenimiento', label: 'Depósito' },
+  { id: 'general', label: 'General' },
 ];
 
 function AdminContent() {
@@ -70,6 +75,7 @@ function AdminContent() {
   const navigate = useNavigate();
   const { data: config } = useConfiguracionQuery();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuFijo, alternarMenuFijo] = useMenuFijo();
 
   const { modulos, listo } = useModulos();
 
@@ -84,26 +90,25 @@ function AdminContent() {
 
   // Mientras el asistente no se cerró, es lo primero que se ve; después, la primera pestaña "de trabajo".
   const asistentePendiente = !!config && config.inicial_cerrada_at == null;
-  const primeraDelGrupo = (group?: Grupo) => visibles.find(t => t.group === group && !(t.id === 'inicial' && !asistentePendiente))
-    ?? visibles.find(t => t.group === group);
   const porDefecto = (asistentePendiente && visibles.find(t => t.id === 'inicial'))
     || visibles.find(t => t.id !== 'inicial') || visibles[0];
 
   const tabActual = visibles.find(t => t.id === tabId) ?? porDefecto;
-  const grupoActivo = tabActual?.group;
 
-  function selectGroup(group: Grupo) {
-    const primera = primeraDelGrupo(group);
-    if (primera) setTabId(primera.id);
-  }
-
-  const navItems = [{ icon: <><Icono n="volver" /> </>, label: 'Volver', onClick: () => navigate(-1) }];
+  // El menú lateral muestra cada grupo con sus pestañas; la hamburguesa del celular, lo mismo en una sola lista.
+  const secciones: SeccionMenu[] = GRUPOS
+    .map(g => ({ titulo: g.label, items: visibles.filter(t => t.group === g.id).map(t => ({ clave: t.id, icono: <Icono n={t.icono} />, titulo: t.label, onClick: () => setTabId(t.id), activo: tabActual?.id === t.id })) }))
+    .filter(s => s.items.length > 0);
+  const navItems = [
+    ...secciones.flatMap(s => s.items).map(i => ({ icon: i.icono, label: i.titulo, onClick: i.onClick, active: i.activo })),
+    { icon: <><Icono n="volver" /> </>, label: 'Volver', onClick: () => navigate(-1) },
+  ];
 
   if (!listo) return <div className="loading-screen">Cargando...</div>;
   if (!tabActual) return null;
 
   return (
-    <div className="admin-screen">
+    <div className={`admin-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
       <header className="app-header">
         <div className="header-logo">
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
@@ -123,20 +128,9 @@ function AdminContent() {
         </div>
       </header>
 
-      <main className="app-main">
-        <div className="admin-group-tabs">
-          {GRUPOS.filter(g => visibles.some(t => t.group === g.id)).map(g => (
-            <button key={g.id} className={`admin-group-tab${grupoActivo === g.id ? ' active' : ''}`} onClick={() => selectGroup(g.id)}>
-              {g.icon} <span className="admin-group-tab-label">{g.label}</span>
-            </button>
-          ))}
-        </div>
-        <div className="admin-subnav">
-          {visibles.filter(t => t.group === grupoActivo).map(t => (
-            <button key={t.id} className={`admin-subtab${tabId === t.id ? ' active' : ''}`} onClick={() => setTabId(t.id)}>{t.label}</button>
-          ))}
-        </div>
+      <MenuLateral secciones={secciones} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
 
+      <main className="app-main">
         <tabActual.Pane />
       </main>
 
