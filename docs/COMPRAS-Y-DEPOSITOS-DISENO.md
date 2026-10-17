@@ -59,6 +59,7 @@ REQUERIMIENTO  ────────────►   ORDEN(ES) DE COMPRA  �
   quedó saldo pendiente, con un motivo), **anulada** (solo si no tuvo ninguna entrega).
 
 ### Recepción (el remito del proveedor)
+- **Es una función de cada depósito, no del módulo de Compras** (decidido el 17 de octubre; ver "Quién hace qué"). La hace la gente del depósito y también puede hacerla Compras.
 - El depósito abre un modal: **elige al proveedor** (por código o nombre; se completan sus datos), carga **número y fecha del remito**, y ve **sus órdenes con saldo**
   (solo las de su depósito). Puede tildar **una o varias**.
 - Aparecen todas las líneas pendientes juntas, cada una con su **casilla de ingresar** y la **cantidad a recibir** (por defecto el saldo; se edita para las entregas parciales).
@@ -109,8 +110,8 @@ contabilidad (cuentas por artículo), ventas, comercio electrónico, doble aprob
 1. **Depósitos**: varios depósitos por empresa, stock y mínimos por depósito, permisos por depósito y transferencias. Es la etapa delicada porque cambia cómo se guarda el
    stock: se ensaya antes sobre una copia de los datos de Cremac, con la misma batería de pruebas que ya existe.
 2. **Requerimientos**, entre depósitos y hacia Compras.
-3. **Compras**: órdenes de compra y recepción (remito de ingreso). Van **juntas en el componente de Compras/Administración**: la recepción apunta a la orden y
-   Abastecimiento no puede depender de Compras; al recibir, Compras le pide a Abastecimiento que sume el stock.
+3. **Compras** (órdenes de compra) y **recepción** (remito de ingreso). La recepción es del **Depósito** y funciona también sin Compras (un ingreso suelto, sin orden); con Compras,
+   el mismo ingreso se vincula a una o más órdenes y descuenta su saldo. Compras depende de Depósito, nunca al revés.
 4. **Orden de pago**, simple al principio (sin retenciones).
 
 ## 8. Pendientes por decidir
@@ -162,6 +163,12 @@ Un retiro, una carga o un ajuste es de **un** depósito (todas sus líneas del m
 **Pedidos entre depósitos** (Producción le pide cajas a Insumos): Producción **busca** artículos de los depósitos que "aceptan pedidos de otras áreas" (solo código, descripción y unidad; sin stock). Insumos lo entrega con un **retiro de su stock con destino Producción**:
 se da de baja en Insumos y **no pasa al stock de Producción** (ya es para usar). Lo que sobra vuelve como carga con el motivo "Devolución de un sector". No hay transferencias entre depósitos ni artículos duplicados.
 
+Se retira **solo del propio depósito**: quien es de Mantenimiento retira de Mantenimiento. Quien tiene más de un depósito retira del que tiene elegido en el selector: cada depósito tiene su propio "A retirar" (lo que se agregó en uno queda guardado en ese depósito al cambiar de selector) y confirmar crea un retiro de ese depósito, con su número y su comprobante. Nunca se mezclan depósitos en un retiro. Si un supervisor necesita sacar algo y no corresponde un retiro común, lo hace en **Movimientos → Ajuste de ese mismo depósito**: resta el artículo y aclara el motivo ("Material retirado sin anotar", u "Otro" con su texto); queda con comprobante numerado y con su nombre.
+
+**Pedirle algo a otra área:** no se retira, se hace un **requerimiento**. Puede hacerlo cualquier persona (por ejemplo, alguien de Mantenimiento pidiéndole bidones de agua a Insumos), porque pedir no saca nada de ningún stock. Quien decide es el área que recibe: solo sus usuarios autorizados lo aceptan, lo entregan y lo descuentan de su depósito (ver "Pedidos entre depósitos"). Cada depósito indica si acepta pedidos de otras áreas.
+
+**Tope de depósitos por cliente:** valor inicial por plan 1 / 3 / 10, configurable por cliente desde el panel (es una decisión comercial: el límite técnico es mucho más alto). Antes de publicar la etapa 2 se mide con 1.000.000 de repuestos repartidos en 10 depósitos y 40 usuarios a la vez.
+
 **Quién define los depósitos:** al crear el cliente desde el panel (cantidad, nombres y letras; por defecto uno solo) y después el dueño los edita desde Configuración. Con un solo depósito la app se ve como siempre (sin selectores).
 
 **Lo que falta, en orden:**
@@ -171,3 +178,19 @@ se da de baja en Insumos y **no pasa al stock de Producción** (ya es para usar)
 4. Numeración de los comprobantes con el punto de venta del depósito.
 
 **Lección técnica:** al mover stock hay que pedir el candado del repuesto en modo "sin clave" (`FOR NO KEY UPDATE`); con el fuerte (`FOR UPDATE`) dos retiros del mismo repuesto se trababan entre sí (77 bloqueos mutuos en la prueba de 40 usuarios).
+
+## Quién hace qué: decisiones del 17 de octubre de 2026
+
+Sale de una conversación con el dueño del producto. Corrige dónde vive la recepción y agrega los permisos de requerimientos e informes.
+
+**Recepción: una función de cada depósito.** Cuando llega la mercadería, la persona del depósito carga el remito, lo vincula con su orden de compra, selecciona lo que llegó y, según una casilla ("Agregar al stock"), suma o no al stock. La puede hacer también la persona de Compras, con el mismo permiso: no hay dos formas de recibir. Sin el módulo de Compras, la recepción sigue funcionando como ingreso suelto (proveedor, remito y líneas, sin orden). Compras depende de Depósito, nunca al revés.
+
+**Proveedores y presupuestos.** Los puede gestionar Compras o la gente del depósito. **El presupuesto no se guarda en el sistema**: quien lo consigue se lo pasa a Compras por correo, y en el requerimiento solo queda el proveedor sugerido (como ya estaba). Las órdenes de compra siguen escribiendo el precio a mano.
+
+**Requerimientos desde el depósito: permiso apagado por defecto.** No es un módulo para todo el depósito sino un permiso por persona. Un administrador de Compras lo habilita a quien considere que puede hacer esa tarea (se asigna desde el panel de permisos de usuarios, como los demás indicadores de `usuarios_perfil`).
+
+**Informe (la pestaña "Informe" del Depósito, el de stock y compras): no lo ve cualquier operario.** Lo ven los administradores de ese depósito, o quien Compras haya habilitado desde el panel de permisos. Hoy la pantalla ya lo muestra solo al administrador; lo nuevo es el permiso individual que Compras puede dar a un operario, y que la base de datos (no solo la pantalla) haga cumplir quién lo ve. Otras listas (retiros, historial de movimientos, exportaciones) no cambian.
+
+**Compras ve todos los depósitos.** Esa vista llega con el panel de Compras, que se arma más adelante. El dueño sigue pudiendo hacer todo.
+
+**Nuevo rol: administrador de Compras.** Hoy no existe. Habilita permisos a usuarios de depósito. Recomendación: un permiso más que se asigna, no un rol aparte.
