@@ -1,4 +1,4 @@
-/* ===== MENÚ LATERAL (escritorio) =====
+/* ===== MENÚ DE SECCIONES (escritorio): a la izquierda, arriba o abajo, como elija cada persona =====
    Franja de íconos pegada al borde izquierdo (debajo del encabezado y hasta abajo), por encima de la pantalla, y se ensancha por encima al acercar el mouse.
    No ocupa ancho: el contenido usa toda la pantalla. Solo crece hacia el costado (alto fijo).
    Toma el color de cada módulo (--menu-acento) y deja los íconos de colores, como las pestañas de antes.
@@ -10,7 +10,7 @@
 .menu-lateral { display: none; }
 
 /* El encabezado dice en qué se está (el área o el nombre del depósito), debajo del nombre de la empresa, también en el celular. */
-.con-menu-lateral .header-title { position: static; width: auto; height: auto; overflow: visible; clip: auto; display: block; }
+.con-menu .header-title { position: static; width: auto; height: auto; overflow: visible; clip: auto; display: block; }
 
 @media (min-width: 769px) {
   .menu-lateral {
@@ -57,16 +57,62 @@
 
   /* Fijo: se queda abierto y el contenido se corre para no quedar tapado. */
   .menu-lateral.fijo { width: 250px; }
-  .con-menu-lateral.menu-fijo .app-main { padding-left: 270px; max-width: 1560px; }
+  .menu-en-lateral.menu-fijo .app-main { padding-left: 270px; max-width: 1560px; }
 
   /* En pantallas que no tienen margen libre a los costados, el contenido deja lugar para que la franja no tape el borde. */
-  .con-menu-lateral:not(.menu-fijo) .app-main { padding-left: 62px; }
+  .menu-en-lateral:not(.menu-fijo) .app-main { padding-left: 62px; }
 }
 
 @media (min-width: 1420px) {
-  .con-menu-lateral:not(.menu-fijo) .app-main { padding-left: 20px; }
+  .menu-en-lateral:not(.menu-fijo) .app-main { padding-left: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .menu-lateral, .menu-lateral-texto, .menu-lateral-grupo span, .menu-lateral-grupo::after { transition: none; }
+}
+
+/* ===== Elegir dónde va el menú (queda guardado en el perfil de cada persona) =====
+   En reposo es un ícono chico y tenue (el de la posición actual). Al pasar el mouse, o al llegar con el teclado (no con el foco que deja un clic), aparecen las otras dos
+   opciones al lado; la elegida queda resaltada. */
+.menu-selector { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 8px; flex: none; transition: background 0.15s; }
+.menu-selector-boton {
+  width: 24px; height: 22px; display: grid; place-items: center; padding: 0;
+  border: none; border-radius: 6px; background: none; color: var(--text-muted); font-size: 14px; cursor: pointer;
+}
+.menu-selector-boton.activo { opacity: 0.55; }
+.menu-selector-boton:not(.activo) { display: none; }
+.menu-selector:hover, .menu-selector:has(:focus-visible) { background: color-mix(in srgb, var(--menu-acento) 7%, transparent); }
+.menu-selector:hover .menu-selector-boton:not(.activo), .menu-selector:has(:focus-visible) .menu-selector-boton:not(.activo) { display: grid; }
+.menu-selector:hover .menu-selector-boton.activo, .menu-selector:has(:focus-visible) .menu-selector-boton.activo {
+  opacity: 1; background: var(--white); color: var(--menu-acento); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.menu-selector-boton:hover { color: var(--menu-acento); }
+
+/* ===== Menú como barra: arriba (las pestañas de antes, debajo del encabezado) o abajo (pegado al borde) ===== */
+.menu-barra { align-items: center; }
+.menu-barra-grupo { display: flex; align-items: center; flex-shrink: 0; }
+.menu-barra-separador { width: 1px; height: 22px; margin: 0 6px; background: var(--border); }
+.menu-barra-fin { margin-left: auto; display: flex; align-items: center; gap: 6px; padding-left: 10px; flex-shrink: 0; }
+.menu-barra .aviso-numero { margin-left: 2px; }
+
+@media (min-width: 769px) {
+  /* En el menú a la izquierda, el selector va en el renglón de "Áreas" y se ve cuando el menú está abierto. */
+  .menu-lateral .menu-selector { margin-left: auto; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+  .menu-lateral.abierto .menu-selector { opacity: 1; pointer-events: auto; }
+  .menu-lateral-grupo.primero { align-items: center; padding-right: 8px; }
+
+  .menu-barra-abajo {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    border-bottom: none; border-top: 2px solid var(--border);
+    box-shadow: 0 -4px 18px color-mix(in srgb, var(--blue) 10%, transparent);
+  }
+  .menu-barra-abajo .nav-tab { border-bottom: none; border-top: 3px solid transparent; margin-bottom: 0; margin-top: -2px; }
+  .menu-barra-abajo .nav-tab.active { border-top-color: var(--red); }
+  .deposito-screen .menu-barra-abajo .nav-tab.active { border-top-color: var(--deposito); }
+  /* el contenido termina antes de la barra, para que no quede tapado */
+  .menu-en-abajo .app-main { padding-bottom: 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-lateral .menu-selector { transition: none; }
 }

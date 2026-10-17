@@ -4,11 +4,11 @@ import { useAuth } from '../auth/AuthContext';
 import { isDirectorioDesactivado, isDepositoAdmin, puedeAjustarInventario, tieneAccesoAdmin, tieneAccesoDeposito } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
-import MenuLateral from '../components/MenuLateral';
+import MenuSecciones from '../components/MenuSecciones';
 import BotonHamburguesa from '../components/BotonHamburguesa';
-import { useMenuFijo } from '../lib/useMenuFijo';
+import { clasesDelMenu, usePreferenciasDeMenu } from '../lib/usePreferenciasDeMenu';
 import { useAvisos } from '../features/avisos/useAvisos';
-import type { SeccionMenu } from '../components/MenuLateral';
+import type { SeccionMenu } from '../components/MenuSecciones';
 import SinModulos from '../components/SinModulos';
 import { hayModulosDeDirectorio } from '../lib/modulos';
 import { useConfiguracionQuery } from '../features/config/useConfiguracion';
@@ -37,7 +37,7 @@ function MantenimientoContent() {
   const [tab, setTab] = useState<Tab>('buscar');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [menuFijo, alternarMenuFijo] = useMenuFijo();
+  const menu = usePreferenciasDeMenu();
   const { retiros: retirosNuevos, sugerencias: sugerenciasNuevas, total: avisosTotal, marcarVisto } = useAvisos();
 
   const nombreEmpresa = config?.empresa_nombre || 'Mi Empresa';
@@ -88,7 +88,7 @@ function MantenimientoContent() {
   useEffect(() => { if (tab === 'retiros' && retirosNuevos > 0) marcarVisto('retiros'); }, [tab, retirosNuevos, marcarVisto]);
 
   return (
-    <div className={`deposito-screen con-menu-lateral${menuFijo ? ' menu-fijo' : ''}`}>
+    <div className={`deposito-screen ${clasesDelMenu(menu.posicion, menu.fijo)}`}>
       <header className="app-header">
         <div className="header-logo">
           {config?.logo_base64 && <img src={config.logo_base64} alt={nombreEmpresa} />}
@@ -103,7 +103,7 @@ function MantenimientoContent() {
         </div>
       </header>
 
-      <MenuLateral secciones={[...areas, ...secciones]} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
+      <MenuSecciones secciones={[...areas, ...secciones]} pie={pie} posicion={menu.posicion} onCambiarPosicion={menu.cambiarPosicion} fijo={menu.fijo} onAlternarFijo={menu.alternarFijo} />
 
       <main className="app-main">
         {tab === 'buscar' && (

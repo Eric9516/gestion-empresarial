@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabaseClient';
 import { opcionesLicencia } from '../features/config/useModulos';
 import { opcionesConfiguracion } from '../features/config/useConfiguracion';
 import type { Profile } from '../lib/types';
+import type { Json } from '../lib/database.types';
+import { leerPreferencias, type PreferenciasPantalla } from '../lib/preferencias';
 import { installErrorLogging, setErrorLoggingUser } from '../lib/errorLogging';
 
 interface AuthState {
@@ -15,6 +17,8 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   updateOwnProfile: (data: { nombre: string; apellido: string }) => Promise<void>;
+  /** Guarda en el perfil una preferencia de pantalla (se ve al instante; si falla la base, avisa con el error). */
+  guardarPreferencias: (cambios: PreferenciasPantalla) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -158,8 +162,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(prev => (prev ? { ...prev, ...data } : prev));
   }
 
+  async function guardarPreferencias(cambios: PreferenciasPantalla) {
+    if (!user) return;
+    setProfile(prev => (prev ? { ...prev, preferencias: { ...leerPreferencias(prev.preferencias), ...cambios } } : prev));
+    const { error } = await supabase.rpc('guardar_preferencias', { p_cambios: cambios as Json });
+    if (error) throw error;
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, authError, signIn, signOut, updateOwnProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, authError, signIn, signOut, updateOwnProfile, guardarPreferencias }}>
       {children}
     </AuthContext.Provider>
   );

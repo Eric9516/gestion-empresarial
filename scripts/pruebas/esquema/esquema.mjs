@@ -385,6 +385,21 @@ if (porComponentes) {
   ok('ninguna regla llama funciones fila por fila (todas una sola vez por consulta)', porFila.length === 0, porFila.map(x => x.p).join(', '));
   ok('hay índice para listar los movimientos de un depósito', (await q(`select 1 from pg_indexes where indexname = 'movimientos_stock_deposito_fecha_idx'`)).length === 1);
   ok('la función que quita permisos no la ejecuta nadie con sesión', (await q(`select has_function_privilege('authenticated', 'public._quitar_permisos_sobrantes()', 'execute') as v`))[0].v === false);
+
+  // --- Preferencias de pantalla de cada persona ---
+  const prefDe = async (uid) => (await q(`select preferencias as p from public.usuarios_perfil where id = '${uid}'`))[0].p;
+  ok('una persona nace sin preferencias guardadas', JSON.stringify(await prefDe(sinDueno)) === '{}');
+  const g1 = await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_posicion": "arriba"}'::jsonb) as p`);
+  ok('cada persona guarda dónde quiere el menú', Array.isArray(g1) && g1[0].p.menu_posicion === 'arriba' && (await prefDe(sinDueno)).menu_posicion === 'arriba', JSON.stringify(g1));
+  await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_fijo": true}'::jsonb)`);
+  ok('guardar una preferencia no borra las otras', JSON.stringify(await prefDe(sinDueno)) === JSON.stringify({ menu_fijo: true, menu_posicion: 'arriba' }));
+  ok('no se puede guardar una posición inventada', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_posicion": "derecha"}'::jsonb)`)));
+  ok('"fijo" tiene que ser sí o no', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_fijo": "quizás"}'::jsonb)`)));
+  ok('no se puede guardar algo enorme', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias(jsonb_build_object('x', repeat('a', 3000)))`)));
+  ok('nadie cambia las preferencias de otro (ni con un update directo)', (await como('authenticated', sinDueno, `update public.usuarios_perfil set preferencias = '{"menu_posicion": "abajo"}' where id = '${C}' returning id`)).length === 0
+    && JSON.stringify(await prefDe(C)) === '{}');
+  ok('sin sesión no se guardan preferencias', !!(await como('anon', null, `select public.guardar_preferencias('{"menu_posicion": "abajo"}'::jsonb)`)).error);
+  ok('guardar preferencias no queda en el historial de cambios de permisos', (await q(`select count(*)::int as n from public.audit_log where tabla = 'usuarios_perfil' and registro_id = '${sinDueno}' and descripcion like '%preferencias%'`))[0].n === 0);
 }
 
 console.log(fallas ? `\n${fallas} FALLAS` : '\nTODO BIEN en la instalación desde cero');

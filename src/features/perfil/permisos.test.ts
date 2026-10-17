@@ -4,7 +4,7 @@ import type { Profile } from '../../lib/types';
 
 const perfil = (extra: Partial<Profile> = {}): Profile => ({
   access_expires_at: null, access_status: 'active', activo: true, apellido: null, created_at: null, email: 'a@b.test', es_owner: false, id: 'u1',
-  last_login_at: null, mantenimiento_rol: null, nombre: 'A', puede_ajustar_inventario: false, puede_gestionar_depositos: false, puede_resetear_contrasenas: false,
+  last_login_at: null, mantenimiento_rol: null, nombre: 'A', puede_ajustar_inventario: false, puede_gestionar_depositos: false, preferencias: {}, puede_resetear_contrasenas: false,
   puede_ver_errores: false, puede_ver_retiros: false, puede_ver_sugerencias: false, rol: 'user', updated_at: null, ...extra,
 });
 const tiene = (p: Profile, clave: string, deposito = true) => permisosDe({ profile: p, deposito }).find(x => x.clave === clave)?.tiene;
