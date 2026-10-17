@@ -1427,6 +1427,7 @@ export type Database = {
           mantenimiento_rol: string | null
           nombre: string | null
           puede_ajustar_inventario: boolean
+          puede_gestionar_depositos: boolean
           puede_resetear_contrasenas: boolean
           puede_ver_errores: boolean
           puede_ver_retiros: boolean
@@ -1447,6 +1448,7 @@ export type Database = {
           mantenimiento_rol?: string | null
           nombre?: string | null
           puede_ajustar_inventario?: boolean
+          puede_gestionar_depositos?: boolean
           puede_resetear_contrasenas?: boolean
           puede_ver_errores?: boolean
           puede_ver_retiros?: boolean
@@ -1467,6 +1469,7 @@ export type Database = {
           mantenimiento_rol?: string | null
           nombre?: string | null
           puede_ajustar_inventario?: boolean
+          puede_gestionar_depositos?: boolean
           puede_resetear_contrasenas?: boolean
           puede_ver_errores?: boolean
           puede_ver_retiros?: boolean
@@ -1507,6 +1510,7 @@ export type Database = {
         }
         Returns: Database['public']['Tables']['depositos']['Row']
       }
+      can_gestionar_depositos: { Args: never; Returns: boolean }
       depositos_del_usuario: { Args: never; Returns: string[] }
       editar_deposito: {
         Args: {

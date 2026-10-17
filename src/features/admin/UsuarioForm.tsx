@@ -23,7 +23,7 @@ interface Props {
 const emptyInput: UsuarioInput = {
   nombre: '', apellido: '', email: '', rol: 'user', mantenimiento_rol: null,
   puede_ver_retiros: false, puede_ver_errores: false, puede_resetear_contrasenas: false,
-  puede_ver_sugerencias: false, puede_ajustar_inventario: false,
+  puede_ver_sugerencias: false, puede_ajustar_inventario: false, puede_gestionar_depositos: false,
 };
 
 export default function UsuarioForm({ open, onClose, usuario }: Props) {
@@ -57,6 +57,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
         puede_resetear_contrasenas: usuario.puede_resetear_contrasenas === true,
         puede_ver_sugerencias: usuario.puede_ver_sugerencias === true,
         puede_ajustar_inventario: usuario.puede_ajustar_inventario === true,
+        puede_gestionar_depositos: usuario.puede_gestionar_depositos === true,
       }
       : emptyInput);
   });
@@ -205,6 +206,17 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
             </div>
           )}
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-mid)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '4px 0 10px' }}>Permisos del panel de Configuración</div>
+          {modulos.deposito && (
+            <div className="form-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
+                <input type="checkbox" checked={input.puede_gestionar_depositos} disabled={esUnoMismo} onChange={e => setInput(v => ({ ...v, puede_gestionar_depositos: e.target.checked }))} />
+                Puede crear y editar depósitos
+              </label>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 24px' }}>
+                Configuración → Depósito → Depósitos: crear depósitos (hasta el tope del plan) y cambiarles el nombre, el color, el ícono o la letra. Solo un dueño da este permiso.
+              </p>
+            </div>
+          )}
           <div className="form-group">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 400 }}>
               <input type="checkbox" checked={input.puede_ver_errores} disabled={esUnoMismo} onChange={e => setInput(v => ({ ...v, puede_ver_errores: e.target.checked }))} />

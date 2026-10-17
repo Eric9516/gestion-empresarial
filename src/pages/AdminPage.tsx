@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isDirectorioAdmin, isDepositoAdmin, isOwner, puedeResetearContrasenas, puedeVerErrores, puedeVerSugerencias, tieneAccesoAdmin, type Profile } from '../lib/types';
+import { isDirectorioAdmin, isDepositoAdmin, isOwner, puedeGestionarDepositos, puedeResetearContrasenas, puedeVerErrores, puedeVerSugerencias, tieneAccesoAdmin, type Profile } from '../lib/types';
 import UserMenu from '../components/UserMenu';
 import MobileMenu from '../components/MobileMenu';
 import BotonHamburguesa from '../components/BotonHamburguesa';
@@ -53,7 +53,7 @@ const ADMIN_TABS: AdminTab[] = [
   { id: 'sectores', group: 'deposito', label: <><Icono n="fabrica" /> Sectores</>, check: isDepositoAdmin, modulo: 'deposito', Pane: SectoresPanel },
   { id: 'fotos-pendientes', group: 'deposito', label: <><Icono n="camara" /> Fotos pendientes</>, check: isOwner, modulo: 'deposito', Pane: FotosPendientesPane },
   { id: 'familias', group: 'deposito', label: <><Icono n="etiqueta" /> Familias</>, check: isOwner, modulo: 'deposito', Pane: FamiliasPane },
-  { id: 'depositos', group: 'deposito', label: <><Icono n="deposito" /> Depósitos</>, check: isOwner, modulo: 'deposito', Pane: DepositosPane },
+  { id: 'depositos', group: 'deposito', label: <><Icono n="deposito" /> Depósitos</>, check: puedeGestionarDepositos, modulo: 'deposito', Pane: DepositosPane },
   // Solo el dueño: apaga o prende, dentro de su plan, los módulos que usa (lo que el plan incluye lo define quien vende).
   { id: 'modulos', group: 'general', label: <><Icono n="modulos" /> Módulos</>, check: isOwner, Pane: ModulosPane },
   { id: 'usuarios', group: 'general', label: <><Icono n="usuarios" /> Usuarios</>, check: p => isOwner(p) || puedeResetearContrasenas(p), Pane: UsuariosPane },

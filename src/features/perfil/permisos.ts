@@ -1,4 +1,4 @@
-import { puedeAjustarInventario, puedeResetearContrasenas, puedeVerErrores, puedeVerSugerencias, puedeVerTodosLosRetiros, type Profile } from '../../lib/types';
+import { puedeAjustarInventario, puedeGestionarDepositos, puedeResetearContrasenas, puedeVerErrores, puedeVerSugerencias, puedeVerTodosLosRetiros, type Profile } from '../../lib/types';
 
 // Lo que una persona puede hacer, en palabras. "Mi perfil" muestra solo el nombre y si lo tiene o no;
 // qué significa cada cosa se explica aparte, con el botón de ayuda (signo de pregunta).
@@ -20,6 +20,7 @@ export function permisosDe({ profile, deposito }: Contexto): Permiso[] {
     ...(deposito ? [
       { clave: 'retiros', nombre: 'Ver todos los retiros', explicacion: 'Ve los retiros que hizo cualquier persona, no solo los suyos.', tiene: puedeVerTodosLosRetiros(profile) },
       { clave: 'ajustes', nombre: 'Ajustar inventario', explicacion: 'Puede cargar stock y corregirlo (Movimientos). Cada cambio queda registrado con su nombre.', tiene: puedeAjustarInventario(profile) },
+      { clave: 'depositos', nombre: 'Gestionar depósitos', explicacion: 'Puede crear depósitos y cambiarles el nombre, el color, el ícono o la letra (Configuración, Depósitos).', tiene: puedeGestionarDepositos(profile) },
     ] : []),
     { clave: 'errores', nombre: 'Ver errores', explicacion: 'Ve los errores que registró la aplicación (Configuración, Errores). Sirve para avisar de un problema.', tiene: puedeVerErrores(profile) },
     { clave: 'sugerencias', nombre: 'Ver sugerencias', explicacion: 'Lee las sugerencias que mandan las demás personas y recibe el aviso cuando llega una nueva.', tiene: puedeVerSugerencias(profile) },

@@ -191,6 +191,8 @@ Sale de una conversación con el dueño del producto. Corrige dónde vive la rec
 
 **Informe (la pestaña "Informe" del Depósito, el de stock y compras): no lo ve cualquier operario.** Lo ven los administradores de ese depósito, o quien Compras haya habilitado desde el panel de permisos. Hoy la pantalla ya lo muestra solo al administrador; lo nuevo es el permiso individual que Compras puede dar a un operario, y que la base de datos (no solo la pantalla) haga cumplir quién lo ve. Otras listas (retiros, historial de movimientos, exportaciones) no cambian.
 
+**Crear y editar depósitos: el dueño y quien él autorice.** Permiso "Gestionar depósitos" (`usuarios_perfil.puede_gestionar_depositos`), que solo un dueño da o quita desde Configuración → Usuarios; la base lo hace cumplir (`can_gestionar_depositos()`) y darlo o sacarlo queda en el historial. Hecho el 2026-10-17.
+
 **Compras ve todos los depósitos.** Esa vista llega con el panel de Compras, que se arma más adelante. El dueño sigue pudiendo hacer todo.
 
 **El depósito original se llama "Depósito 1" por defecto** (el dueño le cambia el nombre, el color y el ícono desde Configuración → Depósitos; la letra del código se fija con el primer repuesto). Hoy el nombre "Depósito de mantenimiento" está escrito fijo en la pantalla y hay que sacarlo.

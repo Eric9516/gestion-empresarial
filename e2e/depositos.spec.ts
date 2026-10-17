@@ -61,3 +61,42 @@ test.describe('Depósitos', () => {
     await modal.getByRole('button', { name: 'Cancelar' }).click();
   });
 });
+
+test.describe('Permiso "Gestionar depósitos"', () => {
+  const COMUN = { email: 'comun@plan2.test', clave: 'Prueba-UI-9!zz' };
+
+  async function cambiarPermiso(page: Page, valor: boolean) {
+    await page.goto('/admin');
+    await page.getByRole('button', { name: 'General', exact: true }).click();
+    await page.getByRole('button', { name: /Usuarios/ }).click();
+    await page.getByRole('row').filter({ hasText: COMUN.email }).getByRole('button', { name: 'Editar' }).click();
+    const modal = page.getByRole('dialog', { name: 'Editar Usuario' });
+    await modal.getByLabel('Puede crear y editar depósitos').setChecked(valor);
+    await modal.getByRole('button', { name: 'Guardar' }).click();
+    await expect(modal).toHaveCount(0);
+  }
+
+  async function entrarComo(page: Page, usuario: { email: string; clave: string }) {
+    await page.context().clearCookies();
+    await page.goto('/login');
+    await page.evaluate(() => localStorage.clear());
+    await entrar(page, usuario);
+  }
+
+  test('el dueño se lo da a una persona: ve la pestaña Depósitos y puede editar; al sacárselo, deja de verla', async ({ page }) => {
+    await entrar(page);
+    await cambiarPermiso(page, true);
+
+    await entrarComo(page, COMUN);
+    await page.goto('/admin');
+    await expect(page.getByRole('button', { name: /Depósitos/ })).toBeVisible();
+    await page.getByRole('button', { name: /Depósitos/ }).click();
+    await expect(page.getByRole('button', { name: 'Editar Depósito principal' })).toBeVisible();
+
+    await entrarComo(page, { email: 'dueno@plan2.test', clave: COMUN.clave });
+    await cambiarPermiso(page, false);
+    await entrarComo(page, COMUN);
+    await page.goto('/admin');
+    await expect(page.getByRole('button', { name: /Depósitos/ })).toHaveCount(0);
+  });
+});

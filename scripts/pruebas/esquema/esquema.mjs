@@ -337,6 +337,28 @@ if (porComponentes) {
   const subir = await como('authenticated', A, `update public.licencia set max_depositos = 50 returning id`);
   ok('el dueño no puede cambiar el tope de depósitos', (Array.isArray(subir) ? subir.length === 0 : !!subir.error) && (await q(`select max_depositos from public.licencia`))[0].max_depositos === 3);
   ok('el tope tiene que estar entre 1 y 100', await db.exec(`update public.licencia set max_depositos = 0`).then(() => false, () => true) && await db.exec(`update public.licencia set max_depositos = 101`).then(() => false, () => true));
+
+  // --- Permiso "Gestionar depósitos": el dueño autoriza a otras personas ---
+  await tope(10);
+  const darPermiso = (quien, uid, valor) => como('authenticated', quien, `update public.usuarios_perfil set puede_gestionar_depositos = ${valor} where id = '${uid}' returning id`);
+  ok('nadie nace con el permiso de gestionar depósitos', (await q(`select count(*)::int as n from public.usuarios_perfil where puede_gestionar_depositos`))[0].n === 0);
+  ok('una persona no se puede dar a sí misma el permiso', /No tenés permiso/.test(msj(await darPermiso(sinDueno, sinDueno, true))));
+  const intento = await darPermiso(C, sinDueno, true); // la base no le deja tocar la fila de otro: o falla o no cambia ninguna
+  ok('un administrador del depósito (no dueño) no se lo puede dar a otro', (Array.isArray(intento) ? intento.length === 0 : !!intento.error)
+    && (await q(`select puede_gestionar_depositos as v from public.usuarios_perfil where id = '${sinDueno}'`))[0].v === false);
+  ok('el dueño da el permiso', Array.isArray(await darPermiso(A, sinDueno, true)) && (await q(`select puede_gestionar_depositos as v from public.usuarios_perfil where id = '${sinDueno}'`))[0].v === true);
+  ok('dar el permiso queda en el historial', (await q(`select 1 from public.audit_log where tabla = 'usuarios_perfil' and registro_id = '${sinDueno}' and descripcion like '%gestionar depósitos%'`)).length >= 1);
+  const delAutorizado = q1(await crearDep(sinDueno, 'Taller', 't', null, 'herramienta'));
+  ok('con el permiso, una persona que no es dueña crea un depósito', !!delAutorizado && delAutorizado.nombre === 'Taller', JSON.stringify(delAutorizado));
+  ok('con el permiso, edita un depósito', q1(await editarDep(sinDueno, delAutorizado.id, 'Taller central', null, 'herramienta', true))?.nombre === 'Taller central');
+  ok('con el permiso igual respeta el tope', await tope(4).then(async () => /permite hasta 4/.test(msj(await crearDep(sinDueno, 'Otro más', 'x')))));
+  await tope(10);
+  ok('con el permiso no puede subir el tope (eso es de quien vende)', (await como('authenticated', sinDueno, `update public.licencia set max_depositos = 50 returning id`)).length === 0);
+  await db.exec(`select set_config('request.jwt.claim.sub', '', false); update public.usuarios_perfil set activo = false where id = '${sinDueno}'`);
+  ok('bloqueado, el permiso no le sirve', !!msj(await crearDep(sinDueno, 'Bloqueado', 'b')));
+  await db.exec(`select set_config('request.jwt.claim.sub', '', false); update public.usuarios_perfil set activo = true where id = '${sinDueno}'`);
+  ok('el dueño saca el permiso', Array.isArray(await darPermiso(A, sinDueno, false)));
+  ok('sin el permiso ya no puede crear ni editar depósitos', /Solo el dueño/.test(msj(await crearDep(sinDueno, 'Otro', 'o'))) && /Solo el dueño/.test(msj(await editarDep(sinDueno, delAutorizado.id, 'X', null, 'deposito', true))));
   await tope(1);
 }
 
