@@ -10,8 +10,8 @@ import { useCrearDeposito, useDepositos, useEditarDeposito, useTopeDepositos, ty
 
 // Configuración → Depósito → Depósitos (solo el dueño): los depósitos de la empresa, con su nombre, color e ícono.
 export default function DepositosPane() {
-  const { data, isLoading } = useDepositos();
-  const { data: tope = 1 } = useTopeDepositos();
+  const { data, isLoading, isError: errorDepositos } = useDepositos();
+  const { data: tope = 1, isError: errorTope } = useTopeDepositos();
   const crear = useCrearDeposito();
   const editar = useEditarDeposito();
   const toast = useToast();
@@ -21,6 +21,8 @@ export default function DepositosPane() {
   const todos = data?.todos ?? [];
   const enUso = todos.filter(d => d.activo).length;
   const lleno = enUso >= tope;
+  // Si la base de datos de esta empresa todavía no tiene los depósitos editables, se avisa en vez de mostrar una lista vacía que parece rota.
+  const baseSinActualizar = errorDepositos || errorTope;
 
   async function guardar(v: ValoresDeposito) {
     try {
@@ -44,6 +46,12 @@ export default function DepositosPane() {
         <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.85 }}>{enUso} de {tope} en uso</span>
       </div>
       <div className="admin-card-body">
+        {baseSinActualizar && (
+          <p role="alert" style={{ padding: 12, borderRadius: 10, background: 'var(--warning-bg, #fff6e0)', color: 'var(--text)', fontSize: 13 }}>
+            <Icono n="alerta" /> A la base de datos de esta empresa todavía le falta la actualización de los depósitos. Hasta que se aplique, no se pueden editar desde acá. Pedile a quien administra el sistema que la actualice (<code>pnpm cliente actualizar</code>).
+          </p>
+        )}
+        {!baseSinActualizar && <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 12px' }}>Tocá <strong>Editar</strong> para cambiarle el nombre, el color o el ícono a un depósito, también al original.</p>}
         {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>}
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
           {todos.map(d => (
@@ -68,7 +76,7 @@ export default function DepositosPane() {
           ))}
         </ul>
         <div style={{ marginTop: 14 }}>
-          <Button variant="primary" size="sm" disabled={lleno} onClick={() => setAbierto(null)}><Icono n="mas" /> Nuevo depósito</Button>
+          <Button variant="primary" size="sm" disabled={lleno || baseSinActualizar} onClick={() => setAbierto(null)}><Icono n="mas" /> Nuevo depósito</Button>
           {lleno && (
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
               El plan permite hasta {tope} depósito{tope === 1 ? '' : 's'}. Para tener más, pedí ampliar el plan.
