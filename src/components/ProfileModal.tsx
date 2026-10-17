@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { useModulos } from '../features/config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
+import { permisosDe } from '../features/perfil/permisos';
+import { AyudaDelPerfil, DatosDeLaCuenta, PermisosDelPerfil, SeguridadDelPerfil } from '../features/perfil/SeccionesDePerfil';
 
 export default function ProfileModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { profile, updateOwnProfile } = useAuth();
+  const { profile, user, updateOwnProfile } = useAuth();
   const toast = useToast();
   const { modulos } = useModulos();
   const [nombre, setNombre] = useState('');
@@ -41,6 +43,7 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
 
   const rolDirectorio = isDirectorioDesactivado(profile) ? 'Sin acceso' : isDirectorioAdmin(profile) ? 'Administrador' : 'Usuario';
   const rolMantenimiento = !tieneAccesoMantenimiento(profile) ? 'Sin acceso' : isMantenimientoAdmin(profile) ? 'Administrador' : 'Usuario';
+  const permisos = permisosDe({ profile, deposito: modulos.deposito });
   const filasRol = [['Directorio', rolDirectorio], ...(modulos.deposito ? [['Depósito de mantenimiento', rolMantenimiento]] : [])];
 
   return (
@@ -74,6 +77,10 @@ export default function ProfileModal({ open, onClose }: { open: boolean; onClose
           </div>
         ))}
       </div>
+      <PermisosDelPerfil permisos={permisos} />
+      <DatosDeLaCuenta profile={profile} user={user} />
+      <SeguridadDelPerfil email={profile?.email} />
+      <AyudaDelPerfil permisos={permisos.filter(p => p.tiene)} />
     </Modal>
   );
 }
