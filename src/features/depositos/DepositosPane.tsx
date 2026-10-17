@@ -43,7 +43,7 @@ export default function DepositosPane() {
     <div className="admin-card" style={{ maxWidth: 640 }}>
       <div className="admin-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <span><Icono n="deposito" /> Depósitos</span>
-        <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.85 }}>{enUso} de {tope} en uso</span>
+        {!baseSinActualizar && <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.85 }}>{enUso} de {tope} en uso</span>}
       </div>
       <div className="admin-card-body">
         {baseSinActualizar && (
