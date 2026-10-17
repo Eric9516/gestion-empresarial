@@ -1,6 +1,59 @@
 /* Panel admin, usuarios, campos custom, logo, toggle */
 
-/* ===== ADMIN: pestañas en chips (las usa la configuración inicial). El menú de grupos vive en el menú lateral. ===== */
+/* ===== ADMIN: tabs de dos niveles ===== */
+/* Nivel 1 — grupo (Directorio / Mantenimiento / General), estilo subrayado. */
+.admin-group-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.admin-group-tabs::-webkit-scrollbar { display: none; }
+
+.admin-group-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  margin-bottom: -1.5px;
+  white-space: nowrap;
+  background: none;
+  font-family: var(--font);
+  transition: color 0.2s;
+}
+/* El subrayado se centra bajo esta parte (la palabra sola) en vez de bajo todo
+   el botón — si se centrara contra "emoji + palabra", el peso visual del
+   emoji corre la barra hacia la izquierda de la palabra. padding/margin-bottom
+   opuestos: el span ocupa el mismo alto que el padding inferior del botón
+   (así la barra queda a ras del borde de abajo) sin sumarle altura extra. */
+.admin-group-tab-label {
+  position: relative;
+  padding-bottom: 10px;
+  margin-bottom: -10px;
+}
+.admin-group-tab-label::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--red);
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.2s ease;
+}
+.admin-group-tab:hover { color: var(--blue); }
+.admin-group-tab.active { color: var(--blue); }
+.admin-group-tab.active .admin-group-tab-label::after { transform: translateX(-50%) scaleX(1); }
+
 /* Nivel 2 — pestaña dentro del grupo elegido, estilo chip/píldora. */
 .admin-subnav {
   display: flex;
@@ -129,3 +182,6 @@
   }
   .campo-custom-row .btn-remove-contact { grid-row: auto; grid-column: auto; align-self: auto; }
 }
+
+/* Número rojo de novedades dentro de una pestaña (por ejemplo, sugerencias nuevas). */
+.admin-subtab .aviso-numero, .admin-group-tab .aviso-numero { margin-left: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; line-height: 18px; vertical-align: middle; }
