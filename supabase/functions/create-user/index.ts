@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     const { email, password, nombre, apellido, rol, mantenimiento_rol, puede_ver_retiros, puede_ver_errores, puede_resetear_contrasenas, puede_ver_sugerencias, puede_ajustar_inventario, puede_gestionar_depositos } = await req.json();
     if (!email || !password || !nombre) throw new Error('Faltan datos obligatorios');
-    if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
+    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres');
     if (mantenimiento_rol && !['comun', 'admin'].includes(mantenimiento_rol)) {
       throw new Error('Rol de mantenimiento inválido');
     }

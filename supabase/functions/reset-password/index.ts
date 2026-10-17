@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     const { userId, password } = await req.json();
     if (!userId || !password) throw new Error('Faltan datos obligatorios');
     if (userId === user.id) throw new Error('No podés resetear tu propia contraseña por acá');
-    if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
+    if (password.length < 8) throw new Error('La contraseña debe tener al menos 8 caracteres');
 
     const secretKey = Deno.env.get('PROJECT_SECRET_KEY');
     if (!secretKey) throw new Error('Falta configurar el secreto PROJECT_SECRET_KEY en la función');
@@ -59,11 +59,17 @@ Deno.serve(async (req) => {
     if (!esOwner) {
       const { data: objetivo, error: objetivoErr } = await supabaseAdmin
         .from('usuarios_perfil')
-        .select('es_owner')
+        .select('es_owner, rol, mantenimiento_rol, puede_ver_retiros, puede_ver_errores, puede_resetear_contrasenas, puede_ver_sugerencias, puede_ajustar_inventario, puede_gestionar_depositos')
         .eq('id', userId)
         .single();
       if (objetivoErr) throw objetivoErr;
       if (objetivo?.es_owner === true) throw new Error('No podés resetear la contraseña del propietario');
+      // Quien no es dueño solo restablece la contraseña de personas sin cargos ni permisos especiales: si pudiera hacerlo con un administrador,
+      // entraría con su cuenta y tendría sus permisos. La de un administrador (o alguien con permisos) la restablece un dueño.
+      const tieneCargo = objetivo?.rol === 'admin' || objetivo?.mantenimiento_rol === 'admin'
+        || objetivo?.puede_ver_retiros === true || objetivo?.puede_ver_errores === true || objetivo?.puede_resetear_contrasenas === true
+        || objetivo?.puede_ver_sugerencias === true || objetivo?.puede_ajustar_inventario === true || objetivo?.puede_gestionar_depositos === true;
+      if (tieneCargo) throw new Error('La contraseña de un administrador o de alguien con permisos especiales la restablece un dueño');
     }
 
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });

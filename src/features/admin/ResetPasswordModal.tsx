@@ -7,6 +7,7 @@ import type { Usuario } from './useUsuarios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mensajeDeError } from '@/lib/errores';
+import { LARGO_MINIMO_CLAVE } from '../perfil/permisos';
 
 interface Props {
   open: boolean;
@@ -24,7 +25,7 @@ export default function ResetPasswordModal({ open, onClose, usuario }: Props) {
 
   async function handleGuardar() {
     if (!usuario) return;
-    if (password.length < 6) { toast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+    if (password.length < LARGO_MINIMO_CLAVE) { toast(`La contraseña debe tener al menos ${LARGO_MINIMO_CLAVE} caracteres`, 'error'); return; }
     setSaving(true);
     try {
       await resetPassword.mutateAsync({ id: usuario.id, password });
@@ -46,7 +47,7 @@ export default function ResetPasswordModal({ open, onClose, usuario }: Props) {
       </p>
       <div className="form-group">
         <label htmlFor="reset-password-modal-1">Contraseña nueva</label>
-        <Input id="reset-password-modal-1" type="password" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
+        <Input id="reset-password-modal-1" type="password" placeholder={`Mínimo ${LARGO_MINIMO_CLAVE} caracteres`} value={password} onChange={e => setPassword(e.target.value)} />
       </div>
       <div className="modal-footer">
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>

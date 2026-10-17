@@ -24,7 +24,7 @@ console.log(`base creada con ${archivos.length} archivos (${((Date.now() - t0) /
 
 const DUENO = '00000000-0000-0000-0000-0000000000a1';
 await db.exec(`insert into auth.users (id, email) values ('${DUENO}', 'dueno@escala.test');
-  update public.usuarios_perfil set rol='admin', mantenimiento_rol='admin', es_owner=true where id='${DUENO}';
+  update public.usuarios_perfil set activo=true, rol='admin', mantenimiento_rol='admin', es_owner=true where id='${DUENO}';
   update public.licencia set modulos = '{"proveedores":true,"comisionistas":true,"envios":true,"deposito":true,"mantenimiento":true,"tareas":true}'::jsonb;`);
 
 // ---------- datos sintéticos ----------

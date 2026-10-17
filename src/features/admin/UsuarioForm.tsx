@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useModulos } from '../config/useModulos';
 import { mensajeDeError } from '@/lib/errores';
+import { LARGO_MINIMO_CLAVE } from '../perfil/permisos';
 import { Icono } from '@/components/Icono';
 
 interface Props {
@@ -82,7 +83,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
     const datos = { ...input, puede_ver_retiros: input.mantenimiento_rol !== null && input.puede_ver_retiros };
     try {
       if (!usuario) {
-        if (!password || password.length < 6) { toast('La contraseña debe tener al menos 6 caracteres', 'error'); setSaving(false); return; }
+        if (!password || password.length < LARGO_MINIMO_CLAVE) { toast(`La contraseña debe tener al menos ${LARGO_MINIMO_CLAVE} caracteres`, 'error'); setSaving(false); return; }
         await createUsuario.mutateAsync({ input: datos, password });
         toast('Usuario creado', 'success');
       } else {
@@ -155,7 +156,7 @@ export default function UsuarioForm({ open, onClose, usuario }: Props) {
             <div className="form-group"><label htmlFor="usuario-form-2">Apellido</label><Input id="usuario-form-2" value={input.apellido} onChange={e => setInput(v => ({ ...v, apellido: e.target.value }))} /></div>
             <div className={`form-group${usuario ? ' full' : ''}`}><label htmlFor="usuario-form-3">Email</label><Input id="usuario-form-3" type="email" value={input.email} disabled={!!usuario} onChange={e => setInput(v => ({ ...v, email: e.target.value }))} /></div>
             {!usuario && (
-              <div className="form-group"><label htmlFor="usuario-form-4">Contraseña</label><Input id="usuario-form-4" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" /></div>
+              <div className="form-group"><label htmlFor="usuario-form-4">Contraseña</label><Input id="usuario-form-4" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={`Mínimo ${LARGO_MINIMO_CLAVE} caracteres`} /></div>
             )}
             <div className="form-group">
               <label htmlFor="usuario-form-5">Rol en Directorio</label>

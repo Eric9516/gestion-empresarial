@@ -102,8 +102,10 @@ ok('El dueño que dejó el instalador puede iniciar sesión', !!dueno.token);
 const pDueno = await perfil(dueno.email);
 dueno.id = pDueno?.id;
 ok('Ese usuario es dueño y administrador', pDueno?.es_owner === true && pDueno?.rol === 'admin' && pDueno?.mantenimiento_rol === 'admin');
-const perfiles = await admin(`/rest/v1/usuarios_perfil?select=email,access_status,es_owner,rol&email=like.*@prueba-plantilla.com`);
-ok('El disparador creó el perfil de cada usuario nuevo, sin privilegios y con acceso activo', perfiles.datos.length === 2 && perfiles.datos.every(x => x.access_status === 'active' && !x.es_owner && x.rol === 'user'));
+const perfiles = await admin(`/rest/v1/usuarios_perfil?select=email,access_status,es_owner,rol,activo&email=like.*@prueba-plantilla.com`);
+ok('El disparador creó el perfil de cada usuario nuevo, sin privilegios y BLOQUEADO hasta que un dueño lo habilite', perfiles.datos.length === 2 && perfiles.datos.every(x => x.access_status === 'active' && !x.es_owner && x.rol === 'user' && x.activo === false));
+for (const p of [deposito, comun]) await http(`/rest/v1/usuarios_perfil?id=eq.${p.id}`, { metodo: 'PATCH', token: dueno.token, cuerpo: { activo: true } });
+ok('El dueño los habilita', (await admin(`/rest/v1/usuarios_perfil?select=activo&email=like.*@prueba-plantilla.com`)).datos.every(x => x.activo === true));
 let r = await admin('/rest/v1/rpc/definir_dueno_inicial', { metodo: 'POST', cuerpo: { p_email: comun.email } });
 ok('Ya con un dueño, "definir primer dueño" se rechaza', r.estado >= 400, msg(r).slice(0, 60));
 for (const p of [deposito, comun]) p.token = await ingresar(p.email, p.clave);
@@ -386,7 +388,7 @@ ok('…y un usuario común no lo ve', Array.isArray(r.datos) ? r.datos.length ==
   // (el usuario "deposito" quedó como dueño en una sección anterior: para esta prueba se crea un administrador que NO lo es)
   const adminSimple = { email: 'adminsimple@prueba-plantilla.com', clave: clave() };
   adminSimple.id = (await admin('/auth/v1/admin/users', { metodo: 'POST', cuerpo: { email: adminSimple.email, password: adminSimple.clave, email_confirm: true, user_metadata: { full_name: 'Admin simple' } } })).datos?.id;
-  await admin(`/rest/v1/usuarios_perfil?id=eq.${adminSimple.id}`, { metodo: 'PATCH', cuerpo: { rol: 'admin', mantenimiento_rol: 'admin' } });
+  await admin(`/rest/v1/usuarios_perfil?id=eq.${adminSimple.id}`, { metodo: 'PATCH', cuerpo: { rol: 'admin', mantenimiento_rol: 'admin', activo: true } });
   adminSimple.token = await ingresar(adminSimple.email, adminSimple.clave);
   r = await rpcDueno(adminSimple.token, 'comisionistas', true);
   ok('Un administrador que no es dueño tampoco', r.estado >= 400 && /Solo el due[ñn]o/i.test(msg(r)), msg(r));
@@ -465,7 +467,7 @@ await cargarStock(itemA, 100); await cargarStock(itemB, 10);
 
 r = await ajustar(comun.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
 ok('Un usuario común del Depósito no puede ajustar el inventario', r.estado >= 400);
-await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: dueno.token, cuerpo: { mantenimiento_rol: 'admin' } });
+await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: dueno.token, cuerpo: { mantenimiento_rol: 'admin', activo: true } });
 r = await ajustar(ajustador.token, 'x', [{ item_id: itemA, tipo: 'suma', cantidad: 1 }]);
 ok('Un administrador del Depósito SIN el permiso tampoco', r.estado >= 400);
 r = await http(`/rest/v1/usuarios_perfil?id=eq.${ajustador.id}`, { metodo: 'PATCH', token: ajustador.token, cuerpo: { puede_ajustar_inventario: true } });

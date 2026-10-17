@@ -5,7 +5,7 @@ export async function sembrar(ejecutar, { items, retiros, auditoria, usuarios = 
   registrar(`cargando datos: ${items.toLocaleString('es-AR')} repuestos, ${retiros.toLocaleString('es-AR')} retiros (${(retiros * 4).toLocaleString('es-AR')} líneas), ${auditoria.toLocaleString('es-AR')} registros de auditoría`);
   // Sin disparadores durante la carga (la auditoría y demás se probaron aparte); las claves, índices y reglas quedan como en la base real.
   await ejecutar(`set session_replication_role = replica;`);
-  await paso('usuarios', `insert into auth.users (id, email) select ('00000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid, 'u' || i || '@escala.test' from generate_series(1, ${usuarios}) i;`);
+  await paso('usuarios', `insert into auth.users (id, email) select ('00000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid, 'u' || i || '@escala.test' from generate_series(1, ${usuarios}) i; update public.usuarios_perfil set activo = true where email like '%@escala.test';`);
   await paso('familias, subfamilias, sectores', `
   insert into public.familias (codigo, nombre) select chr(65 + (i - 1) / 26) || chr(65 + (i - 1) % 26), 'Familia ' || i from generate_series(1, 60) i;
   insert into public.subfamilias (familia_id, codigo, nombre) select f.id, 'A' || chr(64 + s), 'Subfamilia ' || s from public.familias f, generate_series(1, 12) s;

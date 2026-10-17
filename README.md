@@ -14,6 +14,7 @@ Plantilla de aplicación interna para empresas, por módulos: proveedores, comis
 - [Componentes, módulos y licencia](docs/COMPONENTES.md)
 - [Agregar un módulo nuevo](docs/NUEVO-MODULO.md)
 - [Seguridad y permisos](docs/SEGURIDAD.md)
+- [Auditoría de la base de datos (hallazgos, OWASP y fases)](docs/AUDITORIA-BASE-DE-DATOS.md)
 - [Pruebas: qué hay, qué cubre y qué no](docs/PRUEBAS.md)
 - [**Rendimiento: un pilar del producto** (qué se exige, qué se midió, qué se corrigió y qué falta)](docs/RENDIMIENTO.md)
 - [Escala: metas y reglas](docs/ESCALA.md)

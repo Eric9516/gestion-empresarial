@@ -31,6 +31,7 @@ await limpiarRestos(); // restos de una corrida anterior interrumpida
 const otroId = await crearUsuario('zz.otro@ensayo.invalid', { mantenimiento_rol: 'comun' });
 const objetivoId = await crearUsuario('zz.objetivo@ensayo.invalid');
 const duenoBId = await crearUsuario('zz.duenob@ensayo.invalid', { es_owner: true, rol: 'admin' });
+const adminObjetivoId = await crearUsuario('zz.adminobj@ensayo.invalid', { rol: 'admin' });
 // cada trabajador tiene su propio "dueño al que se le quita el cargo" (si lo compartieran, una comprobación le sacaría el cargo mientras otra lo usa)
 const duenosQuitar = [];
 for (let i = 0; i < TRABAJADORES; i++) duenosQuitar.push(await crearUsuario(`zz.duenoq${i}@ensayo.invalid`, { es_owner: true, rol: 'admin' }));
@@ -125,8 +126,12 @@ const SIEMPRE = () => true, NUNCA = () => false;
 
 // lecturas
 const lee = (tabla, esperado, filtro = '') => t('lectura', `leer ${tabla}`, esperado, async x => hecho(await x.u('GET', `/rest/v1/${tabla}?select=*&limit=3${filtro}`)));
-for (const tb of ['comisionistas', 'contactos', 'configuracion', 'familias', 'subfamilias', 'sectores', 'items', 'proveedores', 'rotulo_disenos', 'rotulos_generados', 'rotulos_bultos', 'rotulos_fotos', 'planilla_familias', 'licencia', 'usuarios_perfil', 'equipos', 'equipo_items']) lee(tb, SIEMPRE);
+for (const tb of ['comisionistas', 'contactos', 'configuracion', 'familias', 'subfamilias', 'sectores', 'proveedores', 'rotulo_disenos', 'rotulos_generados', 'rotulos_bultos', 'rotulos_fotos', 'planilla_familias', 'licencia', 'usuarios_perfil', 'equipos', 'equipo_items']) lee(tb, SIEMPRE);
 for (const tb of ['item_proveedores', 'reparaciones', 'reparacion_items', 'reparacion_entregas']) lee(tb, p => p.mantAdm);
+// Los repuestos (stock, ubicación) los lee solo quien tiene acceso al Depósito (seguridad, fase 1).
+lee('items', p => p.mantAcc);
+t('deposito', 'buscar repuestos (función)', p => p.mantAcc, async x => { const r = await x.u('POST', '/rest/v1/rpc/buscar_repuestos', { p_texto: 'ZZ' }); return r.s === 200; });
+t('deposito', 'informe de reposición (función)', p => p.mantAdm, async x => { const r = await x.u('POST', '/rest/v1/rpc/repuestos_a_reponer', {}); return r.s === 200; });
 lee('audit_log', p => p.own);
 lee('error_logs', p => p.verErr);
 lee('sugerencias', p => p.verSug);
@@ -254,6 +259,9 @@ const fn = (nombre, cuerpo) => async x => { const r = await http('POST', `/funct
 t('servidor', 'crear usuario (entrada)', p => p.own, async x => fn('create-user', { email: 'x@y.z' })(x));
 t('servidor', 'eliminar usuario (entrada)', p => p.own, async x => fn('delete-user', { userId: randomUUID() })(x));
 t('servidor', 'resetear contraseña (entrada)', p => p.reset, async x => fn('reset-password', { userId: randomUUID(), password: 'ZZtest123' })(x));
+// La de un administrador solo la restablece un dueño (si no, quien tiene el permiso entraría con su cuenta); la de alguien sin cargos, quien tiene el permiso.
+t('servidor', 'resetear contraseña de un administrador', p => p.own, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: adminObjetivoId, password: 'ZZtest123' } }); return r.s === 200; });
+t('servidor', 'resetear contraseña de alguien sin cargos', p => p.reset, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: objetivoId, password: 'ZZtest123' } }); return r.s === 200; });
 t('servidor', 'resetear contraseña de un dueño', p => p.own, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: duenoBId, password: 'ZZtest123' } }); return r.s === 200; });
 
 // ---------- qué módulos toca cada comprobación (para el cruce con los planes) ----------

@@ -32,7 +32,7 @@ ok('contactos y planilla_familias solo para usuarios con sesión', (await q(`sel
 const A = '00000000-0000-0000-0000-00000000000a', B = '00000000-0000-0000-0000-00000000000b';
 await db.exec(`
   insert into auth.users (id, email) values ('${A}','activo@x.com'), ('${B}','bloqueado@x.com');
-  update public.usuarios_perfil set rol='admin', mantenimiento_rol='admin', es_owner=true where id='${A}';
+  update public.usuarios_perfil set activo=true, rol='admin', mantenimiento_rol='admin', es_owner=true where id='${A}';
   update public.usuarios_perfil set rol='admin', mantenimiento_rol='admin', activo=false where id='${B}';
   update public.licencia set modulos = '{"proveedores":true,"comisionistas":true,"envios":true,"deposito":true,"tareas":true}'::jsonb;
   insert into public.proveedores (nombre) values ('P1');
@@ -129,7 +129,7 @@ if ((await q(`select to_regclass('public.depositos') is not null as hay`))[0].ha
 
   // acceso: A es dueño (ve todo); C es un administrador del depósito (activo, no dueño) que al recibir su rol queda asignado al principal
   const C = '00000000-0000-0000-0000-0000000000c1';
-  await db.exec(`insert into auth.users (id, email) values ('${C}', 'comun@x.com'); update public.usuarios_perfil set rol = 'admin', mantenimiento_rol = 'admin' where id = '${C}';`);
+  await db.exec(`insert into auth.users (id, email) values ('${C}', 'comun@x.com'); update public.usuarios_perfil set activo = true, rol = 'admin', mantenimiento_rol = 'admin' where id = '${C}';`);
   const idsDe = async u => (await como('authenticated', u, `select * from public.depositos_del_usuario() as id`)).map(x => x.id);
   ok('el dueño tiene acceso a todos los depósitos', (await idsDe(A)).length === 2);
   ok('un usuario del depósito empieza solo con el principal (se le asignó solo al recibir su rol)', JSON.stringify(await idsDe(C)) === JSON.stringify([principal.id]));
@@ -199,7 +199,7 @@ if (porComponentes) {
   const TODOS6 = '{"proveedores":true,"comisionistas":true,"envios":true,"deposito":true,"tareas":true,"mantenimiento":true}';
   const lic = async (m) => db.exec(`update public.licencia set modulos = '${m}'::jsonb; update public.preferencias_modulos set apagados = '{}'::jsonb;`);
   await db.exec("select set_config('request.jwt.claim.sub', '', false)");
-  await db.exec(`insert into auth.users (id, email) values ('${C}','admin@x.com'); update public.usuarios_perfil set rol='admin', mantenimiento_rol='admin' where id='${C}';`);
+  await db.exec(`insert into auth.users (id, email) values ('${C}','admin@x.com'); update public.usuarios_perfil set activo=true, rol='admin', mantenimiento_rol='admin' where id='${C}';`);
   const act = async (m) => (await q(`select public.modulo_activo('${m}') as v`))[0].v;
   const apagar = (uid, m, v = true) => como('authenticated', uid, `select public.definir_modulo_del_dueno('${m}', ${v})`);
 
@@ -284,7 +284,7 @@ if (porComponentes) {
 
   // --- Depósitos que el dueño crea y edita: nombre, color, ícono, letra y el tope de la licencia ---
   const sinDueno = '00000000-0000-0000-0000-0000000000d1'; // activo y con acceso al depósito, pero no es dueño ni administrador
-  await db.exec(`insert into auth.users (id, email) values ('${sinDueno}', 'operario@x.com'); update public.usuarios_perfil set rol = 'user', mantenimiento_rol = 'comun' where id = '${sinDueno}';`);
+  await db.exec(`insert into auth.users (id, email) values ('${sinDueno}', 'operario@x.com'); update public.usuarios_perfil set activo = true, rol = 'user', mantenimiento_rol = 'comun' where id = '${sinDueno}';`);
   const principalId = (await q(`select id from public.depositos where es_principal`))[0].id;
   const insumosId = (await q(`select id from public.depositos where nombre = 'Insumos'`))[0].id;
   const q1 = (r) => Array.isArray(r) ? r[0] : null;
@@ -360,6 +360,28 @@ if (porComponentes) {
   ok('el dueño saca el permiso', Array.isArray(await darPermiso(A, sinDueno, false)));
   ok('sin el permiso ya no puede crear ni editar depósitos', /Solo el dueño/.test(msj(await crearDep(sinDueno, 'Otro', 'o'))) && /Solo el dueño/.test(msj(await editarDep(sinDueno, delAutorizado.id, 'X', null, 'deposito', true))));
   await tope(1);
+
+  // --- Seguridad, fase 1 (auditoría del 2026-10-17) ---
+  await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+  const NUEVO = '00000000-0000-0000-0000-0000000000e1', SOLO_DIR = '00000000-0000-0000-0000-0000000000e2';
+  await db.exec(`insert into auth.users (id, email) values ('${NUEVO}', 'nuevo@x.com'), ('${SOLO_DIR}', 'directorio@x.com');
+    update public.usuarios_perfil set activo = true, rol = 'admin', mantenimiento_rol = null where id = '${SOLO_DIR}';`);
+  ok('una cuenta nueva nace bloqueada (sin acceso hasta que un dueño la habilite)', (await q(`select activo from public.usuarios_perfil where id = '${NUEVO}'`))[0].activo === false);
+  ok('la cuenta nueva no lee nada (ni proveedores)', filas(await como('authenticated', NUEVO, 'select * from public.proveedores')) === 0);
+  const sobrantes = await q(`select table_name, grantee, privilege_type from information_schema.role_table_grants where table_schema = 'public' and grantee in ('anon', 'authenticated') and privilege_type in ('TRUNCATE', 'REFERENCES', 'TRIGGER')`);
+  ok('nadie con o sin sesión tiene TRUNCATE, REFERENCES ni TRIGGER sobre las tablas', sobrantes.length === 0, sobrantes.slice(0, 3).map(x => `${x.table_name}:${x.grantee}:${x.privilege_type}`).join(', '));
+  ok('quien es solo del Directorio no lee los repuestos', filas(await como('authenticated', SOLO_DIR, 'select * from public.items')) === 0);
+  ok('quien tiene acceso al Depósito sí los lee', filas(await como('authenticated', sinDueno, 'select * from public.items')) >= 1);
+  ok('quien es solo del Directorio no puede buscar repuestos', /No autorizado/.test(msj(await como('authenticated', SOLO_DIR, `select * from public.buscar_repuestos('ZZ', 10, null, null)`))));
+  ok('un usuario común del Depósito sí busca', Array.isArray(await como('authenticated', sinDueno, `select * from public.buscar_repuestos('ZZ', 10, null, null)`)));
+  ok('el Informe de reposición no lo pide un usuario común del Depósito', /No autorizado/.test(msj(await como('authenticated', sinDueno, `select * from public.repuestos_a_reponer(null, null, null, 10)`))));
+  ok('el Informe sí lo pide un administrador del Depósito', Array.isArray(await como('authenticated', C, `select * from public.repuestos_a_reponer(null, null, null, 10)`)));
+  const porFila = await q(`select schemaname || '.' || tablename || '.' || policyname as p from pg_policies where schemaname in ('public', 'storage')
+    and (coalesce(qual, '') || coalesce(with_check, '')) ~ '(auth\\.uid\\(\\)|is_owner\\(\\)|is_[a-z_]*admin\\(\\)|tiene_acceso_[a-z]*\\(\\)|modulo_activo\\(|usuario_activo\\(\\)|can_[a-z_]*\\(\\))'
+    and (coalesce(qual, '') || coalesce(with_check, '')) !~* '\\( *select'`);
+  ok('ninguna regla llama funciones fila por fila (todas una sola vez por consulta)', porFila.length === 0, porFila.map(x => x.p).join(', '));
+  ok('hay índice para listar los movimientos de un depósito', (await q(`select 1 from pg_indexes where indexname = 'movimientos_stock_deposito_fecha_idx'`)).length === 1);
+  ok('la función que quita permisos no la ejecuta nadie con sesión', (await q(`select has_function_privilege('authenticated', 'public._quitar_permisos_sobrantes()', 'execute') as v`))[0].v === false);
 }
 
 console.log(fallas ? `\n${fallas} FALLAS` : '\nTODO BIEN en la instalación desde cero');
