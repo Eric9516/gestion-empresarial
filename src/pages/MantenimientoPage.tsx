@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isDirectorioDesactivado, isMantenimientoAdmin, puedeAjustarInventario, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
@@ -69,6 +69,11 @@ function MantenimientoContent() {
       ...(modulos.tareas ? [{ clave: 'tareas', icono: <Icono n="exito" />, titulo: 'Tareas', onClick: ir('tareas'), activo: tab === 'tareas' }] : []),
     ] },
   ].filter(s => s.items.length > 0);
+  // Las áreas a las que puede ir esta persona (si tiene una sola, no hace falta mostrarlas).
+  const areas: SeccionMenu[] = canExit ? [{ titulo: 'Áreas', items: [
+    { clave: 'area-directorio', icono: <Icono n="directorio" />, titulo: 'Directorio', onClick: () => navigate('/') },
+    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: ir('buscar'), activo: true },
+  ] }] : [];
   const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   // El menú de la hamburguesa (celular) usa las mismas secciones, en una sola lista.
@@ -91,15 +96,12 @@ function MantenimientoContent() {
           </div>
         </div>
         <div className="header-right">
-          {canExit && (
-            <Link to="/" className="btn-volver-directorio" style={{ display: 'flex' }}><Icono n="volver" /> <span className="hide-mobile">Directorio</span></Link>
-          )}
           <UserMenu />
           <BotonHamburguesa onClick={() => setMenuOpen(true)} aviso={cart.length + avisosTotal > 0} />
         </div>
       </header>
 
-      <MenuLateral secciones={secciones} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
+      <MenuLateral secciones={[...areas, ...secciones]} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
 
       <main className="app-main">
         {tab === 'buscar' && (

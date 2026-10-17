@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isDirectorioDesactivado, tieneAccesoAdmin, tieneAccesoMantenimiento } from '../lib/types';
 import UserMenu from '../components/UserMenu';
@@ -63,6 +63,11 @@ function DirectorioContent() {
     { titulo: 'Directorio', items: pestañas.filter(p => p.id !== 'tareas').map(itemDe) },
     { titulo: 'Gestión', items: pestañas.filter(p => p.id === 'tareas').map(itemDe) },
   ].filter(s => s.items.length > 0);
+  // Las áreas a las que puede ir esta persona (si tiene una sola, no hace falta mostrarlas).
+  const areas: SeccionMenu[] = puedeIrAlDeposito ? [{ titulo: 'Áreas', items: [
+    { clave: 'area-directorio', icono: <Icono n="directorio" />, titulo: 'Directorio', onClick: () => setTabElegida(pestañas[0].id), activo: true },
+    { clave: 'area-deposito', icono: <Icono n="deposito" />, titulo: 'Depósito de mantenimiento', onClick: () => navigate('/mantenimiento') },
+  ] }] : [];
   const pie = tieneAccesoAdmin(profile) ? [{ clave: 'config', icono: <Icono n="config" />, titulo: 'Configuración', cantidad: sugerenciasNuevas, onClick: () => navigate('/admin') }] : [];
 
   const navItems = [
@@ -81,15 +86,12 @@ function DirectorioContent() {
           </div>
         </div>
         <div className="header-right">
-          {puedeIrAlDeposito && (
-            <Link to="/mantenimiento" className="btn-mantenimiento" title="Depósito de mantenimiento" style={{ display: 'flex' }}><Icono n="herramienta" /> <span className="hide-mobile">Depósito</span></Link>
-          )}
           <UserMenu />
           <BotonHamburguesa onClick={() => setMenuOpen(true)} aviso={avisosTotal > 0} />
         </div>
       </header>
 
-      <MenuLateral secciones={secciones} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
+      <MenuLateral secciones={[...areas, ...secciones]} pie={pie} fijo={menuFijo} onAlternarFijo={alternarMenuFijo} />
 
       <main className="app-main">
         {tab === 'proveedores' && <ProveedoresList />}

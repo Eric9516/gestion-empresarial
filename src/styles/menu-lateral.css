@@ -20,7 +20,7 @@
     box-shadow: 6px 0 24px color-mix(in srgb, var(--blue) 10%, transparent);
     transition: width 0.2s ease-out;
   }
-  .menu-lateral.abierto { width: 224px; }
+  .menu-lateral.abierto { width: 250px; }
 
   .menu-lateral-medio { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
   .menu-lateral-medio::-webkit-scrollbar { display: none; }
@@ -53,8 +53,11 @@
   .menu-lateral-grupo.primero::after { display: none; }
 
   /* Fijo: se queda abierto y el contenido se corre para no quedar tapado. */
-  .menu-lateral.fijo { width: 224px; }
-  .con-menu-lateral.menu-fijo .app-main { padding-left: 244px; max-width: 1560px; }
+  .menu-lateral.fijo { width: 250px; }
+  .con-menu-lateral.menu-fijo .app-main { padding-left: 270px; max-width: 1560px; }
+
+  /* El menú ya dice en qué área se está (la resaltada): el rótulo del encabezado queda solo para quien usa lector de pantalla. */
+  .con-menu-lateral .header-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* En pantallas que no tienen margen libre a los costados, el contenido deja lugar para que la franja no tape el borde. */
   .con-menu-lateral:not(.menu-fijo) .app-main { padding-left: 62px; }

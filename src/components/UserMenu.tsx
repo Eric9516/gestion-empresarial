@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { isOwner, tieneAccesoAdmin } from '../lib/types';
+import { isOwner } from '../lib/types';
 import { useMenu } from '../lib/useMenu';
 import ProfileModal from './ProfileModal';
 import SugerenciaModal from './SugerenciaModal';
 import { Icono } from '@/components/Icono';
 
-// Insignia de usuario con menú desplegable (Mi perfil / Inicio / Configuración /
-// Cerrar sesión) — mismo patrón que la app vieja, compartido entre las 3 pantallas
+// Insignia de usuario con menú desplegable (Mi perfil / Inicio / Sugerencia /
+// Cerrar sesión; Configuración está en el menú lateral) — mismo patrón que la app vieja, compartido entre las 3 pantallas
 // en vez de repetir un botón de "Cerrar sesión" suelto en cada header.
 export default function UserMenu() {
   const { profile, signOut } = useAuth();
@@ -46,11 +46,6 @@ export default function UserMenu() {
           {!isOwner(profile) && (
             <button role="menuitem" className="user-dropdown-item" onClick={() => { setSugerenciaOpen(true); cerrar(); }}>
               <span><Icono n="idea" /></span> Sugerencia
-            </button>
-          )}
-          {tieneAccesoAdmin(profile) && (
-            <button role="menuitem" className="user-dropdown-item" onClick={() => { navigate('/admin'); cerrar(); }}>
-              <span><Icono n="config" /></span> Configuración
             </button>
           )}
           <div role="separator" style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
