@@ -372,6 +372,9 @@ if (porComponentes) {
   ok('nadie con o sin sesión tiene TRUNCATE, REFERENCES ni TRIGGER sobre las tablas', sobrantes.length === 0, sobrantes.slice(0, 3).map(x => `${x.table_name}:${x.grantee}:${x.privilege_type}`).join(', '));
   ok('quien es solo del Directorio no lee los repuestos', filas(await como('authenticated', SOLO_DIR, 'select * from public.items')) === 0);
   ok('quien tiene acceso al Depósito sí los lee', filas(await como('authenticated', sinDueno, 'select * from public.items')) >= 1);
+  const sectorId = (await q(`select id from public.sectores limit 1`))[0]?.id ?? (await q(`insert into public.sectores (nombre) values ('ZZ sector') returning id`))[0].id;
+  ok('quien es solo del Directorio no puede crear un retiro (descontaría stock)', !!msj(await como('authenticated', SOLO_DIR, `insert into public.retiros (usuario_id, sector_id) values ('${SOLO_DIR}', '${sectorId}') returning id`)));
+  ok('quien tiene acceso al Depósito sí crea su retiro', Array.isArray(await como('authenticated', sinDueno, `insert into public.retiros (usuario_id, sector_id) values ('${sinDueno}', '${sectorId}') returning id`)));
   ok('quien es solo del Directorio no puede buscar repuestos', /No autorizado/.test(msj(await como('authenticated', SOLO_DIR, `select * from public.buscar_repuestos('ZZ', 10, null, null)`))));
   ok('un usuario común del Depósito sí busca', Array.isArray(await como('authenticated', sinDueno, `select * from public.buscar_repuestos('ZZ', 10, null, null)`)));
   ok('el Informe de reposición no lo pide un usuario común del Depósito', /No autorizado/.test(msj(await como('authenticated', sinDueno, `select * from public.repuestos_a_reponer(null, null, null, 10)`))));

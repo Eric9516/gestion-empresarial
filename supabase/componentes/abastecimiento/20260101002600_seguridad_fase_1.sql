@@ -1,8 +1,9 @@
 -- Seguridad, fase 1 (parte de Abastecimiento). Sale de la auditoría del 2026-10-17 (ver docs/AUDITORIA-BASE-DE-DATOS.md).
 --
--- 1) Los repuestos (con su stock y su ubicación) los lee solo quien tiene acceso al Depósito. Antes cualquier persona con sesión podía pedirlos
+-- 1) Los repuestos (con su stock y su ubicación) los lee solo quien tiene acceso al Depósito: antes cualquier persona con sesión podía pedirlos
 --    por la API, aunque fuera solo del Directorio. Lo mismo para las funciones del catálogo, y el Informe de reposición queda para los
---    administradores del Depósito (como ya mostraba la pantalla).
+--    administradores del Depósito (como ya mostraba la pantalla). Y crear retiros (y sus líneas) también exige acceso al Depósito: antes la regla
+--    pedía solo que el retiro fuera propio, así que alguien solo del Directorio podía crear uno por la API y descontar stock.
 -- 2) Las reglas de "módulo activo" de las tablas y carpetas más nuevas se calculaban una vez por fila; ahora una sola vez por consulta (como las demás).
 -- 3) Índice para listar los movimientos de un depósito (y para la clave foránea, que no tenía).
 -- 4) Sin permisos TRUNCATE / REFERENCES / TRIGGER sobre las tablas de este componente (ver la migración de la Base del mismo número).
@@ -164,6 +165,12 @@ begin
   limit p_limite;
 end;
 $function$;
+
+-- 1b) Crear retiros y sus líneas: solo con acceso al Depósito (además de que el retiro sea propio)
+alter policy retiros_insert on public.retiros
+  with check (usuario_id = (select auth.uid()) and (select public.tiene_acceso_mantenimiento()));
+alter policy retiro_items_insert on public.retiro_items
+  with check ((select public.tiene_acceso_mantenimiento()) and exists (select 1 from public.retiros r where r.id = retiro_items.retiro_id and r.usuario_id = (select auth.uid())));
 
 -- 2) Reglas que se evaluaban por fila: una sola vez por consulta
 alter policy bloqueo_modulo on public.movimientos_stock

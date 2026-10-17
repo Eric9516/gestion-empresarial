@@ -32,6 +32,8 @@ const otroId = await crearUsuario('zz.otro@ensayo.invalid', { mantenimiento_rol:
 const objetivoId = await crearUsuario('zz.objetivo@ensayo.invalid');
 const duenoBId = await crearUsuario('zz.duenob@ensayo.invalid', { es_owner: true, rol: 'admin' });
 const adminObjetivoId = await crearUsuario('zz.adminobj@ensayo.invalid', { rol: 'admin' });
+// sin cargos ni permisos, y ninguna otra comprobación lo toca (zz.objetivo lo convierten en dueño por un momento en otra prueba)
+const sinCargosId = await crearUsuario('zz.sincargos@ensayo.invalid');
 // cada trabajador tiene su propio "dueño al que se le quita el cargo" (si lo compartieran, una comprobación le sacaría el cargo mientras otra lo usa)
 const duenosQuitar = [];
 for (let i = 0; i < TRABAJADORES; i++) duenosQuitar.push(await crearUsuario(`zz.duenoq${i}@ensayo.invalid`, { es_owner: true, rol: 'admin' }));
@@ -202,9 +204,9 @@ t('reparaciones', 'borrar reparación definitivamente', p => p.own, del('reparac
 t('reparaciones', 'registrar entrega', p => p.mantAdm, ins('reparacion_entregas', x => ({ reparacion_item_id: x.f.repItem, cantidad_devuelta: 0.01, resultado: 'baja', fecha_entrega: hoy(), registrado_por: x.me, repone_stock: false })));
 
 // retiros
-t('retiros', 'crear retiro propio', SIEMPRE, ins('retiros', x => ({ usuario_id: x.me, sector_id: x.f.sec })));
+t('retiros', 'crear retiro propio', p => p.mantAcc, ins('retiros', x => ({ usuario_id: x.me, sector_id: x.f.sec })));
 t('retiros', 'crear retiro a nombre de otro', NUNCA, ins('retiros', x => ({ usuario_id: otroId, sector_id: x.f.sec })));
-t('retiros', 'agregar línea a retiro propio', SIEMPRE, ins('retiro_items', x => ({ retiro_id: x.f.retPropio, item_id: x.f.item, cantidad: 1 })));
+t('retiros', 'agregar línea a retiro propio', p => p.mantAcc, ins('retiro_items', x => ({ retiro_id: x.f.retPropio, item_id: x.f.item, cantidad: 1 })));
 t('retiros', 'agregar línea a retiro ajeno', NUNCA, ins('retiro_items', x => ({ retiro_id: x.f.retOtro, item_id: x.f.item, cantidad: 1 })));
 t('retiros', 'editar retiro propio (menos de 24 h)', SIEMPRE, upd('retiros', x => x.f.retPropio, () => ({ observacion_general: 'ZZ' })));
 t('retiros', 'editar retiro propio (más de 24 h)', p => p.verRet, upd('retiros', x => x.f.retViejo, () => ({ observacion_general: 'ZZ' })));
@@ -261,7 +263,7 @@ t('servidor', 'eliminar usuario (entrada)', p => p.own, async x => fn('delete-us
 t('servidor', 'resetear contraseña (entrada)', p => p.reset, async x => fn('reset-password', { userId: randomUUID(), password: 'ZZtest123' })(x));
 // La de un administrador solo la restablece un dueño (si no, quien tiene el permiso entraría con su cuenta); la de alguien sin cargos, quien tiene el permiso.
 t('servidor', 'resetear contraseña de un administrador', p => p.own, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: adminObjetivoId, password: 'ZZtest123' } }); return r.s === 200; });
-t('servidor', 'resetear contraseña de alguien sin cargos', p => p.reset, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: objetivoId, password: 'ZZtest123' } }); return r.s === 200; });
+t('servidor', 'resetear contraseña de alguien sin cargos', p => p.reset, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: sinCargosId, password: 'ZZtest123' } }); return r.s === 200; });
 t('servidor', 'resetear contraseña de un dueño', p => p.own, async x => { const r = await http('POST', '/functions/v1/reset-password', { token: x.tok, cuerpo: { userId: duenoBId, password: 'ZZtest123' } }); return r.s === 200; });
 
 // ---------- qué módulos toca cada comprobación (para el cruce con los planes) ----------

@@ -43,6 +43,7 @@ const NOMBRES = Object.keys(CLASES);
 const ES_ADMIN = (k) => k === 'dueno' || k === 'dirAdmin';        // is_admin(): rol admin de Directorio o dueño
 const VE_RETIROS = (k) => k === 'dueno' || k === 'permisosSueltos'; // puede ver/editar retiros de cualquiera
 const ES_DIR = ES_ADMIN;
+const VE_DEPOSITO = (k) => k === 'dueno' || k === 'depAdmin' || k === 'depComun'; // tiene acceso al Depósito: lee repuestos y crea retiros
 
 console.log('Preparando usuarios…');
 const U = {};
@@ -270,10 +271,10 @@ try {
         chk('H3', `${n}: ver contadores propios (no dependen del vencimiento)`, (ok(r) && Number(r.d?.[0]?.total ?? 0) > 0) === (k !== 'bloqueado' && est.activo !== false), `s=${r.s} ${JSON.stringify(r.d)?.slice(0, 80)}`);
         // control: lo que NO es de tareas no cambia con el vencimiento
         r = await u(k, 'GET', '/rest/v1/items?select=id&limit=1'); await dormir(0);
-        chk('H3', `${n}: control · leer repuestos (no depende del vencimiento)`, hecho(r) === activo, `esperado=${activo} s=${r.s}`);
+        chk('H3', `${n}: control · leer repuestos (no depende del vencimiento)`, hecho(r) === (activo && VE_DEPOSITO(k)), `esperado=${activo && VE_DEPOSITO(k)} s=${r.s}`);
         r = await u(k, 'POST', '/rest/v1/retiros', { usuario_id: U[k].id, sector_id: sectorId });
         if (ok(r)) await sv('DELETE', `/rest/v1/retiros?id=eq.${r.d?.[0]?.id}`);
-        chk('H3', `${n}: control · crear retiro propio (no depende del vencimiento)`, ok(r) === activo, `esperado=${activo} s=${r.s}`);
+        chk('H3', `${n}: control · crear retiro propio (no depende del vencimiento)`, ok(r) === (activo && VE_DEPOSITO(k)), `esperado=${activo && VE_DEPOSITO(k)} s=${r.s}`);
         r = await u(k, 'POST', '/rest/v1/proveedores', { nombre: 'ZZ-h prov ' + Math.random().toString(36).slice(2, 7) });
         if (ok(r)) await sv('DELETE', `/rest/v1/proveedores?id=eq.${r.d?.[0]?.id}`);
         chk('H3', `${n}: control · crear proveedor`, ok(r) === (activo && ES_DIR(k)), `s=${r.s}`);
@@ -310,7 +311,7 @@ try {
       const d = await rpc(k, 'create_task', { p_title: 'ZZ-h despues', p_description: '', p_traffic_level: 'green' });
       chk('H3', `${k}: justo después del vencimiento ya no puede crear tareas`, !ok(d) && /Acceso deshabilitado/.test(msg(d)), `s=${d.s} ${msg(d)}`);
       const c = await u(k, 'GET', '/rest/v1/items?select=id&limit=1');
-      chk('H3', `${k}: vencido el acceso sigue pudiendo leer el depósito`, hecho(c), `s=${c.s}`);
+      chk('H3', `${k}: vencido el acceso, sigue leyendo el depósito si tiene acceso a él`, hecho(c) === VE_DEPOSITO(k), `s=${c.s}`);
       await limpiarTareas(k); await ponerPerfil(k);
     }
   }
@@ -344,7 +345,7 @@ try {
         r = await u(k, 'PATCH', `/rest/v1/retiro_items?id=eq.${linea}`, { cantidad: 2 });
         chk('H4', `${n}: devolver parcialmente una línea (cambiar la cantidad)`, hecho(r) === puede, `esperado=${puede} s=${r.s}`);
         r = await u(k, 'POST', '/rest/v1/retiro_items', { retiro_id: id, item_id: itemId, cantidad: 1 });
-        chk('H4', `${n}: agregarle una línea (la regla actual no tiene límite de edad)`, ok(r) === activo, `esperado=${activo} s=${r.s} ${msg(r)}`);
+        chk('H4', `${n}: agregarle una línea (sin límite de edad; exige acceso al Depósito)`, ok(r) === (activo && VE_DEPOSITO(k)), `esperado=${activo && VE_DEPOSITO(k)} s=${r.s} ${msg(r)}`);
         const lectura = await u(k, 'GET', `/rest/v1/retiros?select=id&id=eq.${id}`);
         chk('H4', `${n}: leerlo (siempre puede leer los propios)`, hecho(lectura) === activo, `s=${lectura.s}`);
         r = await u(k, 'DELETE', `/rest/v1/retiro_items?id=eq.${linea}`);

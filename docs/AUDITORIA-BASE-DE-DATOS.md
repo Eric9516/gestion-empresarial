@@ -19,6 +19,7 @@ actual** (Supabase + RLS + funciones), llevando a funciones con control de rol s
 |---|---|---|---|---|
 | 1 | Quien tiene "resetear contraseñas" podía cambiarle la clave a un **administrador** y entrar como él | A01 / A07 | Alta | ✅ Fase 1 |
 | 2 | Los repuestos (stock, ubicación) los leía cualquiera con sesión; la búsqueda y el **Informe** solo pedían "usuario activo" | A01 | Alta | ✅ Fase 1 (lectura y funciones); la separación por depósito, Fase 2 |
+| 2b | Crear retiros y sus líneas solo pedía que el retiro fuera propio: alguien solo del Directorio podía crear uno por la API y **descontar stock** (encontrado al revisar las pruebas de horarios) | A01 | Alta | ✅ Fase 1 |
 | 3 | Las 3 carpetas de archivos son públicas, sin límite de tamaño ni de tipo; en rótulos sube cualquiera con sesión | A01 / A05 | Alta | Fase 3 |
 | 4 | Una cuenta nueva nacía **activa** con acceso al Directorio (si quedara abierto el registro, entraba cualquiera) | A07 / A05 | Alta (latente) | ✅ Fase 1 |
 | 5 | Contraseña mínima de 6 en Supabase y en las Edge Functions; sin captcha; la dirección del sitio de Cremac es `localhost:3000` | A07 / A05 | Media | ✅ Edge Functions y app en 8; falta la configuración de Supabase de cada cliente |
@@ -44,7 +45,7 @@ actual** (Supabase + RLS + funciones), llevando a funciones con control de rol s
 ## Fases
 
 1. **✅ Fase 1 (migraciones `20260101002600_seguridad_fase_1.sql` y Edge Functions):** cuenta nueva bloqueada; sin TRUNCATE/REFERENCES/TRIGGER
-   (también para las tablas futuras); repuestos, búsqueda y listas del Depósito solo con acceso al Depósito; Informe solo para administradores del
+   (también para las tablas futuras); repuestos, búsqueda y listas del Depósito solo con acceso al Depósito; crear retiros solo con acceso al Depósito; Informe solo para administradores del
    Depósito; reglas una vez por consulta; índice de movimientos por depósito; resetear contraseñas solo de personas sin cargos ni permisos (la de un
    administrador la restablece un dueño); contraseña mínima de 8 en las funciones y en la app.
    Falta en cada cliente (configuración de Supabase, no está en el código): mínimo de 8 caracteres y la dirección del sitio correcta.
