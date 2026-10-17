@@ -52,6 +52,13 @@ Lo que sigue **no está hecho**. Está ordenado por importancia, sin fechas. Hac
 10. **Copias de seguridad:** de la base (los planes gratis no las tienen restaurables) y del servidor de archivos.
 11. **Entorno de pruebas propio** para probar cambios antes de aplicarlos a clientes reales (hoy no hay uno: el de la plantilla se borró;
     se crea con la segunda cuenta de Supabase de pruebas).
+12. **Retirar la columna `usuarios_perfil.mantenimiento_rol` (y las funciones `is_mantenimiento_admin()` y `tiene_acceso_mantenimiento()`).** Hoy se llaman "mantenimiento" pero son el rol de la persona sobre el
+    **Depósito** (común o administrador); el módulo Mantenimiento (equipos) es otra cosa. En la app ya se renombró todo (`DepositoPage`, `/deposito`, `isDepositoAdmin`, `tieneAccesoDeposito`), pero en la base no se
+    puede renombrar sin romper las instalaciones nuevas: los archivos de migración viejos de Abastecimiento y Mantenimiento (que no se editan) nombran esos objetos (27 y 6 lugares). Se probó el 2026-10-17.
+    **Cuándo hacerlo:** cuando se arme el **rol por depósito** (cada persona con un rol distinto según el depósito, algo que se va a necesitar para varios depósitos). Ese dato va a vivir en una tabla nueva con nombre nuevo
+    (por ejemplo, un rol en `usuarios_depositos`), y entonces la columna vieja pierde sentido y se retira sin renombrar nada: las reglas de seguridad pasan a usar el rol nuevo y se borran la columna y las dos funciones
+    en una migración propia. Mientras tanto se deja con un comentario aclaratorio en la base. Alternativas descartadas por riesgo: renombrar ordenando las migraciones por versión (toca el instalador, el panel y las pruebas
+    de equivalencia) o editar los archivos viejos. **Recordárselo al dueño cuando se llegue a "roles por depósito".**
 
 ## Errores encontrados en la prueba exhaustiva (2026-10-09)
 

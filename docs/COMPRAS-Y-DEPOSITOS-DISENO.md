@@ -193,4 +193,6 @@ Sale de una conversación con el dueño del producto. Corrige dónde vive la rec
 
 **Compras ve todos los depósitos.** Esa vista llega con el panel de Compras, que se arma más adelante. El dueño sigue pudiendo hacer todo.
 
+**El depósito original se llama "Depósito 1" por defecto** (el dueño le cambia el nombre, el color y el ícono desde Configuración → Depósitos; la letra del código se fija con el primer repuesto). Hoy el nombre "Depósito de mantenimiento" está escrito fijo en la pantalla y hay que sacarlo.
+
 **Nuevo rol: administrador de Compras.** Hoy no existe. Habilita permisos a usuarios de depósito. Recomendación: un permiso más que se asigna, no un rol aparte.
