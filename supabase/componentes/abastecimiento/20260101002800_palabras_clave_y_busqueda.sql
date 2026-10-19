@@ -408,8 +408,10 @@ $$;
 -- ---------------------------------------------------------------------------------------------
 -- 5) La búsqueda de repuestos
 --    Cada palabra (sin tildes, y su raíz para el plural) se busca en el código, el nombre, las palabras clave y los detalles.
---    Primero los que tienen todas las palabras; si faltan para el límite, los que tienen algunas (más palabras, más arriba).
---    Dentro de cada grupo, por relevancia: coincidir en el código vale 3, en el nombre o en las palabras clave 2, en los detalles 1.
+--    Por niveles de relevancia, y dentro de cada nivel por código (así la base corta apenas junta los que pidió, aunque la palabra sea muy común):
+--      1) todas las palabras en el código, el nombre o las palabras clave;
+--      2) todas las palabras, pero alguna solo en los detalles;
+--      3) con varias palabras, si todavía faltan: los que tienen algunas (los que tienen más, más arriba).
 -- ---------------------------------------------------------------------------------------------
 create or replace function public.buscar_repuestos(p_texto text, p_limite integer default 50, p_familia_id uuid default null, p_subfamilia_id uuid default null)
 returns TABLE(id uuid, codigo text, numero text, descripcion text, detalles text, ubicacion text, stock numeric, stock_minimo numeric, punto_pedido numeric, familia_id uuid, subfamilia_id uuid, foto_url text, puntaje integer)
@@ -426,11 +428,11 @@ declare
   w text;
   v_prefijo text;
   v_digitos text;
+  v_fuerte text;
   v_cond text;
-  v_peso text;
+  v_todas_fuertes text := '';
   v_todas text := '';
   v_alguna text := '';
-  v_pesos text := '';
   v_cuantas text := '';
   v_filtros text := '';
   v_columnas text := 'i.id, i.codigo, i.numero, i.descripcion, i.detalles, i.ubicacion, i.stock, i.stock_minimo, i.punto_pedido, i.familia_id, i.subfamilia_id, i.foto_url';
@@ -467,23 +469,21 @@ begin
   if p_subfamilia_id is not null then v_filtros := v_filtros || ' and i.subfamilia_id = $5'; end if;
 
   for k in 1..v_n loop
-    -- dónde aparece la palabra k (la condición usa los índices; el peso ordena)
-    v_cond := format('(i.codigo ilike $2[%1$s]%2$s or public.texto_de_busqueda(i.descripcion) like $1[%1$s] or public.texto_de_busqueda(i.palabras_clave) like $1[%1$s] or public.texto_de_busqueda(i.detalles) like $1[%1$s])',
-                     k, case when v_regex[k] is not null then format(' or i.codigo ~* $3[%s]', k) else '' end);
-    v_peso := format('(case when i.codigo ilike $2[%1$s]%2$s then 3 when public.texto_de_busqueda(i.descripcion) like $1[%1$s] or public.texto_de_busqueda(i.palabras_clave) like $1[%1$s] then 2 when public.texto_de_busqueda(i.detalles) like $1[%1$s] then 1 else 0 end)',
-                     k, case when v_regex[k] is not null then format(' or i.codigo ~* $3[%s]', k) else '' end);
+    -- la palabra k en el código, el nombre o las palabras clave (lo más relevante) ...
+    v_fuerte := format('(i.codigo ilike $2[%1$s]%2$s or public.texto_de_busqueda(i.descripcion) like $1[%1$s] or public.texto_de_busqueda(i.palabras_clave) like $1[%1$s])',
+                       k, case when v_regex[k] is not null then format(' or i.codigo ~* $3[%s]', k) else '' end);
+    -- ... o en cualquier lado, también los detalles
+    v_cond := format('(%s or public.texto_de_busqueda(i.detalles) like $1[%s])', v_fuerte, k);
+    v_todas_fuertes := v_todas_fuertes || case when k > 1 then ' and ' else '' end || v_fuerte;
     v_todas := v_todas || case when k > 1 then ' and ' else '' end || v_cond;
     v_alguna := v_alguna || case when k > 1 then ' or ' else '' end || v_cond;
-    v_pesos := v_pesos || case when k > 1 then ' + ' else '' end || v_peso;
-    v_cuantas := v_cuantas || case when k > 1 then ' + ' else '' end || '(' || v_peso || ' > 0)::integer';
+    v_cuantas := v_cuantas || case when k > 1 then ' + ' else '' end || '(' || v_cond || ')::integer';
   end loop;
 
-  -- fase 1: los que tienen todas las palabras (con una sola palabra, es la única fase), por relevancia y después por código
+  -- nivel 1: todas las palabras en el código, el nombre o las palabras clave (sin texto: todo lo de la familia), por código
   for r in execute format(
-    'select %s, %s::integer as puntaje from public.items i where i.activo %s and (%s) order by %s limit %s',
-    v_columnas, v_n, v_filtros, case when v_n = 0 then 'true' else v_todas end,
-    -- sin texto (solo familia o subfamilia), por código; con texto, por relevancia y después por código
-    case when v_n = 0 then 'i.codigo' else v_pesos || ' desc, i.codigo' end, p_limite
+    'select %s, %s::integer as puntaje from public.items i where i.activo %s and (%s) order by i.codigo limit %s',
+    v_columnas, v_n, v_filtros, case when v_n = 0 then 'true' else v_todas_fuertes end, p_limite
   ) using v_pat, v_cod, v_regex, p_familia_id, p_subfamilia_id loop
     id := r.id; codigo := r.codigo; numero := r.numero; descripcion := r.descripcion; detalles := r.detalles; ubicacion := r.ubicacion; stock := r.stock;
     stock_minimo := r.stock_minimo; punto_pedido := r.punto_pedido; familia_id := r.familia_id; subfamilia_id := r.subfamilia_id; foto_url := r.foto_url; puntaje := r.puntaje;
@@ -491,11 +491,24 @@ begin
     v_devueltos := v_devueltos + 1;
   end loop;
 
-  -- fase 2 (solo con varias palabras y si faltan para llegar al límite): los que tienen algunas; más palabras primero, después relevancia
+  -- nivel 2: todas las palabras, pero alguna solo en los detalles
+  if v_n > 0 and v_devueltos < p_limite then
+    for r in execute format(
+      'select %s, %s::integer as puntaje from public.items i where i.activo %s and (%s) and not (%s) order by i.codigo limit %s',
+      v_columnas, v_n, v_filtros, v_todas, v_todas_fuertes, p_limite - v_devueltos
+    ) using v_pat, v_cod, v_regex, p_familia_id, p_subfamilia_id loop
+      id := r.id; codigo := r.codigo; numero := r.numero; descripcion := r.descripcion; detalles := r.detalles; ubicacion := r.ubicacion; stock := r.stock;
+      stock_minimo := r.stock_minimo; punto_pedido := r.punto_pedido; familia_id := r.familia_id; subfamilia_id := r.subfamilia_id; foto_url := r.foto_url; puntaje := r.puntaje;
+      return next;
+      v_devueltos := v_devueltos + 1;
+    end loop;
+  end if;
+
+  -- nivel 3 (con varias palabras, si faltan para el límite): los que tienen algunas; de los primeros por código, los que tienen más palabras arriba
   if v_n > 1 and v_devueltos < p_limite then
     for r in execute format(
-      'select %s, (%s) as puntaje from public.items i where i.activo %s and (%s) and not (%s) order by (%s) desc, (%s) desc, i.codigo limit %s',
-      v_columnas, v_cuantas, v_filtros, v_alguna, v_todas, v_cuantas, v_pesos, p_limite - v_devueltos
+      'select %s, i.puntaje from (select i.*, (%s) as puntaje from public.items i where i.activo %s and (%s) and not (%s) order by i.codigo limit %s) i order by i.puntaje desc, i.codigo',
+      v_columnas, v_cuantas, v_filtros, v_alguna, v_todas, p_limite - v_devueltos
     ) using v_pat, v_cod, v_regex, p_familia_id, p_subfamilia_id loop
       id := r.id; codigo := r.codigo; numero := r.numero; descripcion := r.descripcion; detalles := r.detalles; ubicacion := r.ubicacion; stock := r.stock;
       stock_minimo := r.stock_minimo; punto_pedido := r.punto_pedido; familia_id := r.familia_id; subfamilia_id := r.subfamilia_id; foto_url := r.foto_url; puntaje := r.puntaje;

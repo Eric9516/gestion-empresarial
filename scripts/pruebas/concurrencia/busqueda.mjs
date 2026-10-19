@@ -17,7 +17,7 @@ try {
   await instalarEsquema(admin);
   await admin.query(`update public.licencia set modulos = '{"deposito":true,"proveedores":true,"comisionistas":true,"envios":true,"mantenimiento":true,"tareas":true}'::jsonb`);
   await sembrar(sql => admin.query(sql), { items: ITEMS, retiros: 1000, auditoria: 1000 });
-  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'admin', true from auth.users on conflict (id) do nothing`);
+  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo, mantenimiento_rol) select id, email, 'Usuario', 'Prueba', 'admin', true, 'admin' from auth.users on conflict (id) do update set activo = true, rol = excluded.rol, mantenimiento_rol = 'admin'`); // activo y con acceso al Depósito (la búsqueda lo exige)
   await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
   // un código con ceros a la izquierda y un repuesto con detalles, para comprobar esos casos
   const [fam] = (await admin.query(`select id from public.familias order by codigo limit 1`)).rows;

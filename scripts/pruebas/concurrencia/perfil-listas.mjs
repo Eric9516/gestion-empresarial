@@ -13,7 +13,7 @@ try {
   await instalarEsquema(admin);
   await admin.query(`update public.licencia set modulos = '{"deposito":true,"proveedores":true,"comisionistas":true,"envios":true,"mantenimiento":true,"tareas":true}'::jsonb`);
   await sembrar(sql => admin.query(sql), { items: ITEMS, retiros: RETIROS, auditoria: 1000 });
-  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'admin', true from auth.users on conflict (id) do nothing`);
+  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'admin', true from auth.users on conflict (id) do update set activo = true, rol = excluded.rol`); // la base crea el perfil bloqueado al crear la cuenta: se activa
   await admin.query(`update public.usuarios_perfil set es_owner = true, mantenimiento_rol = 'admin' where id = '${U}'`);
   await admin.query(`set role authenticated; select set_config('request.jwt.claim.sub', '${U}', false)`);
   const desde = new Date(Date.now() - 30 * 86_400_000).toISOString();

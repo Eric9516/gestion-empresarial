@@ -40,7 +40,7 @@ try {
   await admin.query(`update public.licencia set modulos = '{"proveedores":true,"comisionistas":true,"envios":true,"deposito":true,"mantenimiento":true,"tareas":true}'::jsonb`);
   await sembrar(sql => admin.query(sql), { items: ITEMS, retiros: RETIROS, auditoria: AUDITORIA, usuarios: Math.max(300, TRABAJADORES + 10) });
   // (durante la carga de datos los disparadores están apagados, así que los perfiles de los usuarios se crean acá)
-  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'user', true from auth.users on conflict (id) do nothing`);
+  await admin.query(`insert into public.usuarios_perfil (id, email, nombre, apellido, rol, activo) select id, email, 'Usuario', 'Prueba', 'user', true from auth.users on conflict (id) do update set activo = true, rol = excluded.rol`); // la base crea el perfil bloqueado al crear la cuenta: se activa
   await admin.query(`update public.usuarios_perfil set rol = 'admin', mantenimiento_rol = 'admin', es_owner = true where id between '${uid(1)}' and '${uid(TRABAJADORES)}'`);
 
   const hot = (await admin.query(`select id from public.items order by codigo limit ${CALIENTES}`)).rows.map(r => r.id);
