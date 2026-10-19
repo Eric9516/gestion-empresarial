@@ -19,7 +19,7 @@ export type Item = Omit<Database['public']['Tables']['items']['Row'], ColumnasFu
 };
 
 // La familia y la subfamilia NO se piden pegadas a cada repuesto (se repetirían miles de veces): son listas chicas, se piden una vez aparte y se enchufan después.
-const COLUMNAS_DE_LA_LISTA = 'id,codigo,numero,descripcion,detalles,ubicacion,unidad,stock,stock_minimo,punto_pedido,activo,familia_id,subfamilia_id,'
+const COLUMNAS_DE_LA_LISTA = 'id,codigo,numero,descripcion,detalles,palabras_clave,ubicacion,unidad,stock,stock_minimo,punto_pedido,activo,familia_id,subfamilia_id,'
   + 'foto_url,foto_url_2,foto_url_3,foto_pendiente,foto_pendiente_2,foto_pendiente_3,estado_reposicion';
 
 type RepuestoSinNombres = Omit<Item, 'familias' | 'subfamilias'>;
@@ -36,6 +36,8 @@ export type ItemInput = {
   stock_minimo: number | null;
   punto_pedido: number | null;
   detalles: string;
+  // Cómo llama la gente de planta al repuesto: cuenta en la búsqueda (tanto como el nombre) y no se muestra en la lista de resultados.
+  palabras_clave: string;
 };
 
 const QUERY_KEY = ['items'] as const;
@@ -240,6 +242,7 @@ export function useSaveItem() {
           stock_minimo: input.stock_minimo ?? 0,
           punto_pedido: input.punto_pedido ?? 0,
           detalles: input.detalles || null,
+          palabras_clave: input.palabras_clave.trim() || null,
         };
         const { data, error } = await supabase.from('items').update(body).eq('id', id).eq('updated_at', version).select('id');
         if (error) throw error;
@@ -257,6 +260,7 @@ export function useSaveItem() {
         p_stock_minimo: input.stock_minimo as number,
         p_punto_pedido: input.punto_pedido as number,
         p_detalles: input.detalles,
+        p_palabras_clave: input.palabras_clave,
       });
       if (error) throw error;
       return { id: data.id, codigo: data.codigo };

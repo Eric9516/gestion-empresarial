@@ -490,6 +490,7 @@ export type Database = {
           foto_url_3: string | null
           id: string
           numero: string
+          palabras_clave: string | null
           punto_pedido: number
           stock: number | null
           stock_minimo: number
@@ -523,6 +524,7 @@ export type Database = {
           foto_url_3?: string | null
           id?: string
           numero: string
+          palabras_clave: string | null
           punto_pedido?: number
           stock?: number | null
           stock_minimo?: number
@@ -556,6 +558,7 @@ export type Database = {
           foto_url_3?: string | null
           id?: string
           numero?: string
+          palabras_clave?: string | null
           punto_pedido?: number
           stock?: number | null
           stock_minimo?: number
@@ -1532,6 +1535,7 @@ export type Database = {
           p_descripcion: string
           p_detalles: string
           p_familia_id: string
+          p_palabras_clave?: string
           p_numero: string
           p_punto_pedido: number
           p_stock: number

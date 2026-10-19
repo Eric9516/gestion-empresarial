@@ -399,6 +399,36 @@ if (porComponentes) {
   ok('nadie cambia las preferencias de otro (ni con un update directo)', (await como('authenticated', sinDueno, `update public.usuarios_perfil set preferencias = '{"menu_posicion": "abajo"}' where id = '${C}' returning id`)).length === 0
     && JSON.stringify(await prefDe(C)) === '{}');
   ok('sin sesión no se guardan preferencias', !!(await como('anon', null, `select public.guardar_preferencias('{"menu_posicion": "abajo"}'::jsonb)`)).error);
+  // --- Palabras clave y búsqueda sin tildes, con plural y por relevancia ---
+  await db.exec("select set_config('request.jwt.claim.sub', '', false)");
+  const famB = (await q(`select f.id as f, s.id as s from public.familias f join public.subfamilias s on s.familia_id = f.id where f.codigo = 'ZZ'`))[0];
+  const altaB = async (num, desc, palabras, det) => (await q(`insert into public.items (codigo, numero, descripcion, palabras_clave, detalles, familia_id, subfamilia_id)
+    values ('MZZZZ9${num}', '9${num}', '${desc}', ${palabras ? `'${palabras}'` : 'null'}, ${det ? `'${det}'` : 'null'}, '${famB.f}', '${famB.s}') returning id`))[0].id;
+  const pinon = await altaB('0001', 'Piñón Z20 paso 1/2', 'piñón de desmoldeo, engranaje', null);
+  const correa = await altaB('0002', 'Correa dentada HTD', null, 'compatible con el piñón de la desmoldeadora');
+  const buscar = async (texto) => (await como('authenticated', sinDueno, `select id, puntaje from public.buscar_repuestos('${texto}', 50, null, null)`));
+  const ids = (r) => Array.isArray(r) ? r.map(x => x.id) : [];
+  ok('las palabras clave cuentan en la búsqueda', ids(await buscar('desmoldeo')).includes(pinon));
+  ok('sin tildes ni ñ también encuentra ("pinon de desmoldeo")', ids(await buscar('pinon de desmoldeo')).includes(pinon));
+  ok('con mayúsculas y tildes de más también ("PIÑÓN DESMOLDÉO")', ids(await buscar('PIÑÓN DESMOLDÉO')).includes(pinon));
+  ok('el plural encuentra el singular ("piñones")', ids(await buscar('piñones')).includes(pinon));
+  ok('y el singular encuentra lo escrito en plural ("engranajes" ↔ "engranaje")', ids(await buscar('engranajes')).includes(pinon));
+  const orden = ids(await buscar('piñon'));
+  ok('relevancia: lo que tiene la palabra en el nombre va antes que lo que la tiene solo en los detalles', orden.indexOf(pinon) >= 0 && orden.indexOf(correa) > orden.indexOf(pinon), JSON.stringify(orden.slice(0, 5)));
+  ok('los detalles también se buscan ("desmoldeadora")', ids(await buscar('desmoldeadora')).includes(correa));
+  const porFamilia = await como('authenticated', sinDueno, `select id from public.buscar_repuestos('', 50, '${famB.f}', null)`);
+  ok('buscar solo por familia, sin texto, también funciona (ordenado por código)', Array.isArray(porFamilia) && porFamilia.some(x => x.id === pinon), JSON.stringify(porFamilia).slice(0, 120));
+  await db.exec(`update public.items set stock_minimo = 5, punto_pedido = 5 where id = '${pinon}'`);
+  const enInforme = await como('authenticated', C, `select id from public.repuestos_a_reponer('pinon desmoldeo', null, null, 50)`);
+  ok('el Informe también busca por palabras clave y sin tildes', Array.isArray(enInforme) && enInforme.some(x => x.id === pinon), JSON.stringify(enInforme).slice(0, 120));
+  ok('las listas del Depósito también ("desmoldeo" en repuestos_con_palabra)', (await como('authenticated', sinDueno, `select * from public.repuestos_con_palabra('desmoldeo') as id`)).some?.(x => x.id === pinon));
+  ok('un usuario común del Depósito no puede cambiar las palabras clave', !!msj(await como('authenticated', sinDueno, `update public.items set palabras_clave = 'otra cosa' where id = '${pinon}' returning id`)));
+  ok('un administrador sí, y queda en el historial', Array.isArray(await como('authenticated', C, `update public.items set palabras_clave = 'piñón de desmoldeo, rueda dentada' where id = '${pinon}' returning id`))
+    && (await q(`select 1 from public.audit_log where tabla = 'items' and registro_id = '${pinon}' and descripcion like '%palabras clave modificadas%'`)).length >= 1);
+  const nuevo = q1(await como('authenticated', C, `select (t.x).codigo as codigo, (t.x).palabras_clave as palabras_clave from (select public.crear_repuesto('${famB.f}', '${famB.s}', null, 'Buje de bronce', null, null, 0, 0, null, 'Uni', null, 'casquillo') as x) t`));
+  ok('crear un repuesto guarda sus palabras clave', nuevo?.palabras_clave === 'casquillo', JSON.stringify(nuevo));
+  ok('la búsqueda usa índices sobre el texto sin tildes', (await q(`select count(*)::int as n from pg_indexes where tablename = 'items' and indexname in ('items_descripcion_busqueda_idx', 'items_palabras_clave_busqueda_idx', 'items_detalles_busqueda_idx')`))[0].n === 3);
+
   ok('guardar preferencias no queda en el historial de cambios de permisos', (await q(`select count(*)::int as n from public.audit_log where tabla = 'usuarios_perfil' and registro_id = '${sinDueno}' and descripcion like '%preferencias%'`))[0].n === 0);
 }
 

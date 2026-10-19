@@ -274,6 +274,12 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
             <p style={{ marginTop: 4, fontSize: 14, color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}>{item.detalles}</p>
           </div>
         )}
+        {item.palabras_clave && (
+          <div className="detail-section">
+            <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)' }}>Palabras clave</label>
+            <p style={{ marginTop: 4, fontSize: 13, color: 'var(--text-muted)' }}>{item.palabras_clave}</p>
+          </div>
+        )}
         {admin && integ.depositoConProveedores && <ProveedoresDeItem itemId={item.id} onVerProveedor={setProveedorVisto} />}
         {admin && (
           <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1.5px solid var(--border)' }}>

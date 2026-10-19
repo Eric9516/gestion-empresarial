@@ -24,15 +24,26 @@ await cremac.exec(`
   insert into public.sectores (nombre) values ('Quesería');
   insert into public.equipos (sector, nombre) values ('Quesería','Prensa');
   update public.configuracion set color_deposito = '#7a2a8a' where id = 1;
+  insert into public.subfamilias (familia_id, codigo, nombre) select id, 'BB', 'Sub' from public.familias where codigo = 'AA';
+  insert into public.items (codigo, numero, descripcion, detalles, familia_id, subfamilia_id) select 'MAABB00001', '00001', 'Piñón Z20', 'piñón de desmoldeo', f.id, s.id from public.familias f join public.subfamilias s on s.familia_id = f.id where f.codigo = 'AA';
 `);
 const antes = (await cremac.query(`select modulos from public.licencia`)).rows[0].modulos;
 ok('Cremac antes: licencia con los 5 módulos de siempre, sin "mantenimiento"', antes.deposito === true && antes.mantenimiento === undefined);
-await aplicar(cremac, [...nuevas('base'), ...nuevas('abastecimiento'), ...nuevas('mantenimiento')]);
+// Se aplica todo lo nuevo salvo el traslado de "detalles" a "palabras clave"; la foto del repuesto se toma justo antes de ese traslado (otras migraciones sí tocan cada repuesto).
+const TRASLADO = '20260101002800_palabras_clave_y_busqueda.sql';
+const pendientes = [...nuevas('base'), ...nuevas('abastecimiento'), ...nuevas('mantenimiento')];
+await aplicar(cremac, pendientes.filter(a => !a.endsWith(TRASLADO)));
+const itemAntes = (await cremac.query(`select updated_at from public.items where codigo = 'MAABB00001'`)).rows[0];
+const auditoriaAntes = (await cremac.query(`select count(*)::int as n from public.audit_log where tabla = 'items'`)).rows[0].n;
+await aplicar(cremac, pendientes.filter(a => a.endsWith(TRASLADO)));
 const lic = (await cremac.query(`select modulos, componentes from public.licencia`)).rows[0];
 ok('Después: "mantenimiento" prendido (heredó el depósito)', lic.modulos.mantenimiento === true);
 ok('Después: componentes = abastecimiento, base, mantenimiento', JSON.stringify(lic.componentes) === '["abastecimiento","base","mantenimiento"]', JSON.stringify(lic.componentes));
 const datos = (await cremac.query(`select (select count(*)::int from public.proveedores) p, (select count(*)::int from public.equipos) e, (select count(*)::int from public.sectores) s, (select count(*)::int from public.usuarios_perfil) u`)).rows[0];
 ok('El color que la empresa había elegido para el depósito pasó al depósito principal', (await cremac.query(`select color, icono, nombre from public.depositos where es_principal`)).rows[0].color === '#7a2a8a');
+const movido = (await cremac.query(`select palabras_clave, detalles, updated_at from public.items where codigo = 'MAABB00001'`)).rows[0];
+ok('Lo que había en "detalles" pasó a "palabras clave" y "detalles" quedó libre', movido.palabras_clave === 'piñón de desmoldeo' && movido.detalles === null, JSON.stringify(movido));
+ok('El traslado no cambió la versión del repuesto ni llenó el historial', String(movido.updated_at) === String(itemAntes.updated_at) && (await cremac.query(`select count(*)::int as n from public.audit_log where tabla = 'items'`)).rows[0].n === auditoriaAntes);
 await cremac.exec(`update public.configuracion set color_deposito = null where id = 1; update public.depositos set color = null;`); // el color era un dato de la prueba: se quita para comparar solo el esquema
 ok('Los datos que ya tenía siguen ahí', datos.p === 1 && datos.e === 1 && datos.s === 1 && datos.u === 1, JSON.stringify(datos));
 

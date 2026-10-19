@@ -25,7 +25,7 @@ interface Props {
   item: Item | null;
 }
 
-const emptyInput: ItemInput = { familia_id: '', subfamilia_id: '', numero: '', descripcion: '', ubicacion: '', unidad: 'Uni', stock: null, stock_minimo: null, punto_pedido: null, detalles: '' };
+const emptyInput: ItemInput = { familia_id: '', subfamilia_id: '', numero: '', descripcion: '', ubicacion: '', unidad: 'Uni', stock: null, stock_minimo: null, punto_pedido: null, detalles: '', palabras_clave: '' };
 
 // Unidades de medida más usadas (se puede escribir otra).
 const UNIDADES = ['Uni', 'Kg', 'Lt', 'Mt', 'Caja', 'Par', 'Juego', 'Rollo', 'Bolsa'];
@@ -66,6 +66,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
         familia_id: itemActual.familia_id, subfamilia_id: itemActual.subfamilia_id, numero: itemActual.numero,
         descripcion: itemActual.descripcion, ubicacion: itemActual.ubicacion ?? '', unidad: itemActual.unidad, stock: itemActual.stock,
         stock_minimo: itemActual.stock_minimo, punto_pedido: itemActual.punto_pedido, detalles: itemActual.detalles ?? '',
+        palabras_clave: itemActual.palabras_clave ?? '',
       }
       : emptyInput);
   });
@@ -243,6 +244,11 @@ export default function ItemForm({ open, onClose, item }: Props) {
           <label htmlFor="item-form-5">Descripción *</label>
           <Textarea id="item-form-5" rows={2} value={input.descripcion} onChange={e => setInput(prev => ({ ...prev, descripcion: e.target.value }))} />
         </div>
+        <div className="form-group full">
+          <label htmlFor="item-form-palabras">Palabras clave</label>
+          <Input id="item-form-palabras" type="text" maxLength={500} placeholder="Ej: piñón de desmoldeo, engranaje" value={input.palabras_clave} onChange={e => setInput(prev => ({ ...prev, palabras_clave: e.target.value }))} />
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Cómo lo llama la gente de planta. Sirven para encontrarlo al buscar (no hace falta escribir tildes) y no se muestran en la lista de resultados.</p>
+        </div>
         <div className="form-group">
           <label htmlFor="item-form-6">Ubicación</label>
           <Input id="item-form-6" type="text" placeholder="Ej: Estante 3B" value={input.ubicacion} onChange={e => setInput(prev => ({ ...prev, ubicacion: e.target.value }))} />
@@ -279,7 +285,7 @@ export default function ItemForm({ open, onClose, item }: Props) {
         </div>
         <div className="form-group full">
           <label htmlFor="item-form-10">Detalles</label>
-          <Textarea id="item-form-10" rows={2} placeholder="Información relevante que no es la descripción (ej: compatibilidad, repuesto alternativo)" value={input.detalles} onChange={e => setInput(prev => ({ ...prev, detalles: e.target.value }))} />
+          <Textarea id="item-form-10" rows={2} placeholder="Ej: compatible con el repuesto MRMED00012, repuesto alternativo, medidas" value={input.detalles} onChange={e => setInput(prev => ({ ...prev, detalles: e.target.value }))} />
         </div>
       </div>
       </fieldset>
