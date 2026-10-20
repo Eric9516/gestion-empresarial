@@ -73,6 +73,11 @@ input[type="file"] { display: none; }
 .user-dropdown-item:hover { background: var(--surface2); color: var(--text); }
 .user-dropdown-item.user-dropdown-danger { color: var(--danger); }
 .user-dropdown-item.user-dropdown-danger:hover { background: var(--danger-bg); }
+.user-dropdown-item:disabled { opacity: 0.5; cursor: default; background: none; }
+/* Menú "⋯": un separador, el título de un grupo de opciones y la marca de la elegida. */
+.user-dropdown-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+.user-dropdown-grupo { padding: 8px 12px 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); }
+.user-dropdown-marca { margin-left: auto; color: var(--primary, var(--blue)); }
 
 /* ===== PROFILE AVATAR ===== */
 

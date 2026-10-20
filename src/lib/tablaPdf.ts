@@ -1,3 +1,5 @@
+import type { LetraPdf } from './preferencias';
+
 export interface ColumnaPdf {
   header: string;
   // En mm. Una sola columna (la de descripción) va sin ancho y ocupa lo que sobra.
@@ -25,6 +27,8 @@ export interface TablaPdfInput {
   nota?: string;
   columnas: ColumnaPdf[];
   secciones: SeccionPdf[];
+  /** Tamaño de la letra de la tabla y los datos (lo elige cada persona). Sin dato, normal. */
+  letra?: LetraPdf;
 }
 
 const MARGEN = 15;
@@ -32,6 +36,8 @@ const ALTO_LINEA = 4.6;
 const PAD_FILA = 2.2;
 const ALTO_ENCABEZADO_TABLA = 7;
 const ESPACIO_PIE = 20;
+// Cuánto se achica o agranda la tabla (texto, renglones y encabezado) según la letra elegida. El encabezado de la hoja y el pie no cambian.
+const ESCALA_LETRA: Record<LetraPdf, number> = { chica: 0.8, normal: 1, grande: 1.2 };
 
 // Documento A4 con encabezado de empresa, datos, y una o más tablas con salto
 // de página automático. Lo usan el pedido a proveedores y el informe de
@@ -42,6 +48,9 @@ export async function generarTablaPdf(input: TablaPdfInput): Promise<Blob> {
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
   const anchoUtil = w - MARGEN * 2;
+  const e = ESCALA_LETRA[input.letra ?? 'normal'];
+  const altoLinea = ALTO_LINEA * e, padFila = PAD_FILA * e, altoEncabezadoTabla = ALTO_ENCABEZADO_TABLA * e;
+  const letraTexto = 10 * e, letraEncabezado = 9 * e;
 
   const fijo = input.columnas.reduce((acc, c) => acc + (c.ancho ?? 0), 0);
   const anchos = input.columnas.map(c => c.ancho ?? anchoUtil - fijo);
@@ -75,7 +84,7 @@ export async function generarTablaPdf(input: TablaPdfInput): Promise<Blob> {
   doc.setDrawColor(200, 200, 200); doc.line(MARGEN, y, w - MARGEN, y);
   y += 7;
 
-  doc.setFontSize(10); doc.setTextColor(30, 30, 30);
+  doc.setFontSize(letraTexto); doc.setTextColor(30, 30, 30);
   for (const d of input.datos ?? []) {
     if (!d.texto.trim()) continue;
     doc.setFont('helvetica', 'bold');
@@ -85,23 +94,23 @@ export async function generarTablaPdf(input: TablaPdfInput): Promise<Blob> {
     doc.setFont('helvetica', 'normal');
     const lineas: string[] = doc.splitTextToSize(d.texto.trim(), w - MARGEN - xValor);
     doc.text(lineas, xValor, y);
-    y += lineas.length * ALTO_LINEA + 1.5;
+    y += lineas.length * altoLinea + 1.5;
   }
   if (input.nota?.trim()) {
     doc.setTextColor(80, 80, 80);
     const lineasNota: string[] = doc.splitTextToSize(input.nota.trim(), anchoUtil);
     doc.text(lineasNota, MARGEN, y);
-    y += lineasNota.length * ALTO_LINEA + 2;
+    y += lineasNota.length * altoLinea + 2;
   }
   y += 2;
 
   function encabezadoTabla() {
     doc.setFillColor(238, 242, 248);
-    doc.rect(MARGEN, y, anchoUtil, ALTO_ENCABEZADO_TABLA, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(60, 60, 60);
-    input.columnas.forEach((c, i) => doc.text(c.header, xTexto(i), y + 4.8, opciones(i)));
-    y += ALTO_ENCABEZADO_TABLA;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 30, 30);
+    doc.rect(MARGEN, y, anchoUtil, altoEncabezadoTabla, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(letraEncabezado); doc.setTextColor(60, 60, 60);
+    input.columnas.forEach((c, i) => doc.text(c.header, xTexto(i), y + 4.8 * e, opciones(i)));
+    y += altoEncabezadoTabla;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(letraTexto); doc.setTextColor(30, 30, 30);
   }
 
   function altoTitulo(t: TituloPdf) { return t.nivel === 1 ? 11 : 9; }
@@ -117,26 +126,26 @@ export async function generarTablaPdf(input: TablaPdfInput): Promise<Blob> {
     y += altoTitulo(t) - (t.nivel === 1 ? 4 : 2);
   }
 
-  const altoFila = (celdas: string[][]) => Math.max(...celdas.map(l => l.length), 1) * ALTO_LINEA + PAD_FILA * 2;
+  const altoFila = (celdas: string[][]) => Math.max(...celdas.map(l => l.length), 1) * altoLinea + padFila * 2;
   const partirFila = (fila: string[]) => fila.map((texto, i) => doc.splitTextToSize(texto || '', anchos[i] - 4) as string[]);
 
   for (const seccion of input.secciones) {
     if (!seccion.filas.length) continue;
     const titulos = seccion.titulos ?? [];
     const altoTitulos = titulos.reduce((acc, t) => acc + altoTitulo(t), 0);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(letraTexto);
     const primera = altoFila(partirFila(seccion.filas[0]));
     // Título + encabezado + primera fila tienen que entrar juntos: nunca queda un título solo al pie de una página.
-    if (y + altoTitulos + ALTO_ENCABEZADO_TABLA + primera > h - ESPACIO_PIE) { doc.addPage(); y = MARGEN; }
+    if (y + altoTitulos + altoEncabezadoTabla + primera > h - ESPACIO_PIE) { doc.addPage(); y = MARGEN; }
     titulos.forEach(dibujarTitulo);
     encabezadoTabla();
 
     for (const fila of seccion.filas) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 30, 30);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(letraTexto); doc.setTextColor(30, 30, 30);
       const celdas = partirFila(fila);
       const alto = altoFila(celdas);
       if (y + alto > h - ESPACIO_PIE) { doc.addPage(); y = MARGEN; encabezadoTabla(); }
-      const yTexto = y + PAD_FILA + 3.4;
+      const yTexto = y + padFila + 3.4 * e;
       celdas.forEach((lineas, i) => doc.text(lineas, xTexto(i), yTexto, opciones(i)));
       y += alto;
       doc.setDrawColor(225, 225, 225); doc.line(MARGEN, y, w - MARGEN, y);

@@ -5,6 +5,7 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { fechaHoyISO } from '../../lib/fechaHoy';
 import { abrirPdfBlob, descargarPdfBlob } from '../../lib/pdfBlob';
 import { generarPedidoBlob, type LineaPedido } from '../../lib/pedidoPdf';
+import { useLetraPdf } from '../../lib/usePreferencias';
 import { useConfiguracionQuery } from '../config/useConfiguracion';
 import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
 import { useProveedoresQuery } from '../proveedores/useProveedores';
@@ -69,6 +70,7 @@ function AgregarLinea({ yaAgregados, onAgregarItem, onAgregarManual }: {
 export default function PedidoModal({ items, onClose, onDescargado }: Props) {
   const toast = useToast();
   const { data: config } = useConfiguracionQuery();
+  const [letraPdf] = useLetraPdf();
   const { data: proveedores } = useProveedoresQuery();
 
   const [lineas, setLineas] = useState<LineaEditable[]>(() =>
@@ -97,6 +99,7 @@ export default function PedidoModal({ items, onClose, onDescargado }: Props) {
   async function generar(): Promise<Blob | null> {
     try {
       return await generarPedidoBlob({
+        letra: letraPdf,
         empresa: config?.empresa_nombre || NOMBRE_EMPRESA_POR_DEFECTO,
         logo: config?.logo_base64 || '',
         fecha, para, nota, incluirCodigo,

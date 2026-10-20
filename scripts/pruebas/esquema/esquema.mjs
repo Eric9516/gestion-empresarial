@@ -394,6 +394,9 @@ if (porComponentes) {
   await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_fijo": true}'::jsonb)`);
   ok('guardar una preferencia no borra las otras', JSON.stringify(await prefDe(sinDueno)) === JSON.stringify({ menu_fijo: true, menu_posicion: 'arriba' }));
   ok('no se puede guardar una posición inventada', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_posicion": "derecha"}'::jsonb)`)));
+  await como('authenticated', sinDueno, `select public.guardar_preferencias('{"pdf_letra": "grande"}'::jsonb)`);
+  ok('cada persona guarda la letra de sus PDF', (await prefDe(sinDueno)).pdf_letra === 'grande');
+  ok('no se puede guardar una letra inventada', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias('{"pdf_letra": "enorme"}'::jsonb)`)));
   ok('"fijo" tiene que ser sí o no', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias('{"menu_fijo": "quizás"}'::jsonb)`)));
   ok('no se puede guardar algo enorme', !!msj(await como('authenticated', sinDueno, `select public.guardar_preferencias(jsonb_build_object('x', repeat('a', 3000)))`)));
   ok('nadie cambia las preferencias de otro (ni con un update directo)', (await como('authenticated', sinDueno, `update public.usuarios_perfil set preferencias = '{"menu_posicion": "abajo"}' where id = '${C}' returning id`)).length === 0

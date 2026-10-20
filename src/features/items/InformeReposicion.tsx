@@ -6,6 +6,9 @@ import { registrarErrorAccion } from '../../lib/errorLogging';
 import { fechaHoyISO } from '../../lib/fechaHoy';
 import { descargarPdfBlob } from '../../lib/pdfBlob';
 import { generarTablaPdf, type ColumnaPdf, type SeccionPdf } from '../../lib/tablaPdf';
+import { useLetraPdf } from '../../lib/usePreferencias';
+import { LETRAS_PDF, type LetraPdf } from '../../lib/preferencias';
+import MasAcciones from '../../components/MasAcciones';
 import { useDebouncedValue } from '../../lib/useDebouncedValue';
 import { useConfiguracionQuery } from '../config/useConfiguracion';
 import { NOMBRE_EMPRESA_POR_DEFECTO } from '../../lib/empresa';
@@ -98,6 +101,7 @@ export default function InformeReposicion() {
   const { data: familias } = useFamiliasQuery();
   const { data: subfamilias } = useSubfamiliasQuery();
   const { data: config } = useConfiguracionQuery();
+  const [letraPdf, cambiarLetraPdf] = useLetraPdf();
   const toast = useToast();
   const confirmar = useConfirm();
   const [busqueda, setBusqueda] = useState('');
@@ -224,6 +228,7 @@ export default function InformeReposicion() {
       ].filter(Boolean).join(' · ');
 
       const blob = await generarTablaPdf({
+        letra: letraPdf,
         empresa: config?.empresa_nombre || NOMBRE_EMPRESA_POR_DEFECTO,
         logo: config?.logo_base64 || '',
         titulo: 'Informe de reposición',
@@ -348,9 +353,10 @@ export default function InformeReposicion() {
         <Button variant="primary" size="sm" disabled={seleccionados.length === 0} onClick={() => setPedidoAbierto(true)}>
           <Icono n="documento" /> Armar solicitud de presupuesto ({seleccionados.length})
         </Button>
-        <Button variant="ghost" size="sm" disabled={filas.length === 0} onClick={() => void handleExportarPdf()}>
-          <Icono n="exportar" /> Exportar informe PDF
-        </Button>
+        <MasAcciones
+          acciones={[{ clave: 'pdf', texto: 'Exportar informe PDF', icono: <Icono n="exportar" />, deshabilitada: filas.length === 0, onClick: () => void handleExportarPdf() }]}
+          grupos={[{ titulo: 'Letra del PDF', opciones: LETRAS_PDF, elegida: letraPdf, onElegir: id => cambiarLetraPdf(id as LetraPdf) }]}
+        />
       </div>
 
       {isLoading && <p style={{ color: 'var(--text-muted)' }}>Cargando...</p>}
