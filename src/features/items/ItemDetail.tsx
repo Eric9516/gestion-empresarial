@@ -18,6 +18,7 @@ import { useModulos } from '../config/useModulos';
 import { Button } from '@/components/ui/button';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
+import Copiable from '../../components/Copiable';
 
 interface Props {
   item: Item | null;
@@ -220,7 +221,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
             )}
           </div>
           <div style={{ flex: 1, minWidth: 200 }} className="detail-grid">
-            <div className="detail-item"><label>Código</label><div className="value">{item.codigo}</div></div>
+            <div className="detail-item"><label>Código</label><div className="value"><Copiable texto={item.codigo} que="código" /></div></div>
             {item.familias && <div className="detail-item"><label>Familia</label><div className="value">{item.familias.nombre}</div></div>}
             {item.subfamilias && <div className="detail-item"><label>Subfamilia</label><div className="value">{item.subfamilias.nombre}</div></div>}
             {item.ubicacion && <div className="detail-item"><label>Ubicación</label><div className="value">{item.ubicacion}</div></div>}
@@ -266,7 +267,7 @@ export default function ItemDetail({ item, onClose, onEdit }: Props) {
         </div>
         <div className="detail-section">
           <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--text-muted)' }}>Descripción</label>
-          <p style={{ marginTop: 4, fontSize: 14, color: 'var(--text-mid)' }}>{item.descripcion}</p>
+          <p style={{ marginTop: 4, fontSize: 14, color: 'var(--text-mid)' }}><Copiable texto={item.descripcion} que="descripción" /></p>
         </div>
         {item.detalles && (
           <div className="detail-section">

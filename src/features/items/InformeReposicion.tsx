@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { mensajeDeError } from '@/lib/errores';
 import { Icono } from '@/components/Icono';
+import Copiable from '../../components/Copiable';
 
 const stockDe = (it: RepuestoAReponer) => it.stock ?? 0;
 
@@ -249,8 +250,8 @@ export default function InformeReposicion() {
 
   const columns: Column<RepuestoAReponer>[] = [
     { header: '', render: it => <input type="checkbox" aria-label={`Seleccionar ${it.codigo}`} checked={seleccion.has(it.id)} onChange={() => toggleUno(it)} /> },
-    { header: 'Código', render: it => <strong>{it.codigo}</strong> },
-    { header: 'Descripción', render: it => it.descripcion },
+    { header: 'Código', render: it => <Copiable texto={it.codigo} que="código"><strong>{it.codigo}</strong></Copiable> },
+    { header: 'Descripción', render: it => <Copiable texto={it.descripcion} que="descripción" /> },
     ...(porFamilia ? [] : [{ header: 'Familia', render: (it: RepuestoAReponer) => familiaPorId.get(it.familia_id) ?? '—' }]),
     { header: 'Stock', render: it => (stockDe(it) === 0 ? <ChipSinStock /> : <span>{stockDe(it)}</span>) },
     { header: 'Pto. pedido', render: it => <span>{it.punto_pedido}</span> },
@@ -266,11 +267,11 @@ export default function InformeReposicion() {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input type="checkbox" checked={seleccion.has(it.id)} onChange={() => toggleUno(it)} />
-              <span className="prov-card-name">{it.codigo}</span>
+              <Copiable texto={it.codigo} que="código"><span className="prov-card-name">{it.codigo}</span></Copiable>
             </label>
             {stockDe(it) === 0 && <ChipSinStock />}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-mid)' }}>{it.descripcion}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-mid)' }}><Copiable texto={it.descripcion} que="descripción" /></div>
         </div>
         <div className="prov-card-body">
           <div className="prov-card-row">Stock: <strong>{stockDe(it)}</strong> · Pto. pedido: {it.punto_pedido} · Mínimo: {it.stock_minimo}</div>

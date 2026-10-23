@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Icono } from '@/components/Icono';
+import Copiable from '../../components/Copiable';
 
 // La búsqueda se hace en la base (el catálogo nunca se descarga entero) y trae de a tandas: el botón "Ver más" pide otra tanda, hasta el tope de la base.
 // Con más resultados que eso, se afina la búsqueda (texto, familia o subfamilia).
@@ -87,13 +88,14 @@ export default function ItemsList() {
   const columns: Column<RepuestoDeLista>[] = [
     {
       header: 'Código', render: it => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer' }} {...clicConTeclado(() => setViewingId(it.id))}>
-          <strong>{it.codigo}</strong>
-          {it.foto_url && <img src={it.foto_url} alt="" loading="lazy" decoding="async" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          {/* lo que abre el repuesto va aparte del botón de copiar (un botón no puede ir adentro de otro) */}
+          <Copiable texto={it.codigo} que="código"><strong style={{ cursor: 'pointer' }} {...clicConTeclado(() => setViewingId(it.id))}>{it.codigo}</strong></Copiable>
+          {it.foto_url && <img onClick={() => setViewingId(it.id)} src={it.foto_url} alt="" loading="lazy" decoding="async" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
         </div>
       ),
     },
-    { header: 'Descripción', render: it => <span style={{ cursor: 'pointer' }} onClick={() => setViewingId(it.id)}>{it.descripcion}</span> },
+    { header: 'Descripción', render: it => <span style={{ cursor: 'pointer' }} onClick={() => setViewingId(it.id)}><Copiable texto={it.descripcion} que="descripción" /></span> },
     ...(mostrarStock ? [{ header: 'Stock', render: (it: RepuestoDeLista) => <span>{it.stock ?? '-'}</span> } as Column<RepuestoDeLista>] : []),
     { header: '', render: it => <div className="td-actions" style={{ flexWrap: 'nowrap' }}>{botonRetirar(it)}</div> },
   ];
@@ -101,11 +103,11 @@ export default function ItemsList() {
   function renderCard(it: RepuestoDeLista) {
     return (
       <div className="prov-card">
-        <div className="prov-card-header" {...clicConTeclado(() => setViewingId(it.id))} style={{ cursor: 'pointer' }}>
+        <div className="prov-card-header" onClick={() => setViewingId(it.id)} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, width: '100%' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="prov-card-name">{it.codigo}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 2, lineHeight: '16px', minHeight: 32 }}>{it.descripcion}</div>
+              <div className="prov-card-name"><Copiable texto={it.codigo} que="código"><span {...clicConTeclado(() => setViewingId(it.id))}>{it.codigo}</span></Copiable></div>
+              <div style={{ fontSize: 12, color: 'var(--text-mid)', marginTop: 2, lineHeight: '16px', minHeight: 32 }}><Copiable texto={it.descripcion} que="descripción" /></div>
             </div>
             {it.foto_url && <img src={it.foto_url} alt="" loading="lazy" decoding="async" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
           </div>

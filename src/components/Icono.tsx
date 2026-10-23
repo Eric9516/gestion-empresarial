@@ -4,7 +4,7 @@ import {
   Eye, Factory, FileSpreadsheet, FileText, Folder, FolderOpen, Handshake, Hourglass, House, Image, KeyRound, Lightbulb, Lock, LockOpen, LogOut, Mail, MapPin, MessageSquare,
   Minus, NotebookPen, Package, PackageMinus, Palette, Pencil, Phone, Pin, Plus, Printer, Puzzle, RectangleHorizontal, RefreshCw, Rocket, Ruler, Save, Scale, ScrollText, Search,
   Settings, ShoppingCart, Smartphone, Sparkles, Square, SquareDashed, Star, Table, Tag, Target, Trash2, TrafficCone, TriangleAlert, Undo2, Upload, User, Users, Wrench, X,
-  ClipboardList, EllipsisVertical, LayoutGrid, List, Warehouse, BookUser, CircleHelp, Boxes, Truck, Store, FlaskConical, PanelLeft, PanelTop, PanelBottom,
+  ClipboardList, EllipsisVertical, LayoutGrid, List, Warehouse, BookUser, CircleHelp, Boxes, Truck, Store, FlaskConical, PanelLeft, PanelTop, PanelBottom, Copy,
 } from 'lucide-react';
 
 // Los íconos de toda la app salen de acá, con un nombre que dice qué significan. Así todos tienen el mismo tamaño, trazo y color
@@ -24,7 +24,7 @@ const ICONOS = {
   camara: Camera, imagen: Image, carpeta: Folder, carpetaAbierta: FolderOpen, paleta: Palette, regla: Ruler, marco: SquareDashed, vacio: Square, ancho: RectangleHorizontal,
   cajas: Boxes, camion: Truck, tienda: Store, laboratorio: FlaskConical,
   menuLateral: PanelLeft, menuArriba: PanelTop, menuAbajo: PanelBottom,
-  fijar: Pin, ayuda: CircleHelp, deposito: Warehouse, directorio: BookUser, balanza: Scale, estrella: Star, carrito: ShoppingCart, vistaLista: List, vistaGrilla: LayoutGrid, masAcciones: EllipsisVertical,
+  fijar: Pin, ayuda: CircleHelp, deposito: Warehouse, directorio: BookUser, balanza: Scale, estrella: Star, carrito: ShoppingCart, vistaLista: List, vistaGrilla: LayoutGrid, masAcciones: EllipsisVertical, copiar: Copy,
 } as const;
 
 export type NombreIcono = keyof typeof ICONOS;
