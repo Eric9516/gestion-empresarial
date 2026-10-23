@@ -198,3 +198,44 @@ Sale de una conversación con el dueño del producto. Corrige dónde vive la rec
 **El depósito original se llama "Depósito 1" por defecto** (el dueño le cambia el nombre, el color y el ícono desde Configuración → Depósitos; la letra del código se fija con el primer repuesto). Hoy el nombre "Depósito de mantenimiento" está escrito fijo en la pantalla y hay que sacarlo.
 
 **Nuevo rol: administrador de Compras.** Hoy no existe. Habilita permisos a usuarios de depósito. Recomendación: un permiso más que se asigna, no un rol aparte.
+
+## Seguimiento de compras: requerimiento, orden de compra y remito vinculados (2026-10-23)
+
+Sale de la planilla con la que el dueño sigue hoy los requerimientos (unos 1.500 en 18 meses, unos 4 por día): fecha del requerimiento, proveedor,
+descripción, sector, quién pide, número y fecha de la OC, fecha de llegada, remito, demoras y un historial de entregas escrito a mano. Se toma **como
+ejemplo, no para copiarla**: solo la hoja de requerimientos; el detalle remito por remito lo da el propio sistema (se abre el remito desde el historial).
+
+**Todo se completa solo.** Nada se escribe dos veces: el seguimiento es una vista de los documentos que se emiten en la app.
+- Al **emitir un requerimiento** aparece en el seguimiento (estado *sin OC*).
+- Cuando **Compras emite una o varias órdenes** desde ese requerimiento, se completan solos el número y la fecha de cada OC (*esperando*).
+- Cuando llega un **remito y se asocia a la OC**, se completan la fecha de llegada, el número de remito, lo recibido y el saldo (*llegó en parte* / *completo*).
+- Las **demoras** (requerimiento → OC → llegada) y su promedio **por proveedor** salen de esas fechas.
+
+**La relación es renglón por renglón**: cada renglón de la OC dice qué renglón del requerimiento cubre (o que lo agregó Compras, como un flete), y cada
+renglón del remito dice qué renglón de la OC recibe. De ahí salen lo cubierto, lo recibido, el saldo y los estados, en los dos sentidos. Un requerimiento
+puede repartirse en varias OCs; una OC puede llegar en varios remitos; un remito puede traer renglones de varias OCs del mismo proveedor.
+
+**Mercadería que llega antes que la OC** (pasa: está anotado en la planilla): el remito se carga suelto y se asocia cuando sale la OC; ahí se completa todo igual.
+
+**Selectores cortos, nunca listas de 1.500.** Al armar una OC solo aparecen los requerimientos con algo sin cubrir; al cargar un remito, primero el proveedor y
+después solo sus OCs con saldo. Se busca escribiendo (número, descripción, sector, quién pide). Lo cerrado no aparece en los selectores, sí en las listas.
+
+**Estilo administrativo: tres listas que se cruzan** (requerimientos, órdenes de compra, remitos de ingreso), con el mismo componente de lista. Cada número
+de documento es un enlace que lo abre; cada fila se despliega con el detalle por renglón (pedido → ordenado → recibido → saldo); cada documento muestra
+sus **documentos relacionados** como árbol (REQ → OCs → remitos). El seguimiento es la lista de requerimientos con el filtro *pendientes* y la columna de días.
+Filtros por estado, proveedor, sector, quién pide y fechas; exportar a Excel.
+
+**Datos que se suman al diseño**: quién pide puede ser un usuario o un nombre que la app recuerda (por ejemplo "Stock"); materiales o servicio; transporte en el
+remito. Proveedor, sector y quién pide se eligen de listas (en la planilla los mismos datos estaban escritos de varias formas).
+
+**Números**: los da la app y siguen el correlativo que ya usa la empresa (se configura el próximo número). Se asume que las OC se emiten desde la app; si un
+tiempo conviven con otro sistema, se agrega cargar una OC externa con su número sin cambiar nada de lo anterior.
+
+**Módulos**: la vinculación existe cuando la empresa tiene el **módulo de Compras** (requerimientos a Compras, órdenes de compra y seguimiento). Sin Compras,
+el Depósito sigue recibiendo remitos como ingreso suelto. Compras depende de Depósito y de Proveedores, nunca al revés.
+
+**Historial**: la hoja de requerimientos se importa como historial cerrado cuando existan las tres piezas (para tener demoras por proveedor desde el primer
+día), con una revisión previa que unifica proveedores, sectores y nombres repetidos.
+
+**Orden**: 1) requerimientos con renglones y su lista; 2) orden de compra desde el requerimiento, con su número y su PDF; 3) remito de ingreso contra la OC,
+con su detalle en el historial e importación de la planilla.
